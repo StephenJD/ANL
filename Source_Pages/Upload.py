@@ -4,7 +4,7 @@ from pathlib import Path
 def updateWebsite(webRootPath):
   ParmsAdd = ("add", ".")
   ParmsCommit = ("commit","-m", "Upload new content")
-  ParmsPush = ("push", "origin", "main")
+  ParmsPush = ("push", "origin", "master")
   Git = "git"
   subprocess.run([Git, *ParmsAdd], shell=False, cwd=webRootPath)
   subprocess.run([Git, *ParmsCommit], shell=False, cwd=webRootPath)
