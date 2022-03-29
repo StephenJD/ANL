@@ -16,7 +16,7 @@
 theme = "minimal"
 
 # Enable users to switch between day and night mode?
-day_night = true
+day_night = false
 
 # Override the theme's font set (optional).
 #   Guide to font sets: https://wowchemy.com/docs/customization/#fonts
@@ -48,7 +48,7 @@ local_business_type = ""
 org_name = "Lighting Up Chinley"
 
 # Description for social sharing and search engines. If undefined, superuser role is used in place.
-description = "Find Light for your Life"
+description = "Secondary School Drop-In"
 
 ############################
 ## Site Features
