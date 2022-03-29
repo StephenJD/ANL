@@ -4,22 +4,9 @@ type: document
 translationKey: Secondary School After School Drop-In
 geometry: margin=2cm
 geometry: a4paper
-weight: 10 
-design:
-  background:
-    #color: 'navy'
-    # Text color (true=light, false=dark, or remove for the dynamic theme color). 
-    #text_color_light: true
-    # Name of image in `static/media/`.
-    image: PageWash.jpg
-    # Darken the image? Range 0-1 where 0 is transparent and 1 is opaque.
-    #image_darken: 0.6
-    #  Options are `cover` (default), `contain`, or `actual` size.
-    #image_size: cover
-    # Options include `left`, `center` (default), or `right`.
 ---
 
-![](/media/Source_Pages/TnT_Webpage/media/image1.png)
+![](/media/home/TnT_Webpage/media/image1.png)
 
 # What is TnT?
 
@@ -42,7 +29,8 @@ design:
 
 # Who is Running TnT?
 
--   This is a *Lighting Up Chinley* initiative
+-   This is a [*Lighting Up
+    Chinley*](https://www.facebook.com/LightingUpChinley/) initiative
 
 -   It is being hosted by volunteers from Chinley
 
