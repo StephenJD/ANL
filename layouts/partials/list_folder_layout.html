@@ -1,0 +1,41 @@
+{{ $current_page := . }}
+
+{{/* Check whether to show breadcrumb navigation. */}}
+{{ $breadcrumb_page_types := site.Params.breadcrumb.page_types | default dict }}
+{{ $show_breadcrumb := index $breadcrumb_page_types .Type | default false }}
+
+<div class="container-fluid docs">
+  <div class="row flex-xl-nowrap">
+
+  <main class="col-12 col-md-9 col-xl-8 py-md-3 pl-md-5 docs-content" role="main"> 
+	{{ if $show_breadcrumb }}
+		{{ partial "breadcrumb" $current_page }}
+	{{ end }}
+
+	<h1>{{ .Title }}</h1>
+	<div class="directory-style" >		
+	{{ $paginator := .Paginate (.Pages) -}}
+	{{ range $paginator.Pages -}}
+		{{ if eq .Type "document-folder" }}
+			<p><a href="{{ .Permalink }}"> {{ .Title }}/</a></p>
+		{{ end }}
+	{{ end -}}
+	</div>
+	{{ range $paginator.Pages -}}
+	{{ if eq .Type "document" }}
+	  <div class="summary-style">		
+		<p><a href="{{ .Permalink }}">{{ .Title }}</a></p>
+        {{ if .Params.summary }}
+          {{ .Params.summary | plainify | emojify }}
+        {{ else if .Params.abstract }}
+          {{ .Params.abstract | plainify | emojify | truncate 250 }}
+        {{ else if .Summary }}
+          {{ .Summary | plainify | emojify }}
+        {{ end }}
+      </div>
+	  {{ end}}
+	{{ end -}}
+
+ </main> 
+  </div>
+</div>
