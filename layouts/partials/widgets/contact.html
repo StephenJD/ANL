@@ -3,44 +3,14 @@
       method="POST"
       accept-charset="UTF-8">
 	<hr>
-	These entries are optional and will not be published on the blog:<br>
     <label for="fullname">Your Name:</label><br>
     <input type="text" name="fullname" Name style="max-width: 100%;" cols="100"><br>
     <label for="email">Email Address:</label><br>
     <input type="email" name="email" style="max-width: 100%;" cols="100"><br>
-	*Please select age-range
-	<div style="max-width: 95%; padding-left: 20px;">
-	<div class="row">
-		<div class="column" style= "width:150px;">
-			<input type="radio" name="age" value="Under 18" required>    
-			<label for="age"> *Under 18</label><br>
-		</div>
-		<div class="column" style= "width:150px">
-			<input type="radio" name="gender" value="male">    
-			<label for="gender"> Male</label><br>
-		</div>
-	</div>
-	<div class="row">
-		<div class="column" style= "width:150px">
-			<input type="radio" name="age" value="Over 18" required>
-			<label for="age"> *Over 18</label><br>
-		</div>
-		<div class="column" style= "width:150px">		
-			<input type="radio" name="gender" value="female">
-			<label for="gender"> Female</label><br>
-		</div>			
-	</div>	
-	</div>
 	
-	<label for="private_message">Private Message:</label><br>
-    <textarea type="text" name="private_message" rows="4" cols="200" style="max-width: 100%; box-sizing: border-box;" >
+	<label for="private_message">Message:</label><br>
+    <textarea type="text" name="tnt_message" rows="4" cols="200" style="max-width: 100%; box-sizing: border-box;" >
     </textarea>
-	<hr>
-    <label for="public_message">This optional message may be published on the Blog</label><br>
-    <label for="public_message">Include an optional name:</label><br>	
-    <textarea type="text" name="public_message" rows="4" cols="200" style="max-width: 100%; box-sizing: border-box;" >
-    </textarea>
-	<hr>
     <button type="submit">Send</button> 
 </form>
 </div>

@@ -6,7 +6,7 @@ geometry: margin=2cm
 geometry: a4paper
 ---
 
-![](/media/Source_Pages/TnT_Webpage/media/image1.png)
+![](/media/TnT_Webpage/media/image1.png)
 
 # What is TnT?
 
@@ -29,7 +29,8 @@ geometry: a4paper
 
 # Who is Running TnT?
 
--   This is a *Lighting Up Chinley* initiative
+-   This is a [*Lighting Up
+    Chinley*](https://www.facebook.com/LightingUpChinley/) initiative
 
 -   It is being hosted by volunteers from Chinley
 

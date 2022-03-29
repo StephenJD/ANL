@@ -6,27 +6,12 @@
 # Specific values needing translation must be provided in languages.toml
 
 [[main]]
-  name = "Read Online"
-  url = "read_online/bible/"
-  weight = 50
-  
-[[main]]
-  name = "A Good Read"
-  url = "#Light Up Your Life v3"
+  name = "TnT"
+  url = "#TnT_Webpage"
   weight = 10
   
 [[main]]
-  name = "Blog"
-  url = "#blog"
-  weight = 20
-  
-[[main]]
-  name = "About"
-  url = "#about"
-  weight = 30
-     
-[[main]]
   name = "Contact Us"
   url = "#contact"
-  weight = 40
+  weight = 20
   

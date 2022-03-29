@@ -2,7 +2,7 @@
 widget = "contact"
 headless = true  # This file represents a page section.
 active = true  # Activate this widget? true/false
-weight = 40 
+weight = 20 
 
 # ... Put Your Section Options Here (title etc.) ...
 [content]
