@@ -7,27 +7,9 @@
 	#languageCode = "en"
 	languageName = "English"
 	contentDir = "content/en"  # Uncomment for multi-lingual sites, and move English content into `en` sub-folder.
-	title = "Light Up Your Life"
+	title = "TnT@Chinley"
 	weight = 1
 			
-[fr]
-	languageName = "French"
-	contentDir = "content/fr"
-	title = "La vie au Libéria"
-	weight = 2
-	[fr.menu]
-		[[fr.menu.main]]
-			name = "Blog"
-			url = "blog"
-			weight = 30
-		[[fr.menu.main]]			
-			name = "À propos"
-			url = "#about"
-			weight = 40
-		[[fr.menu.main]]
-			name = "Nous contacter"
-			url = "#contact"
-			weight = 50
 # Uncomment the lines below to configure your website in a second language.
 #[zh]
 #  languageCode = "zh-Hans"
