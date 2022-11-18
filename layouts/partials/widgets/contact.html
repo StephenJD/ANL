@@ -1,16 +1,44 @@
 <div style="max-width: 95%;">
-<form action="https://getform.io/f/66c7556b-30ef-477f-8bac-d22cb3f3f306" 
+<form action="https://getform.io/f/4fe66fed-2988-4761-9d69-bb2aca136b14" 
       method="POST"
       accept-charset="UTF-8">
 	<hr>
+	Optional:<br>
     <label for="fullname">Your Name:</label><br>
     <input type="text" name="fullname" Name style="max-width: 100%;" cols="100"><br>
     <label for="email">Email Address:</label><br>
     <input type="email" name="email" style="max-width: 100%;" cols="100"><br>
+	Please select:
+	<div style="max-width: 95%; padding-left: 20px;">
+	<div class="row">
+		<div class="column" style= "width:150px;">
+			<input type="radio" name="age" value="Under 18" required>    
+			<label for="age"> I would like to come sometimes </label><br>
+		</div>
+		<div class="column" style= "width:150px">
+			<input type="radio" name="gender" value="male">    
+			<label for="gender"> The location is fine </label><br>
+		</div>
+	</div>
+	<div class="row">
+		<div class="column" style= "width:150px">
+			<input type="radio" name="age" value="Over 18" required>
+			<label for="age"> This is not for me </label><br>
+		</div>
+		<div class="column" style= "width:150px">		
+			<input type="radio" name="gender" value="female">
+			<label for="gender"> The location puts me off </label><br>
+		</div>			
+	</div>	
+	</div>
 	
-	<label for="private_message">Message:</label><br>
-    <textarea type="text" name="tnt_message" rows="4" cols="200" style="max-width: 100%; box-sizing: border-box;" >
+	<label for="private_message">Optional Message:</label><br>
+    <textarea type="text" name="private_message" rows="4" cols="200" style="max-width: 100%; box-sizing: border-box;" >
     </textarea>
+	<hr>
+    <textarea type="text" name="public_message" rows="4" cols="200" style="max-width: 100%; box-sizing: border-box;" >
+    </textarea>
+	<hr>
     <button type="submit">Send</button> 
 </form>
 </div>
