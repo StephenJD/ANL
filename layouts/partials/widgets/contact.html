@@ -11,32 +11,62 @@
 	Please select:
 	<div style="max-width: 95%; padding-left: 20px;">
 	<div class="row">
-		<div class="column" style= "width:150px;">
-			<input type="radio" name="age" value="Under 18" required>    
-			<label for="age"> I would like to come sometimes </label><br>
-		</div>
+		<label for="Day" style="width: 230px;" >I would like to come:</label><br>
 		<div class="column" style= "width:150px">
-			<input type="radio" name="gender" value="male">    
-			<label for="gender"> The location is fine </label><br>
+			<input type="radio" name="Attendence" value="Often" >
+			<label for="Attendence"> Often </label><br>
+		</div>		
+		<div class="column" style= "width:150px;">
+			<input type="radio" name="Attendence" value="Sometimes" >    
+			<label for="Attendence"> Sometimes </label><br>
+		</div>
+		<div class="column" style= "width:150px;">
+			<input type="radio" name="Attendence" value="Never" >    
+			<label for="Attendence"> It's not for me </label><br>
 		</div>
 	</div>
 	<div class="row">
-		<div class="column" style= "width:150px">
-			<input type="radio" name="age" value="Over 18" required>
-			<label for="age"> This is not for me </label><br>
-		</div>
-		<div class="column" style= "width:150px">		
-			<input type="radio" name="gender" value="female">
-			<label for="gender"> The location puts me off </label><br>
-		</div>			
-	</div>	
+		<label for="Day" style="width: 230px;" >Good days for me are:</label><br>
+		<div class="row" style="max-width: 95%; padding-left: 20px;">
+			<input type="checkbox" name="Day" value="Mon" >
+			<label for="Day" style="padding-left: 5px; width: 100px;" > Monday </label><br>
+			<input type="checkbox" name="Day" value="Tue" >
+			<label for="Day" style="padding-left: 5px; width: 100px;" > Tuesday </label><br>
+			<input type="checkbox" name="Day" value="Wed" >
+			<label for="Day" style="padding-left: 5px; width: 150px;"> Wednesday </label><br>
+			<input type="checkbox" name="Day" value="Thur" >
+			<label for="Day" style="padding-left: 5px; width: 120px;"> Thursday </label><br>
+			<input type="checkbox" name="Day" value="Fri" >
+			<label for="Day" style="padding-left: 5px; width: 100px;"> Friday </label><br>
+			<input type="checkbox" name="Day" value="Sat" >
+			<label for="Day" style="padding-left: 5px; width: 110px;"> Saturday </label><br>
+			<input type="checkbox" name="Day" value="Sun" >
+			<label for="Day" style="padding-left: 5px; width: 100px;"> Sunday </label><br>
+		</div>		
 	</div>
-	
+	</div>
+	<div class="row">
+		<label for="Day" style="width: 230px;" >Good time for me is:</label><br>
+		<div class="row" style="max-width: 95%; padding-left: 20px;">
+			<input type="text" name="Day" value="Time" >
+			<label for="Day" style="padding-left: 5px; width: 100px;" > Mon </label><br>
+			<input type="text" name="Day" value="Time" >
+			<label for="Day" style="padding-left: 5px; width: 100px;" > Tue </label><br>
+			<input type="text" name="Day" value="Time" >
+			<label for="Day" style="padding-left: 5px; width: 150px;"> Wed </label><br>
+			<input type="text" name="Day" value="Time" >
+			<label for="Day" style="padding-left: 5px; width: 120px;"> Thur </label><br>
+			<input type="text" name="Day" value="Time" >
+			<label for="Day" style="padding-left: 5px; width: 100px;"> Fri </label><br>
+			<input type="text" name="Day" value="Time" >
+			<label for="Day" style="padding-left: 5px; width: 110px;"> Sat </label><br>
+			<input type="text" name="Day" value="Time" >
+			<label for="Day" style="padding-left: 5px; width: 100px;"> Sun </label><br>
+		</div>		
+	</div>
+	</div>	
 	<label for="private_message">Optional Message:</label><br>
     <textarea type="text" name="private_message" rows="4" cols="200" style="max-width: 100%; box-sizing: border-box;" >
-    </textarea>
-	<hr>
-    <textarea type="text" name="public_message" rows="4" cols="200" style="max-width: 100%; box-sizing: border-box;" >
     </textarea>
 	<hr>
     <button type="submit">Send</button> 
