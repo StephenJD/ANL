@@ -1,74 +1,85 @@
+<html>
+<head>
+<style type="text/css">
+<!--
+.radioCols {width:500px;}
+-->
+</style>
+</head>
+<body>
 <div style="max-width: 95%;">
 <form action="https://getform.io/f/4fe66fed-2988-4761-9d69-bb2aca136b14" 
       method="POST"
       accept-charset="UTF-8">
 	<hr>
-	Optional:<br>
-    <label for="fullname">Your Name:</label><br>
-    <input type="text" name="fullname" Name style="max-width: 100%;" cols="100"><br>
-    <label for="email">Email Address:</label><br>
-    <input type="email" name="email" style="max-width: 100%;" cols="100"><br>
-	Please select:
-	<div style="max-width: 95%; padding-left: 20px;">
-	<div class="row">
-		<label for="Day" style="width: 230px;" >I would like to come:</label><br>
-		<div class="column" style= "width:150px">
-			<input type="radio" name="Attendence" value="Often" >
-			<label for="Attendence"> Often </label><br>
-		</div>		
-		<div class="column" style= "width:150px;">
-			<input type="radio" name="Attendence" value="Sometimes" >    
-			<label for="Attendence"> Sometimes </label><br>
-		</div>
-		<div class="column" style= "width:150px;">
-			<input type="radio" name="Attendence" value="Never" >    
-			<label for="Attendence"> It's not for me </label><br>
-		</div>
+	<h2>TnT is provided as a safe place for seconary school children to relax, chat and be together.</h2>
+	<p>Please select:</p>
+	<div class="radioCols">
+		<input type="radio" name="Idea" value="GoodIdea" >    
+		<label for="GoodIdea"> I think that is a good idea </label><br>
+		<input type="radio" name="Idea" value="BadIdea" >    
+		<label for="BadIdea"> I don't think it is needed in Chinley </label><br>
+		<label for="Idea-Other"> Other comments about the idea: </label><br>
+		<input type="text" name="Idea" value="" >
 	</div>
-	<div class="row">
-		<label for="Day" style="width: 230px;" >Good days for me are:</label><br>
-		<div class="row" style="max-width: 95%; padding-left: 20px;">
-			<input type="checkbox" name="Day" value="Mon" >
-			<label for="Day" style="padding-left: 5px; width: 100px;" > Monday </label><br>
-			<input type="checkbox" name="Day" value="Tue" >
-			<label for="Day" style="padding-left: 5px; width: 100px;" > Tuesday </label><br>
-			<input type="checkbox" name="Day" value="Wed" >
-			<label for="Day" style="padding-left: 5px; width: 150px;"> Wednesday </label><br>
-			<input type="checkbox" name="Day" value="Thur" >
-			<label for="Day" style="padding-left: 5px; width: 120px;"> Thursday </label><br>
-			<input type="checkbox" name="Day" value="Fri" >
-			<label for="Day" style="padding-left: 5px; width: 100px;"> Friday </label><br>
-			<input type="checkbox" name="Day" value="Sat" >
-			<label for="Day" style="padding-left: 5px; width: 110px;"> Saturday </label><br>
-			<input type="checkbox" name="Day" value="Sun" >
-			<label for="Day" style="padding-left: 5px; width: 100px;"> Sunday </label><br>
-		</div>		
+	
+	<h2>TnT  meets in the Parish room opposite the shops in Chinley</h2>
+	<p>Please tick:</p>
+	<div class="radioCols">
+		<input type="checkbox" name="Location" value="Convenient" >    
+		<label for="Convenient"> The location is convenient </label><br>
+		<input type="checkbox" name="Location" value="Small" >    
+		<label for="Small"> The room is too small </label><br>
+		<input type="checkbox" name="Location" value="Uninviting" >    
+		<label for="Uninviting"> The room is not very inviting </label><br>
+		<input type="checkbox" name="Location" value="CommunityCentre" >    
+		<label for="CommunityCentre"> I would prefer to meet at the Community Centre </label><br>
+		<label for="Idea-Other"> Other comments about the location: </label><br>
+		<input type="text" name="Location" value="" >
 	</div>
+	
+	<h2>TnT  meets after school on Fridays</h2>
+	<div class="radioCols">
+		<label for="Day">I prefer a different day: Please say when:</label><br>
+		<input type="text" name="Day" value="" >
+		<label for="Time">I prefer a different time: Please say when:</label><br>
+		<input type="text" name="Time" value="" >
+		<label for="Idea-Other"> Other comments about the day or time: </label><br>
+		<input type="text" name="Day_Time" value="" >
 	</div>
-	<div class="row">
-		<label for="Day" style="width: 230px;" >Good time for me is:</label><br>
-		<div class="row" style="max-width: 95%; padding-left: 20px;">
-			<input type="text" name="Day" value="Time" >
-			<label for="Day" style="padding-left: 5px; width: 100px;" > Mon </label><br>
-			<input type="text" name="Day" value="Time" >
-			<label for="Day" style="padding-left: 5px; width: 100px;" > Tue </label><br>
-			<input type="text" name="Day" value="Time" >
-			<label for="Day" style="padding-left: 5px; width: 150px;"> Wed </label><br>
-			<input type="text" name="Day" value="Time" >
-			<label for="Day" style="padding-left: 5px; width: 120px;"> Thur </label><br>
-			<input type="text" name="Day" value="Time" >
-			<label for="Day" style="padding-left: 5px; width: 100px;"> Fri </label><br>
-			<input type="text" name="Day" value="Time" >
-			<label for="Day" style="padding-left: 5px; width: 110px;"> Sat </label><br>
-			<input type="text" name="Day" value="Time" >
-			<label for="Day" style="padding-left: 5px; width: 100px;"> Sun </label><br>
-		</div>		
+
+	<h2>TnT  offers hot and cold drinks and buttered toast</h2>
+	<div class="radioCols">
+		<input type="checkbox" name="Snacks" value="Takeaway" >    
+		<label for="Uninviting"> I would like takeaway drinks </label><br>
+		<input type="checkbox" name="Snacks" value="Toast" >    
+		<label for="CommunityCentre">I like toast</label><br>
+		<input type="checkbox" name="Snacks" value="Toast" >    
+		<label for="CommunityCentre">I would like crumpets</label><br>
+		<input type="checkbox" name="Snacks" value="Toast" >    
+		<label for="CommunityCentre">I would like waffles</label><br>
+		<label for="Idea-Other"> Other comments about the snacks/drinks: </label><br>
+		<input type="text" name="Snacks" value="" >	
 	</div>
-	</div>	
-	<label for="private_message">Optional Message:</label><br>
-    <textarea type="text" name="private_message" rows="4" cols="200" style="max-width: 100%; box-sizing: border-box;" >
-    </textarea>
-	<hr>
+	
+	<h2>TnT offers various card-games</h2>
+	<div class="radioCols">
+		<input type="checkbox" name="Games" value="Music" >    
+		<label for="Uninviting"> I would like music </label><br>
+		<input type="checkbox" name="Games" value="Boardgames" >    
+		<label for="CommunityCentre">I would like board games</label><br>
+		<input type="checkbox" name="Games" value="videogames" >    
+		<label for="CommunityCentre">I would like to play games on my phone</label><br>
+		<input type="checkbox" name="Games" value="chat-friends" >    
+		<label for="CommunityCentre">I would like to chat with my friends</label><br>
+		<input type="checkbox" name="Games" value="chat-adult" >    
+		<label for="CommunityCentre">I would like to be able to chat with a friendly adult</label><br>
+		<label for="Idea-Other"> Other comments about activities: </label><br>
+		<input type="text" name="Games" value="" >	
+	</div>
+	<br>
     <button type="submit">Send</button> 
 </form>
 </div>
+</body>
+</html>
