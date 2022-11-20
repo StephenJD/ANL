@@ -4,7 +4,7 @@ type: document
 translationKey: Secondary School After School Drop-In
 geometry: margin=2cm
 geometry: a4paper
-weight: 10 
+weight: 30 
 design:
   background:
     #color: 'navy'
@@ -31,11 +31,9 @@ design:
 
 -   For secondary school children living in Chinley
 
--   Friday afternoons 3.00pm -- 4:30pm
+-   Friday afternoons 3.30pm -- 4:30pm
 
 -   In the Parish Room (opposite the shop-parade)
-
--   A trial period of five weeks for the first half of the summer term
 
 -   Free hot or cold drink (water, squash, tea, coffee or hot chocolate)
     and buttered toast
@@ -52,9 +50,6 @@ design:
 -   The Parish Council have kindly offered the use of the Parish Room
 
 # House Rules
-
-Please note: This is NOT a youth club. We will not be providing games or
-activities.
 
 -   Only secondary school children will be allowed in
 
@@ -91,4 +86,3 @@ You can enquire about TnT via:
 
 -   TnT.Chinley\@gmail.com
 
--   01663 261 040
