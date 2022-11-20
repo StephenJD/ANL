@@ -2,9 +2,11 @@
 <head>
 <style type="text/css">
 <!--
-.radioCols {width:500px; padding-left: 20px;}
-.checkCols {width:500px; padding-left: 20px;}
-.textCols {width:800px; padding-left: 20px;}
+.radioCols {width:800px; padding-left: 20px; max-width:100%; box-sizing: border-box;}
+.checkCols {width:800px; padding-left: 20px; max-width:100%; box-sizing: border-box;}
+.textCols {width:800px; padding-left: 20px; max-width:100%; box-sizing: border-box; }
+.textBox {max-width:100%; box-sizing: border-box; width:200px; }
+.textMsg {max-width:100%; box-sizing: border-box; width:800px }
 -->
 </style>
 </head>
@@ -14,7 +16,7 @@
       method="POST"
       accept-charset="UTF-8">
 	<hr>
-	<h1>TnT - Tell us what yuou think</h2>
+	<h1>TnT - Tell us what you think</h2>
 
 	<h2>TnT is provided as a safe place for seconary school children to relax, chat and be together.</h2>
 	<p>Please select:</p>
@@ -24,7 +26,8 @@
 		<input type="radio" name="Idea" value="Bad Idea" >    
 		<label for="BadIdea"> I don't think it is needed in Chinley </label><br>
 		<label for="Idea Other"> Other comments about the idea: </label><br>
-		<input class="textCols" type="text" name="Idea Other" value="" >
+		<textarea rows="1" class="textMsg" type="text" name="Idea Other" value="" >
+		</textarea>
 	</div>
 	
 	<h2>TnT  meets in the Parish room opposite the shops in Chinley</h2>
@@ -39,17 +42,19 @@
 		<input type="checkbox" name="CommunityCentre" value="yes" >    
 		<label for="CommunityCentre"> I would prefer to meet at the Community Centre </label><br>
 		<label for="Location other"> Other comments about the location: </label><br>
-		<input class="textCols" type="text" name="Location other" value="" >
+		<textarea rows="2" class="textMsg" type="text" name="Location other" value="" >
+		</textarea>
 	</div>
 	
 	<h2>TnT  meets after school on Fridays</h2>
 	<div class="textCols">
-		<label for="Day">I prefer a different day: Please say when:</label>
-		<input type="text" name="Day" value="" ><br>
-		<label for="Time">I prefer a different time: Please say when:</label>
-		<input type="text" name="Time" value="" ><br>
-		<label for="Day/Time other"> Other comments about the day or time: </label>
-		<input class="textCols" type="text" name="Day/Time other" value="" ><br>
+		<label for="Day">I prefer a different day: When? </label>
+		<input class="textBox" type="text" name="Day" value="" ><br>
+		<label for="Time">I prefer a different time: When?</label>
+		<input class="textBox" type="text" name="Time" value="" ><br>
+		<label for="Day/Time other"> Other comments about the day or time: </label><br>
+		<textarea rows="1" class="textMsg" type="text" name="Day/Time other" value="" >
+		</textarea>
 	</div>
 
 	<h2>TnT  offers hot and cold drinks and buttered toast</h2>
@@ -63,11 +68,12 @@
 		<input type="checkbox" name="Waffles" value="yes" >    
 		<label for="Waffles">I would like waffles</label><br>
 		<label for="Snacks Other"> Other comments about the snacks/drinks: </label><br>
-		<input class="textCols" type="text" name="Snacks Other" value="" >	
+		<textarea rows="1" class="textMsg" type="text" name="Snacks Other" value="" >
+		</textarea>
 	</div>
 	
 	<h2>TnT offers various activities</h2>
-	<div class="radioCols">
+	<div class="checkCols">
 		<input type="checkbox" name="Card games" value="yes" >    
 		<label for="Card games"> I like card games </label><br>
 		<input type="checkbox" name="Boardgames" value="yes" >    
@@ -83,11 +89,12 @@
 		<input type="checkbox" name="chat-adult" value="yes" >    
 		<label for="chat-adult">I would like to be able to chat with a friendly adult</label><br>
 		<label for="Activity Other"> Other comments about activities: </label><br>
-		<input class="textCols" type="text" name="Activity Other" value="" >	
+		<textarea rows="4" class="textMsg" type="text" name="Activity Other" value="" >
+		</textarea>
 	</div>
 	<br>
 	<label for="Name"> First Name (required): </label><br>
-	<input class="textCols" type="text" name="Name" value="" required ><br>
+	<input class="textBox" type="text" name="Name" value="" required ><br>
 	<br>
     <button type="submit">Send</button> 
 </form>
