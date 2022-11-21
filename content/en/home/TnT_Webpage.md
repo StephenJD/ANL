@@ -27,7 +27,7 @@ design:
 
 -   After-school drop-in at the end of the school week
 
--   A safe place to relax, chat and be together
+-   A safe place to chill and chat
 
 -   For secondary school children living in Chinley
 
