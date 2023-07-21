@@ -16,7 +16,6 @@ design:
     # Options include `left`, `center` (default), or `right`.
 weight: 6
 ---
-# Secondary School After School Drop-In
 
 ![](/media/home/TnT_Webpage/media/image1.png)
 
