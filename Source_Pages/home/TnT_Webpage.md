@@ -1,13 +1,6 @@
----
-title: Safeguarding
-type: document
-translationKey: Safeguarding
-summary: ""
-weight: 6
----
 ## Secondary School After School Drop-In
 
-![](image1.png)
+![](media/7fbe9a5560efb70f660c1e14bc23b0a4.png)
 
 ## Holiday Opening 4-5pm Fridays
 
@@ -49,4 +42,3 @@ You can enquire about TnT via:
 
 -   Contact Form
 -   TnT.Chinley@gmail.com
-
