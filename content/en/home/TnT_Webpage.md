@@ -1,17 +1,28 @@
 ---
-title: Safeguarding
+title: Secondary School After School Drop-In
 type: document
-translationKey: Safeguarding
-summary: ""
+translationKey: Secondary School After School Drop-In
+design:
+  background:
+    #color: 'navy'
+    # Text color (true=light, false=dark, or remove for the dynamic theme color). 
+    #text_color_light: true
+    # Name of image in `static/media/`.
+    image: PageWash.jpg
+    # Darken the image? Range 0-1 where 0 is transparent and 1 is opaque.
+    #image_darken: 0.6
+    #  Options are `cover` (default), `contain`, or `actual` size.
+    #image_size: cover
+    # Options include `left`, `center` (default), or `right`.
 weight: 6
 ---
-## Secondary School After School Drop-In
+# Secondary School After School Drop-In
 
-![](image1.png)
+![](/media/home/TnT_Webpage/media/image1.png)
 
-## Holiday Opening 4-5pm Fridays
+# Holiday Opening 4-5pm Fridays
 
-## What is TnT?
+# What is TnT?
 
 -   Tea and Toast (actually waffles and toppings)
 -   After-school drop-in at the end of the school week and during the holidays
@@ -21,14 +32,14 @@ weight: 6
 -   In the Parish Room (opposite the shop-parade)
 -   Free hot or cold drink (water, squash, tea, coffee or hot chocolate) and buttered toast
 
-## Who is Running TnT?
+# Who is Running TnT?
 
 -   This is a [*Lighting Up Chinley*](https://www.facebook.com/LightingUpChinley/) initiative
 -   It is being hosted by volunteers from Chinley
 -   St Mary's Church PCC are providing Safeguarding oversight
 -   The Parish Council have kindly offered the use of the Parish Room
 
-## House Rules
+# House Rules
 
 -   Only secondary school children will be allowed in
 -   If you are under 14, you must show that you have your parent's permission and give your parent's contact phone number.
@@ -39,7 +50,7 @@ weight: 6
 -   No smoking, alcohol or drugs on the premises.
 -   If a TnT helper asks you to modify your behaviour and you do not, you will be asked to leave.
 
-## Safeguarding
+# Safeguarding
 
 St Mary's Church PCC have approved the Risk Assessment, Safeguarding arrangements and Volunteer Role descriptions. All TnT leaders and helpers are DBS checked and have received Safeguarding training.
 
