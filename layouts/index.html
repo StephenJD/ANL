@@ -3,14 +3,39 @@
 <div style="border: 5px solid red; padding: 1rem; text-align: center;">
   HOME LAYOUT ACTIVE \layouts\index.html
 </div>
+TestParam: {{ .Params.testparam }}
+
+
 <pre style="border:1px solid blue; padding:1rem; margin-top:1rem;">
 Type: {{ .Type }}
 Kind: {{ .Kind }}
 Layout: {{ .Layout }}
 File Path: {{ with .File }}{{ .Path }}{{ else }}nil{{ end }}
 BaseFileName: {{ with .File }}{{ .BaseFileName }}{{ else }}nil{{ end }}
+Params: {{ printf "%#v" .Params }}
+hero_logo raw: '{{ .Params.hero_logo }}'
 </pre>
 
+
+{{ $home := site.GetPage "home/index.md" }}
+{{ $logo := "" }}
+{{ with $home.Params.hero_logo }}
+  {{ $logo = $home.Resources.GetMatch . | relURL }}
 {{ end }}
 
 
+{{ if $logo }}
+  <img src="{{ $logo }}" alt="ANL Logo" style="max-width:300px; display:block; margin:0 auto 1rem;">
+{{ else }}
+  <div style="border:1px solid orange; padding:0.5rem; text-align:center; max-width:600px; margin:0 auto;">
+    Logo not found. home.Params.hero_logo='{{ with $home }}{{ .Params.hero_logo }}{{ else }}nil{{ end }}'
+    <br>
+    {{ if $home }}
+      Resources in content/home/:<br>
+      <small>
+      {{ range $home.Resources }}{{ .Name }} → {{ .RelPermalink }}<br>{{ end }}
+      </small>
+    {{ end }}
+  </div>
+{{ end }}
+{{ end }}

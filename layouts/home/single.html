@@ -9,8 +9,12 @@ Kind: {{ .Kind }}
 Layout: {{ .Layout }}
 File Path: {{ with .File }}{{ .Path }}{{ else }}nil{{ end }}
 BaseFileName: {{ with .File }}{{ .BaseFileName }}{{ else }}nil{{ end }}
+Params: {{ printf "%#v" .Params }}
+hero_logo raw: '{{ .Params.hero_logo }}'
 </pre>
 
+
+{{ $home := site.GetPage "home/index.md" }}
 
 {{ end }}
 
