@@ -1,0 +1,17 @@
+<aside class="related layout__related">
+  <ul>
+    {{ $current := .Page }}
+    {{ $homeSections := sort (where .Site.RegularPages "Type" "home") "Weight" }}
+    {{ range $homeSections }}
+      {{ if and (ne .File.BaseFileName "index") (ne .File.BaseFileName $current.File.BaseFileName) }}
+        <li><a href="{{ .RelPermalink }}">{{ .Title }}</a></li>
+      {{ end }}
+    {{ end }}
+  </ul>
+</aside>
+
+
+
+
+
+

@@ -1,9 +1,4 @@
 # SITE SETUP
-# Guide: https://wowchemy.com/docs/get-started/
-# Documentation: https://wowchemy.com/docs/
-#
-# This file is formatted using TOML syntax - learn more at https://learnxinyminutes.com/docs/toml/
-# Each config section after this section is defined by a name in square brackets (e.g. `[search]`).
 
 ############################
 ## Theme
@@ -16,7 +11,7 @@
 theme = "minimal"
 
 # Enable users to switch between day and night mode?
-day_night = false
+day_night = true
 
 # Override the theme's font set (optional).
 #   Guide to font sets: https://wowchemy.com/docs/customization/#fonts
@@ -45,7 +40,7 @@ local_business_type = ""
 
 # Organization name (optional)
 # Enter an organization or project name. Defaults to the site title from `config.toml`.
-org_name = "Lighting Up Chinley"
+org_name = "Ascend Next Level"
 
 # Description for social sharing and search engines. If undefined, superuser role is used in place.
 description = "Secondary School Drop-In"
@@ -53,29 +48,6 @@ description = "Secondary School Drop-In"
 ############################
 ## Site Features
 ############################
-
-# Enable source code highlighting? true/false
-# Documentation: https://wowchemy.com/docs/writing-markdown-latex/#highlighting-options
-highlight = false
-# highlight_languages = ["r"]  # Add support for highlighting additional languages
-# highlight_style = "github"  # For supported styles, see https://cdnjs.com/libraries/highlight.js/
-
-# Enable LaTeX math rendering? true/false
-#   If false, you can enable math on a per page basis as needed.
-math = false
-
-# Enable diagram rendering? true/false
-#   If false, you can enable diagrams on a per page basis as needed.
-diagram = false
-
-# Privacy pack
-#   Show a cookie consent message to visitors
-#   Anonymize IP in Google Analytics (if enabled)
-privacy_pack = false
-
-# Enable visitors to edit pages?
-#   `repo` defines the repository URL. `editable` defines which page types can be edited.
-edit_page = {repo_url = "", content_dir = "", repo_branch = "main", editable = {book = false}}
 
 # Show related content at the bottom of pages?
 show_related = {book = true}
@@ -209,13 +181,6 @@ toc = {document = true}
   engine = 0
   api_key = ""
   zoom = 15
-
-############################
-## Marketing
-############################
-[marketing]
-  google_analytics = ""
-  google_tag_manager = ""
 
 ############################
 ## Content Management System

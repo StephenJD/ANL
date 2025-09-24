@@ -1,5 +1,4 @@
 # Navigation Links
-# ALL LINKS MUST BE LOWER_CASE
 #   To link a homepage widget, specify the URL as a hash `#` followed by the filename of the
 #     desired widget in your `content/home/` folder.
 #   The weight parameter defines the order that the links will appear in.
@@ -7,27 +6,12 @@
 # Specific values needing translation must be provided in languages.toml
 
 [[main]]
-  name = "ANL-Home"
-  url = "#"
+  name = "TnT"
+  url = "#TnT_Webpage"
   weight = 10
   
 [[main]]
-  name = "Volunteers"
-  url = "volunteers"
-  weight = 20
-  
-[[main]]
-  name = "TnT-Chinley"
-  url = "tnt-chinley"
-  weight = 30
-  
-[[main]]
-  name = "About ANL"
-  url = "about"
-  weight = 40
-  
-[[main]]
   name = "Contact Us"
-  url = "contact"
-  weight = 50
+  url = "#contact"
+  weight = 20
   

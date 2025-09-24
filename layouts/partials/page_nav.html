@@ -1,0 +1,25 @@
+<header class="site-header">
+  <nav class="site-nav">
+    <ul>
+      <!-- include Home -->
+      <li>
+        <a href="/" class="{{ if .IsHome }}active{{ end }}">Home</a>
+      </li>
+
+      <!-- include top-level sections -->
+      {{ range .Site.Sections.ByWeight }}
+        {{ $isActive := eq $.Section .Section }}
+        <li>
+          <a href="{{ .RelPermalink }}" class="{{ if $isActive }}active{{ end }}">
+            {{ .Title }}
+          </a>
+        </li>
+      {{ end }}
+    </ul>
+  </nav>
+</header>
+
+
+
+
+
