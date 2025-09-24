@@ -1,25 +1,28 @@
 {{ define "main" }}
-{{ $home := site.GetPage "home/index.md" }}
-{{ $homeSections := $home.Resources.Match "*.md" }}
-{{ $homeSections := sort $homeSections "Weight" }}
+{{ $homeBundle := site.GetPage "home/index.md" }}
 
+{{ $homeSections := sort ($homeBundle.Resources.ByType "page") "Params.weight" }}
+
+{{ $showDebug := false }}  {{/* change to true to see debug */}}
+
+{{ if $showDebug }}
 <div style="border: 5px solid red; padding: 1rem; text-align: center;">
   HOME LAYOUT ACTIVE \layouts\index.html
-  Revised 11
+  Revised 15
 </div>
 
 <pre style="border:1px solid blue; padding:1rem; margin-top:1rem;">
 Files under content/home/:
-{{ range $home.Resources.ByType "page" }} 
+{{ range $homeBundle.Resources.ByType "page" }} 
 Path: {{ .File.Path }} | Base: {{ .File.BaseFileName }} | Title: {{ .Title }} | Weight: {{ .Weight }} 
 {{ end }}
 </pre>
+{{ end }}
 
 {{/* Logo */}}
-{{ $home := site.GetPage "home/index.md" }}
 {{ $logo := "" }}
-{{ with $home.Params.hero_logo }}
-  {{ $res := $home.Resources.GetMatch . }}
+{{ with $homeBundle.Params.hero_logo }}
+  {{ $res := $homeBundle.Resources.GetMatch . }}
   {{ if $res }}
     {{ $logo = $res.RelPermalink }}
   {{ end }}
@@ -27,8 +30,8 @@ Path: {{ .File.Path }} | Base: {{ .File.BaseFileName }} | Title: {{ .Title }} | 
 
 {{/* Background */}}
 {{ $bg := "" }}
-{{ with $home.Params.hero_background }}
-  {{ $res := $home.Resources.GetMatch . }}
+{{ with $homeBundle.Params.hero_background }}
+  {{ $res := $homeBundle.Resources.GetMatch . }}
   {{ if $res }}
     {{ $bg = $res.RelPermalink }}
   {{ end }}
@@ -63,14 +66,15 @@ Path: {{ .File.Path }} | Base: {{ .File.BaseFileName }} | Title: {{ .Title }} | 
   </div>
 
   <!-- Render pages under home, excluding index.md -->
-  {{ range $homeSections }}
-    {{ if ne .File.BaseFileName "index" }}
-      <section style="padding:2rem; margin:1rem 0; text-align:center; width:100%;">
-        <h2>{{ .Title }}</h2>
-        {{ .Content | safeHTML }}
-      </section>
+{{ range $homeSections }}
+  <section style="padding:2rem; margin:1rem 0; text-align:center; width:100%;">
+    <h2>{{ .Title }}</h2>
+    {{ with .Page }}
+      {{ .Content | safeHTML }}
     {{ end }}
-  {{ end }}
+  </section>
+{{ end }}
+
 
 </div>
 

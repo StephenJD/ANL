@@ -1,14 +1,45 @@
-<aside class="related layout__related">
-  <ul>
-    {{ $current := .Page }}
-    {{ $homeSections := sort (where .Site.RegularPages "Type" "home") "Weight" }}
-    {{ range $homeSections }}
-      {{ if and (ne .File.BaseFileName "index") (ne .File.BaseFileName $current.File.BaseFileName) }}
-        <li><a href="{{ .RelPermalink }}">{{ .Title }}</a></li>
-      {{ end }}
+{{/* shortcodes/home_sibling_links.html */}}
+
+{{ $showDebug := false }}  {{/* change to true to see debug */}}
+
+{{ if $showDebug }}
+<pre style="border:1px solid orange; padding:1rem; margin:1rem 0;">
+DEBUG: sibling pages
+
+{{ $homePage := site.GetPage "home/index.md" }}
+{{ $parent := $homePage.Parent }}
+
+Home page: {{ $homePage.File.Path }}
+Parent folder: {{ if $parent }}{{ $parent.File.Path }}{{ else }}nil{{ end }}
+
+Siblings under same parent:
+{{ if $parent }}
+  {{ range sort $parent.Pages "Weight" }}
+    Path: {{ .File.Path }} | Base: {{ .File.BaseFileName }} | Title: {{ .Title }} | Weight: {{ .Weight }}
+  {{ end }}
+{{ else }}
+  No parent found.
+{{ end }}
+</pre>
+{{ end }}
+
+<ul>
+{{ $homePage := site.GetPage "home/index.md" }}
+{{ $parent := $homePage.Parent }}
+
+{{ if $parent }}
+  {{ range sort $parent.Pages "Weight" }}
+    {{ if ne .File.BaseFileName "index" }}
+      <li><a href="{{ .RelPermalink }}">{{ .Title }}</a></li>
     {{ end }}
-  </ul>
-</aside>
+  {{ end }}
+{{ end }}
+</ul>
+
+
+
+
+
 
 
 
