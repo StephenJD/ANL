@@ -1,48 +1,33 @@
-{{/* shortcodes/home_sibling_links.html */}}
-
-{{ $showDebug := false }}  {{/* change to true to see debug */}}
-
-{{ if $showDebug }}
-<pre style="border:1px solid orange; padding:1rem; margin:1rem 0;">
-DEBUG: sibling pages
-
-{{ $homePage := site.GetPage "home/index.md" }}
+{{ $homePage := site.GetPage "00_home/index.md" }}
 {{ $parent := $homePage.Parent }}
 
-Home page: {{ $homePage.File.Path }}
-Parent folder: {{ if $parent }}{{ $parent.File.Path }}{{ else }}nil{{ end }}
-
-Siblings under same parent:
-{{ if $parent }}
-  {{ range sort $parent.Pages "Weight" }}
-    Path: {{ .File.Path }} | Base: {{ .File.BaseFileName }} | Title: {{ .Title }} | Weight: {{ .Weight }}
-  {{ end }}
-{{ else }}
-  No parent found.
-{{ end }}
-</pre>
-{{ end }}
-
-<ul>
-{{ $homePage := site.GetPage "home/index.md" }}
-{{ $parent := $homePage.Parent }}
-
-{{ if $parent }}
-  {{ range sort $parent.Pages "Weight" }}
-    {{ if ne .File.BaseFileName "index" }}
-      <li><a href="{{ .RelPermalink }}">{{ .Title }}</a></li>
+<ul class="home-sibling-links">
+  {{ if $parent }}
+    {{ range sort $parent.Pages "Weight" }}
+      {{ if ne .File.BaseFileName "index" }}
+        <li><a href="{{ .RelPermalink }}">{{ .Title }}</a></li>
+      {{ end }}
     {{ end }}
   {{ end }}
-{{ end }}
 </ul>
 
+<style>
+.home-sibling-links {
+  list-style: none;        /* remove bullets */
+  padding: 0;
+  margin: 0;
+  /*display: flex; */          /* horizontal layout */
+  gap: 1rem;               /* spacing between links */
+  justify-content: center; /* center on page */
+}
 
+.home-sibling-links li {
+  margin: 0;
+}
 
-
-
-
-
-
-
-
-
+.home-sibling-links a {
+  color: blue;             /* hyperlink color */
+  text-decoration: underline;
+  font-size: var(--h2-font-size, 2rem); /* match H2 size */
+}
+</style>
