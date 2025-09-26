@@ -5,7 +5,7 @@
 {{ $highlight_active_link := site.Params.main_menu.highlight_active_link | default true }}
 {{ $show_current_language := site.Params.main_menu.show_language | default false }}
 
-{{/* Get site logo. */}}
+{{/* Site logo */}}
 {{ $show_logo := site.Params.main_menu.show_logo | default true }}
 {{ $has_logo := fileExists "assets/images/logo.png" | or (fileExists "assets/images/logo.svg") }}
 {{ $logo := "" }}
@@ -16,7 +16,7 @@
 <nav class="navbar navbar-expand-lg navbar-light compensate-for-scrollbar" id="navbar-main">
   <div class="container-xl">
 
-    {{if $show_logo}}
+    {{ if $show_logo }}
     <div class="d-none d-lg-inline-flex">
       <a class="navbar-brand" href="{{ "/" | relLangURL }}">
         {{- if $has_logo -}}
@@ -26,16 +26,16 @@
         {{- end -}}
       </a>
     </div>
-    {{end}}
+    {{ end }}
 
     {{ if site.Menus.main }}
     <button type="button" class="navbar-toggler" data-toggle="collapse"
             data-target="#navbar-content" aria-controls="navbar" aria-expanded="false" aria-label="{{ i18n "toggle_navigation" }}">
-    <span><i class="fas fa-bars"></i></span>
+      <span><i class="fas fa-bars"></i></span>
     </button>
     {{ end }}
 
-    {{if $show_logo}}
+    {{ if $show_logo }}
     <div class="navbar-brand-mobile-wrapper d-inline-flex d-lg-none">
       <a class="navbar-brand" href="{{ "/" | relLangURL }}">
       {{- if $has_logo -}}
@@ -45,73 +45,70 @@
       {{- end -}}
       </a>
     </div>
-    {{end}}
+    {{ end }}
 
-    <!-- Collect the nav links, forms, and other content for toggling -->
+    {{/* Navbar links */}}
     {{ $align_menu := site.Params.main_menu.align | default "l" }}
-    <div class="navbar-collapse main-menu-item collapse {{ if eq $align_menu "c" }}justify-content-center{{ else if eq $align_menu "r" }}justify-content-end{{else}}justify-content-start{{ end }}" id="navbar-content">
+    <div class="navbar-collapse main-menu-item collapse {{ if eq $align_menu "c" }}justify-content-center{{ else if eq $align_menu "r" }}justify-content-end{{ else }}justify-content-start{{ end }}" id="navbar-content">
 
-      <!-- Left Nav Bar -->
       <ul class="navbar-nav d-md-inline-flex">
-        {{ range site.Menus.main }}
+        {{ $home := site.GetPage site.Params.home }}
 
-        {{ if .HasChildren }}
-        <li class="nav-item dropdown">
-          <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true">
-            {{- .Pre -}}<span>{{ .Name | safeHTML }}</span>{{- .Post -}}
-            <span class="caret"></span>
-          </a>
-          <div class="dropdown-menu">
-            {{ range .Children }}
-              <a class="dropdown-item" href="{{ .URL | relLangURL }}"{{ if $.IsHome }} data-target="{{ .URL }}"{{ end }}>
+        {{ range site.Menus.main }}
+          {{/* Handle dropdown */}}
+          {{ if .HasChildren }}
+            <li class="nav-item dropdown">
+              <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true">
+                {{- .Pre -}}<span>{{ .Name | safeHTML }}</span>{{- .Post -}}
+                <span class="caret"></span>
+              </a>
+              <div class="dropdown-menu">
+                {{ range .Children }}
+                  {{ $link := .URL }}
+                  {{ if and (hasPrefix $link "#") $home }}
+                    {{ $link = printf "%s%s" $home.RelPermalink $link }}
+                  {{ end }}
+                  <a class="dropdown-item" href="{{ $link | relLangURL }}">
+                    {{- .Pre -}}<span>{{ .Name | safeHTML }}</span>{{- .Post -}}
+                  </a>
+                {{ end }}
+              </div>
+            </li>
+
+          {{ else }}
+            {{/* Single link */}}
+            {{ $link := .URL }}
+            {{ if and (hasPrefix $link "#") $home }}
+              {{ $link = printf "%s%s" $home.RelPermalink $link }}
+            {{ end }}
+
+            {{/* Determine target for external links */}}
+            {{ $.Scratch.Set "target" "" }}
+            {{ if gt (len .URL) 4 }}
+              {{ if eq "http" (slicestr .URL 0 4) }}
+                {{ $.Scratch.Set "target" " target=\"_blank\" rel=\"noopener\"" }}
+              {{ end }}
+            {{ end }}
+
+            {{/* Highlight active link */}}
+            {{ $is_link_in_current_path := false }}
+            {{ if $current_page.IsHome | and (or (eq .URL "/") (eq .URL "")) }}
+              {{ $is_link_in_current_path = true }}
+            {{ else }}
+              {{ $is_link_in_current_path = in $current_page.RelPermalink .URL }}
+            {{ end }}
+
+            <li class="nav-item">
+              <a class="nav-link {{ if and $highlight_active_link $is_link_in_current_path }}active{{ end }}" 
+                 href="{{ $link | relLangURL }}" 
+                 {{ ($.Scratch.Get "target") | safeHTMLAttr }}>
                 {{- .Pre -}}<span>{{ .Name | safeHTML }}</span>{{- .Post -}}
               </a>
-            {{ end }}
-          </div>
-        </li>
-
-        {{ else }}
-
-        {{/* Set target for link. */}}
-        {{ $.Scratch.Set "target" "" }}
-        {{ if gt (len .URL) 4 }}
-          {{ if eq "http" (slicestr .URL 0 4) }}
-            {{ $.Scratch.Set "target" " target=\"_blank\" rel=\"noopener\"" }}
+            </li>
           {{ end }}
         {{ end }}
 
-        {{/* Get active page. */}}
-
-        {{ $is_link_in_current_path := false }}
-        {{ $is_widget_page := or $current_page.IsHome (eq $current_page.Type "widget_page") }}
-        {{ $is_same_page := false }}
-        {{ $hash := findRE "#(.+)" .URL }}
-
-        {{ if $current_page.IsHome | and (or (eq .URL "/") (eq .URL "")) }}
-          {{ $is_link_in_current_path = true }}
-        {{else}}
-          {{ if gt (len .URL) 1 }}{{/* Ignore root URL */}}
-            {{ $is_link_in_current_path = in $current_page.RelPermalink .URL }}
-            {{ $is_same_page = $is_link_in_current_path }}
-          {{end}}
-          {{ if gt (len $hash) 0 }}
-            {{ $hash = index $hash 0 }}
-            {{ $hash_removed := replace .URL $hash "" }}
-            {{ if eq (len $hash_removed) 0 }}
-              {{ $hash_removed = "/" }}{{/* Add robustness for `/#SECTION` or `#SECTION` in `menus.toml`. */}}
-            {{ end }}
-            {{ $is_same_page = eq (path.Dir $current_page.RelPermalink) (path.Dir ($hash_removed|relLangURL)) }}
-          {{ end }}
-        {{end}}
-
-        <li class="nav-item">
-          <a class="nav-link {{if and $highlight_active_link $is_link_in_current_path }} active{{end}}" href="{{.URL | relLangURL}}"{{ if and $is_widget_page $is_same_page }} data-target="{{$hash}}"{{ end }}{{ ($.Scratch.Get "target") | safeHTMLAttr }}>
-            {{- .Pre -}}<span>{{ .Name | safeHTML }}</span>{{- .Post -}}
-          </a>
-        </li>
-
-        {{ end }}
-        {{ end }}
+      </ul>
 
       {{ if site.Menus.main_right | and (eq $align_menu "l") }}
       </ul>
@@ -119,28 +116,25 @@
       {{ end }}
 
         {{ range site.Menus.main_right }}
-
-        {{/* Set target for link. */}}
-        {{ $.Scratch.Set "target" "" }}
-        {{ if gt (len .URL) 4 }}
-        {{ if eq "http" (slicestr .URL 0 4) }}
-        {{ $.Scratch.Set "target" " target=\"_blank\" rel=\"noopener\"" }}
+          {{ $.Scratch.Set "target" "" }}
+          {{ if gt (len .URL) 4 }}
+            {{ if eq "http" (slicestr .URL 0 4) }}
+              {{ $.Scratch.Set "target" " target=\"_blank\" rel=\"noopener\"" }}
+            {{ end }}
+          {{ end }}
+          <li class="nav-item">
+            <a class="nav-link" href="{{ .URL | relLangURL }}"{{ ($.Scratch.Get "target") | safeHTMLAttr }}>
+              {{- .Pre -}}<span>{{ .Name | safeHTML }}</span>{{- .Post -}}
+            </a>
+          </li>
         {{ end }}
-        {{ end }}
 
-        <li class="nav-item">
-          <a class="nav-link" href="{{ .URL | relLangURL }}"{{ if $.IsHome }} data-target="{{ .URL }}"{{ end }}{{ ($.Scratch.Get "target") | safeHTMLAttr }}>
-            {{- .Pre -}}<span>{{ .Name | safeHTML }}</span>{{- .Post -}}
-          </a>
-        </li>
-
-        {{ end }}
-      </ul>
     </div><!-- /.navbar-collapse -->
-	
+
+    <!-- Optional nav icons (social, search, day/night) -->
     <ul class="nav-icons navbar-nav flex-row ml-auto d-flex pl-md-2">
 
-      {{/* Display any social links that the superuser chose to display in the header. */}}
+      {{/* Social icons */}}
       {{ range where (where (where site.Pages "Section" "authors") ".Params.superuser" true) ".Params.social" "!=" nil }}
         {{ range where .Params.social ".display.header" true }}
           {{ $social_link := partial "functions/get_social_link" . }}
@@ -152,6 +146,7 @@
         {{ end }}
       {{ end }}
 
+      {{/* Search */}}
       {{ $show_search := site.Params.main_menu.show_search | default true }}
       {{ if and site.Params.search.engine $show_search }}
       <li class="nav-item">
@@ -159,6 +154,7 @@
       </li>
       {{ end }}
 
+      {{/* Day/night toggle */}}
       {{ $show_day_night := site.Params.main_menu.show_day_night | default true }}
       {{ if and site.Params.day_night $show_day_night }}
       <li class="nav-item dropdown theme-dropdown">
@@ -179,10 +175,10 @@
       </li>
       {{ end }}
 
+      {{/* Translations */}}
       {{ if .IsTranslated }}
       <li class="nav-item dropdown i18n-dropdown">
-        <a href="#" class="nav-link {{ if $show_current_language }}dropdown-toggle{{end}}" data-toggle="dropdown"
-           aria-haspopup="true" aria-label="{{ i18n "languages" | default "Languages" }}">
+        <a href="#" class="nav-link {{ if $show_current_language }}dropdown-toggle{{ end }}" data-toggle="dropdown" aria-haspopup="true" aria-label="{{ i18n "languages" | default "Languages" }}">
           <i class="fas fa-globe mr-1" aria-hidden="true"></i>
           {{- if $show_current_language -}}
             <span class="d-none d-lg-inline">{{ index site.Data.i18n.languages .Lang }}</span>
@@ -193,7 +189,7 @@
             <span>{{ index site.Data.i18n.languages .Lang }}</span>
           </div>
           {{ range .Translations }}
-          <a class="dropdown-item" href="{{ .Permalink }}"{{ if $.IsHome }} data-target="{{ .RelPermalink }}"{{ end }}>
+          <a class="dropdown-item" href="{{ .Permalink }}">
             <span>{{ index site.Data.i18n.languages .Lang }}</span>
           </a>
           {{ end }}
@@ -202,7 +198,6 @@
       {{ end }}
 
     </ul>
-
   </div><!-- /.container -->
 </nav>
-{{end}}{{/* End show navbar. */}}
+{{ end }}

@@ -1,4 +1,5 @@
-{{ $homePage := site.GetPage "00_home/index.md" }}
+{{ $homePage := site.GetPage site.Params.home }}
+
 {{ $parent := $homePage.Parent }}
 
 <ul class="home-sibling-links">

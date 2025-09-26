@@ -7,27 +7,29 @@
 # Specific values needing translation must be provided in languages.toml
 
 [[main]]
-  name = "ANL-Home"
-  url = "#"
-  weight = 10
-  
+name = "ANL-Home"
+url = "/"          # Home page top
+weight = 10
+
 [[main]]
-  name = "TnT-Chinley"
-  url = "01_tnt-chinley"
-  weight = 20
-  
+name = "TnT-Chinley"
+url = "01_tnt-chinley"
+weight = 20
+
 [[main]]
-  name = "Volunteers"
-  url = "02_volunteers"
-  weight = 30
-  
+name = "Volunteers"
+url = "02_volunteers"
+weight = 30
+
 [[main]]
-  name = "About ANL"
-  url = "#about"
-  weight = 40
-  
+name = "About ANL"
+url = "/#00_about"      # Section on home page
+weight = 40
+
 [[main]]
-  name = "Contact Us"
-  url = "#contact"
-  weight = 50
+name = "Contact Us"
+url = "/#04_contact"    # Section on home page
+weight = 50
+
+
   
