@@ -15,7 +15,7 @@ copyright = "S.J.Dolley"
 
 # Use \home as the home leaf-page bundle.
 [frontmatter]
-  home = "home/index.md"
+  home = "00_home/index.md"
 ############################
 ## Advanced options below ##
 ############################

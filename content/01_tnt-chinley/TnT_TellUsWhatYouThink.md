@@ -1,0 +1,112 @@
+---
+title: "Feedback"
+headless: true  # This file represents a page section.
+type: document
+geometry: margin=2cm
+geometry: a4paper
+share: true
+summary: Tell us what you think...
+weight: 30
+---
+{{< rawhtml >}}
+
+<style type="text/css">
+<!--
+.radioCols {width:800px; padding-left: 20px; max-width:100%; box-sizing: border-box;}
+.checkCols {width:800px; padding-left: 20px; max-width:100%; box-sizing: border-box;}
+.textCols {width:800px; padding-left: 20px; max-width:100%; box-sizing: border-box; }
+.textBox {max-width:100%; box-sizing: border-box; width:200px; }
+.textMsg {max-width:100%; box-sizing: border-box; width:800px }
+-->
+</style>
+
+<div style="max-width: 95%;">
+<form action="https://getform.io/f/apjzldwa" 
+      method="POST"
+      accept-charset="UTF-8">
+	<hr>
+	<h1>TnT - Tell us what you think</h2>
+	<input type="hidden" name="_gotcha" style="display:none !important">
+	<h2>TnT is provided as a safe place for seconary school children to chill and chat.</h2>
+	<p>Please select:</p>
+	<div class="radioCols">
+		<input type="radio" name="Idea" value="Good Idea" >    
+		<label for="GoodIdea"> I think that is a good idea </label><br>
+		<input type="radio" name="Idea" value="Bad Idea" >    
+		<label for="BadIdea"> I don't think it is needed in Chinley </label><br>
+		<label for="Idea Other"> Other comments about the idea: </label><br>
+		<textarea rows="1" class="textMsg" type="text" name="Idea Other" value="" >
+		</textarea>
+	</div>
+	
+	<h2>TnT  meets in the Parish room opposite the shops in Chinley</h2>
+	<p>Please tick:</p>
+	<div class="checkCols">
+		<input type="checkbox" name="Convenient" value="yes" >
+		<label for="Convenient"> The location is convenient </label><br>
+		<input type="checkbox" name="Small" value="yes" >    
+		<label for="Small"> The room is too small </label><br>
+		<input type="checkbox" name="Uninviting" value="yes" >    
+		<label for="Uninviting"> The room is not very inviting </label><br>
+		<input type="checkbox" name="CommunityCentre" value="yes" >    
+		<label for="CommunityCentre"> Prefer to meet at the Community Centre </label><br>
+		<label for="Location other"> Other comments about the location: </label><br>
+		<textarea rows="2" class="textMsg" type="text" name="Location other" value="" >
+		</textarea>
+	</div>
+	
+	<h2>TnT  meets after school on Fridays</h2>
+	<div class="textCols">
+		<label for="Day">I prefer a different day: When? </label>
+		<input class="textBox" type="text" name="Day" value="" ><br>
+		<label for="Time">I prefer a different time: When?</label>
+		<input class="textBox" type="text" name="Time" value="" ><br>
+		<label for="Day/Time other"> Other comments about the day or time: </label><br>
+		<textarea rows="1" class="textMsg" type="text" name="Day/Time other" value="" >
+		</textarea>
+	</div>
+
+	<h2>TnT  offers hot and cold drinks and buttered toast</h2>
+	<div class="checkCols">
+		<input type="checkbox" name="Takeaway" value="yes" >    
+		<label for="Takeaway"> I would like takeaway drinks </label><br>
+		<input type="checkbox" name="Toast" value="yes" >    
+		<label for="Toast">I like toast</label><br>
+		<input type="checkbox" name="Crumpets" value="yes" >    
+		<label for="Crumpets">I would like crumpets</label><br>
+		<input type="checkbox" name="Waffles" value="yes" >    
+		<label for="Waffles">I would like waffles</label><br>
+		<label for="Snacks Other"> Other comments about the snacks/drinks: </label><br>
+		<textarea rows="1" class="textMsg" type="text" name="Snacks Other" value="" >
+		</textarea>
+	</div>
+	
+	<h2>TnT offers various activities</h2>
+	<div class="checkCols">
+		<input type="checkbox" name="Card games" value="yes" >    
+		<label for="Card games"> I like card games </label><br>
+		<input type="checkbox" name="Boardgames" value="yes" >    
+		<label for="Boardgames">I would like board games</label><br>
+		<input type="checkbox" name="Music" value="yes" >    
+		<label for="Music"> I would like music </label><br>
+		<input type="checkbox" name="Homework" value="yes" >    
+		<label for="Homework"> I would like space to do homework </label><br>
+		<input type="checkbox" name="SmartPhone" value="yes" >    
+		<label for="SmartPhone">I would like to play on my phone</label><br>
+		<input type="checkbox" name="chat-friends" value="yes" >    
+		<label for="chat-friends">I like to chat with my friends</label><br>
+		<input type="checkbox" name="chat-adult" value="yes" >    
+		<label for="chat-adult">I like to chat with a friendly adult</label><br>
+		<label for="Activity Other"> Other comments about activities: </label><br>
+		<textarea rows="4" class="textMsg" type="text" name="Activity Other" value="" >
+		</textarea>
+	</div>
+	<br>
+	<label for="firstName"> First Name (required): </label><br>
+	<input class="textBox" type="text" id="firstName" name="Name" required><br>
+	<br>
+	<button type="submit">Send</button> 
+
+</form>
+</div>
+{{< /rawhtml >}}

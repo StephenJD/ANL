@@ -1,0 +1,16 @@
+{{ define "main" }}
+
+<div style="border:5px solid red; padding:1rem; text-align:center;">
+  HOME LAYOUT ACTIVE
+</div>
+
+<!-- Debug info -->
+<pre style="border:1px solid blue; padding:1rem; margin-top:1rem;">
+Type: {{ .Type }}
+Kind: {{ .Kind }}
+Layout: {{ .Layout }}
+File Path: {{ with .File }}{{ .Path }}{{ else }}nil{{ end }}
+</pre>
+
+{{ end }}
+

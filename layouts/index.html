@@ -1,81 +1,90 @@
 {{ define "main" }}
-{{ $homeBundle := site.GetPage "home/index.md" }}
-
-{{ $homeSections := sort ($homeBundle.Resources.ByType "page") "Params.weight" }}
-
-{{ $showDebug := false }}  {{/* change to true to see debug */}}
+{{ $homeBundle := site.GetPage "00_home/index.md" }}
+{{ $showDebug := false }}
 
 {{ if $showDebug }}
 <div style="border: 5px solid red; padding: 1rem; text-align: center;">
   HOME LAYOUT ACTIVE \layouts\index.html
-  Revised 15
+  Revised 31
 </div>
 
-<pre style="border:1px solid blue; padding:1rem; margin-top:1rem;">
-Files under content/home/:
-{{ range $homeBundle.Resources.ByType "page" }} 
-Path: {{ .File.Path }} | Base: {{ .File.BaseFileName }} | Title: {{ .Title }} | Weight: {{ .Weight }} 
-{{ end }}
+<pre id="theme-debug" style="border:1px solid blue; padding:1rem; margin-top:1rem;">
+DEBUG: waiting for theme info...
 </pre>
 {{ end }}
 
-{{/* Logo */}}
-{{ $logo := "" }}
-{{ with $homeBundle.Params.hero_logo }}
-  {{ $res := $homeBundle.Resources.GetMatch . }}
-  {{ if $res }}
-    {{ $logo = $res.RelPermalink }}
-  {{ end }}
-{{ end }}
-
-{{/* Background */}}
-{{ $bg := "" }}
-{{ with $homeBundle.Params.hero_background }}
-  {{ $res := $homeBundle.Resources.GetMatch . }}
-  {{ if $res }}
-    {{ $bg = $res.RelPermalink }}
-  {{ end }}
-{{ end }}
-
-<div style="
-  background-color: #f0f0f0;
-  {{ if $bg }}background-image: url('{{ $bg }}');{{ end }}
-  background-size: cover;
-  background-position: center;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  align-items: center;
-  padding: 2rem;
-">
-
-  <!-- Hero logo -->
-  <div style="
+<div class="home-hero" style="
+    position: relative;
+    background-image: url('{{ $homeBundle.Params.hero_background }}');
+    background-size: cover;
+    background-position: center;
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-start;
     align-items: center;
-    text-align: center;
-    width: 100%;
-    margin-bottom: 2rem;
-  ">
+    padding: 2rem;
+">
+
+  <!-- Dark-mode overlay -->
+  <div class="hero-overlay"></div>
+  
+  <!-- Content on top -->
+  <div style="position: relative; z-index: 1; text-align: center; width: 100%;">
+    <!-- Logo -->
+    {{ $logo := "" }}
+    {{ with $homeBundle.Params.hero_logo }}
+      {{ $res := $homeBundle.Resources.GetMatch . }}
+      {{ if $res }}
+        {{ $logo = $res.RelPermalink }}
+      {{ end }}
+    {{ end }}
+
     {{ if $logo }}
-      <img src="{{ $logo }}" alt="ANL Logo" style="max-width:300px; margin: 0 auto 1rem;">
+      <img src="{{ $logo }}" alt="ANL Logo" style="max-width:300px; margin-bottom:1rem;">
+    {{ end }}
+
+    <!-- Home sections -->
+    {{ $homeSections := sort ($homeBundle.Resources.Match "*.md") "File.BaseFileName" }}
+    {{ range $homeSections }}
+      <section style="padding:2rem; margin:1rem 0; text-align:center; width:100%;">
+        <h2>{{ .Params.title }}</h2>
+        {{ .Content | safeHTML }}
+      </section>
     {{ end }}
   </div>
-
-  <!-- Render pages under home, excluding index.md -->
-{{ range $homeSections }}
-  <section style="padding:2rem; margin:1rem 0; text-align:center; width:100%;">
-    <h2>{{ .Title }}</h2>
-    {{ with .Page }}
-      {{ .Content | safeHTML }}
-    {{ end }}
-  </section>
-{{ end }}
-
-
 </div>
+
+<style>
+.home-hero .hero-overlay {
+  position: absolute;
+  top:0; left:0; right:0; bottom:0;
+  z-index: 0;  /* behind content */
+  pointer-events: none;
+  background-color: transparent; /* light mode = no dimming */
+  transition: background-color 0.3s ease;
+}
+
+/* Dimming only in dark mode */
+body.dark .home-hero .hero-overlay {
+  background-color: rgba(0,0,0,0.5);
+}
+</style>
+
+{{ if $showDebug }}
+<script>
+function updateThemeDebug() {
+  const body = document.body;
+  const dbg = document.getElementById("theme-debug");
+  if (dbg) {
+    dbg.innerText = "DEBUG: <body> classList = " + body.classList.value;
+  }
+}
+
+// Run immediately and observe for class changes
+updateThemeDebug();
+new MutationObserver(updateThemeDebug).observe(document.body, { attributes: true, attributeFilter: ["class"] });
+</script>
+{{ end }}
 
 {{ end }}

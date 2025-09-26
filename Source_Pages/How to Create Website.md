@@ -1,30 +1,141 @@
-<!--<p align="center"><a href="https://wowchemy.com" target="_blank" rel="noopener"><img src="https://sourcethemes.com/academic/img/logo_200px.png" alt="Wowchemy Website Builder"></a></p>-->
+# How to Create a Hugo Website
 
-# Book Template for [Wowchemy Website Builder](https://wowchemy.com)
+## Site Folder Structure
 
-The **Book Template** empowers you to create **product documentation**, **digital books**, **personal notes**, and **knowledge bases**.
+**Filenames must not include spaces.**
 
-[Check out the latest demo](https://book-starter.netlify.app/) of what you'll get in less than 10 minutes, or [view the showcase](https://wowchemy.com/user-stories/).
+Use \\Source_Pages as a repository for any material you might want to use.
 
-[**Wowchemy**](https://github.com/wowchemy/wowchemy-hugo-modules) makes it easy to create a beautiful website for free using Markdown, Jupyter, or RStudio. Customize anything on your site with widgets, themes, and language packs.
+The published website uses what you put in \\content\\
 
-- 👉 [**Get Started**](https://wowchemy.com/docs/install/)
-- 📚 [View the **documentation**](https://wowchemy.com/docs/)
-- 💬 [Chat with the **Wowchemy community**](https://discord.gg/z8wNYzb) or [**Hugo community**](https://discourse.gohugo.io)
-- 🐦 Twitter: [@wowchemy](https://twitter.com/wowchemy) [@GeorgeCushen](https://twitter.com/GeorgeCushen) [#MadeWithWowchemy](https://twitter.com/search?q=(%23MadeWithWowchemy%20OR%20%23MadeWithAcademic)&src=typed_query)
-- 💡 [Request a **feature** or report a **bug** for _Wowchemy_](https://github.com/wowchemy/wowchemy-hugo-modules/issues)
-- ⬆️ **Updating Wowchemy?** View the [Update Guide](https://wowchemy.com/docs/update/) and [Release Notes](https://wowchemy.com/updates/)
+The home-page is in \\content\\home\\
 
-## Crowd-funded open-source software
+Published forms must be put in \\layouts\\partials\\widgets
 
-To help us develop this template and software sustainably under the MIT license, we ask all individuals and businesses that use it to help support its ongoing maintenance and development via sponsorship.
+## 
 
-### [❤️ Click here to unlock rewards with sponsorship](https://wowchemy.com/plans/)
+## Logo and Icon
 
-<!--
-[![Screenshot]()](https://github.com/wowchemy/starter-book)
--->
+In Your-Site/assets/images put two .png files of size 512x512 (maximum).
 
-<!--
-[![](https://ga-beacon.appspot.com/UA-78646709-2/starter-book/readme?pixel)](https://github.com/igrigorik/ga-beacon)
--->
+icon.png appears in the browser with the site address. logo.png appears on the page menu.
+
+Website title (as shown in browser nav-bar_) set in \\config\\_default\\languages.toml
+
+`[en]`
+
+`#languageCode = "en"`
+
+`languageName = "English"`
+
+`contentDir = "content/en"`
+
+`title = "AscendNextLevel"`
+
+Set Organisation & Description & Social-media buttons in \\config\\_default\\params.toml
+
+Set site-url in \\config\\_default\\config.toml
+
+## Webpage construction
+
+Every page must live in its own folder under \\content\\...\\.
+
+Pages are either leaf-pages (just content) or branch-pages (links to other pages).
+
+If a page folder has an index.md or \_index.md file, its header-title is used as the menu item, otherwise the folder name is used.
+
+## Home Page
+
+### Native hugo
+
+The \\content\\ folder MUST contain \_index.md, making it a branch-page.
+
+### More control:
+
+Add to \\config\\_default\\config.toml :
+
+`# Use \home as the home leaf-page bundle.`
+
+`[frontmatter]`
+
+`  home = "home/index.md"`
+
+Homepage sections are now in a leaf-folder: \\content\\home with index.md:
+
+`---`
+
+`title: "Home"`
+
+`type: "widget_page"`
+
+`headless: true  # Do not render as its own page`
+
+`---`
+
+Home-page is rendered using \\layouts\\home\\single.html
+
+### Leaf-Pages
+
+A page-folder with an index.md will be constructed from all the files in the folder and any sub-folders. There must not be any nested index.md or \_index.md files.
+
+If there is no index.md then each .md file creates its own leaf-page, otherwise each .md file creates a section on the page.
+
+To create links to other pages, you add them manually in any of the .md files:
+
+Welcome to my site. Here are some links:
+
+\- [About](/about/)
+
+\- [Contact](/contact/)
+
+The page uses \\layouts\\document\\single.html to lay out the page.
+
+### Branch-Pages
+
+A branch-page has an \_index.md and lists its child-pages: The page is laid out according to \\layouts\\document\\list.html -\> \\layouts\\partials\\list_folder_layout.html
+
+The \_index.md provides the title but no content.
+
+Links with summaries will be provided to all other page.md files and subfolders containing \_index.md.
+
+### Section Headers
+
+# Each .md file must start with a header (recommend YAML):
+
+`---`
+
+`title: ANL Home # Appears at the top of the page.`
+
+`headless: true # False if it starts a new page, True if it’s a page section.`
+
+`type: document`
+
+`geometry: margin=2cm`
+
+`geometry: a4paper`
+
+`share: true`
+
+`summary: What this file contains`
+
+`weight: 10`
+
+`---`
+
+`# Ascend Next Level`
+
+## Site-Menu
+
+Defined in \\config\\_default\\menus.toml
+
+`[[main]]`
+
+`  name = "ANL-Home"`
+
+`  url = "#" # for home.`
+
+`  url = "about" # to link to another page or folder.`
+
+`  weight = 10`
+
+## Forms

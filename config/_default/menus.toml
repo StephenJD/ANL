@@ -12,22 +12,22 @@
   weight = 10
   
 [[main]]
-  name = "Volunteers"
-  url = "volunteers"
+  name = "TnT-Chinley"
+  url = "01_tnt-chinley"
   weight = 20
   
 [[main]]
-  name = "TnT-Chinley"
-  url = "tnt-chinley"
+  name = "Volunteers"
+  url = "02_volunteers"
   weight = 30
   
 [[main]]
   name = "About ANL"
-  url = "about"
+  url = "#about"
   weight = 40
   
 [[main]]
   name = "Contact Us"
-  url = "contact"
+  url = "#contact"
   weight = 50
   
