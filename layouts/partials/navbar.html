@@ -7,7 +7,7 @@
 
 {{/* Site logo */}}
 {{ $show_logo := site.Params.main_menu.show_logo | default true }}
-{{ $has_logo := fileExists "assets/images/logo.png" | or (fileExists "assets/images/logo.svg") }}
+{{ $has_logo := fileExists "/images/logo.png" | or (fileExists "/images/logo.svg") }}
 {{ $logo := "" }}
 {{ if $has_logo }}
   {{ $logo = (partial "functions/get_logo" (dict "constraint" "max_height" "size" 70)) }}
@@ -16,16 +16,16 @@
 <nav class="navbar navbar-expand-lg navbar-light compensate-for-scrollbar" id="navbar-main">
   <div class="container-xl">
 
+    {{/* Logo always on the left */}}
     {{ if $show_logo }}
-    <div class="d-none d-lg-inline-flex">
-      <a class="navbar-brand" href="{{ "/" | relLangURL }}">
-        {{- if $has_logo -}}
-          <img src="{{ $logo.RelPermalink }}" alt="{{ site.Title }}">
-        {{- else -}}
-          {{- site.Title -}}
-        {{- end -}}
-      </a>
-    </div>
+<a class="navbar-brand" href="{{ "/" | relLangURL }}">
+  {{ if $logo }}
+    <img src="{{ $logo.RelPermalink }}" alt="{{ site.Title }}">
+  {{ else }}
+    <img src="/images/logo.png" alt="{{ site.Title }}">
+  {{ end }}
+</a>
+
     {{ end }}
 
     {{ if site.Menus.main }}
@@ -35,32 +35,17 @@
     </button>
     {{ end }}
 
-    {{ if $show_logo }}
-    <div class="navbar-brand-mobile-wrapper d-inline-flex d-lg-none">
-      <a class="navbar-brand" href="{{ "/" | relLangURL }}">
-      {{- if $has_logo -}}
-        <img src="{{ $logo.RelPermalink }}" alt="{{ site.Title }}">
-      {{- else -}}
-        {{- site.Title -}}
-      {{- end -}}
-      </a>
-    </div>
-    {{ end }}
+    <div class="collapse navbar-collapse" id="navbar-content">
 
-    {{/* Navbar links */}}
-    {{ $align_menu := site.Params.main_menu.align | default "l" }}
-    <div class="navbar-collapse main-menu-item collapse {{ if eq $align_menu "c" }}justify-content-center{{ else if eq $align_menu "r" }}justify-content-end{{ else }}justify-content-start{{ end }}" id="navbar-content">
-
+      {{/* Left nav links */}}
       <ul class="navbar-nav d-md-inline-flex">
         {{ $home := site.GetPage site.Params.home }}
 
         {{ range site.Menus.main }}
-          {{/* Handle dropdown */}}
           {{ if .HasChildren }}
             <li class="nav-item dropdown">
               <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true">
-                {{- .Pre -}}<span>{{ .Name | safeHTML }}</span>{{- .Post -}}
-                <span class="caret"></span>
+                {{ .Name }}
               </a>
               <div class="dropdown-menu">
                 {{ range .Children }}
@@ -68,21 +53,16 @@
                   {{ if and (hasPrefix $link "#") $home }}
                     {{ $link = printf "%s%s" $home.RelPermalink $link }}
                   {{ end }}
-                  <a class="dropdown-item" href="{{ $link | relLangURL }}">
-                    {{- .Pre -}}<span>{{ .Name | safeHTML }}</span>{{- .Post -}}
-                  </a>
+                  <a class="dropdown-item" href="{{ $link | relLangURL }}">{{ .Name }}</a>
                 {{ end }}
               </div>
             </li>
-
           {{ else }}
-            {{/* Single link */}}
             {{ $link := .URL }}
             {{ if and (hasPrefix $link "#") $home }}
               {{ $link = printf "%s%s" $home.RelPermalink $link }}
             {{ end }}
 
-            {{/* Determine target for external links */}}
             {{ $.Scratch.Set "target" "" }}
             {{ if gt (len .URL) 4 }}
               {{ if eq "http" (slicestr .URL 0 4) }}
@@ -90,7 +70,6 @@
               {{ end }}
             {{ end }}
 
-            {{/* Highlight active link */}}
             {{ $is_link_in_current_path := false }}
             {{ if $current_page.IsHome | and (or (eq .URL "/") (eq .URL "")) }}
               {{ $is_link_in_current_path = true }}
@@ -102,19 +81,16 @@
               <a class="nav-link {{ if and $highlight_active_link $is_link_in_current_path }}active{{ end }}" 
                  href="{{ $link | relLangURL }}" 
                  {{ ($.Scratch.Get "target") | safeHTMLAttr }}>
-                {{- .Pre -}}<span>{{ .Name | safeHTML }}</span>{{- .Post -}}
+                {{ .Name }}
               </a>
             </li>
           {{ end }}
         {{ end }}
-
       </ul>
 
-      {{ if site.Menus.main_right | and (eq $align_menu "l") }}
-      </ul>
+      {{/* Right-aligned menu */}}
+      {{ if site.Menus.main_right }}
       <ul class="navbar-nav ml-md-auto">
-      {{ end }}
-
         {{ range site.Menus.main_right }}
           {{ $.Scratch.Set "target" "" }}
           {{ if gt (len .URL) 4 }}
@@ -124,80 +100,76 @@
           {{ end }}
           <li class="nav-item">
             <a class="nav-link" href="{{ .URL | relLangURL }}"{{ ($.Scratch.Get "target") | safeHTMLAttr }}>
-              {{- .Pre -}}<span>{{ .Name | safeHTML }}</span>{{- .Post -}}
+              {{ .Name }}
             </a>
           </li>
         {{ end }}
+      </ul>
+      {{ end }}
+
+      {{/* Nav icons: social, search, day/night toggle, translations */}}
+      <ul class="nav-icons navbar-nav flex-row ml-auto d-flex pl-md-2">
+
+        {{/* Social icons */}}
+        {{ range where (where (where site.Pages "Section" "authors") ".Params.superuser" true) ".Params.social" "!=" nil }}
+          {{ range where .Params.social ".display.header" true }}
+            {{ $social_link := partial "functions/get_social_link" . }}
+            <li class="nav-item d-none d-lg-inline-flex">
+              <a class="nav-link" href="{{ $social_link.link | safeURL }}"{{ with $social_link.tooltip }} data-toggle="tooltip" data-placement="bottom" title="{{.}}"{{ end }} {{ $social_link.target | safeHTMLAttr }} aria-label="{{ $social_link.aria_label }}">
+                <i class="{{ $social_link.icon_pack }} {{ $social_link.pack_prefix }}-{{ $social_link.icon }}" aria-hidden="true"></i>
+              </a>
+            </li>
+          {{ end }}
+        {{ end }}
+
+        {{/* Search */}}
+        {{ $show_search := site.Params.main_menu.show_search | default true }}
+        {{ if and site.Params.search.engine $show_search }}
+        <li class="nav-item">
+          <a class="nav-link js-search" href="#" aria-label="{{ i18n "search" }}"><i class="fas fa-search" aria-hidden="true"></i></a>
+        </li>
+        {{ end }}
+
+        {{/* Day/night toggle */}}
+        {{ $show_day_night := site.Params.main_menu.show_day_night | default true }}
+        {{ if and site.Params.day_night $show_day_night }}
+        <li class="nav-item dropdown theme-dropdown">
+          <a href="#" class="nav-link" data-toggle="dropdown" aria-haspopup="true" aria-label="{{ i18n "theme_selector" | default "Display preferences" }}">
+            <i class="fas fa-moon" aria-hidden="true"></i>
+          </a>
+          <div class="dropdown-menu">
+            <a href="#" class="dropdown-item js-set-theme-light"><span>{{ i18n "theme_light" | default "Light" }}</span></a>
+            <a href="#" class="dropdown-item js-set-theme-dark"><span>{{ i18n "theme_dark" | default "Dark" }}</span></a>
+            <a href="#" class="dropdown-item js-set-theme-auto"><span>{{ i18n "theme_auto" | default "Automatic" }}</span></a>
+          </div>
+        </li>
+        {{ end }}
+
+        {{/* Translations */}}
+        {{ if .IsTranslated }}
+        <li class="nav-item dropdown i18n-dropdown">
+          <a href="#" class="nav-link {{ if $show_current_language }}dropdown-toggle{{ end }}" data-toggle="dropdown" aria-haspopup="true" aria-label="{{ i18n "languages" | default "Languages" }}">
+            <i class="fas fa-globe mr-1" aria-hidden="true"></i>
+            {{- if $show_current_language -}}
+              <span class="d-none d-lg-inline">{{ index site.Data.i18n.languages .Lang }}</span>
+            {{- end -}}
+          </a>
+          <div class="dropdown-menu">
+            <div class="dropdown-item dropdown-item-active">
+              <span>{{ index site.Data.i18n.languages .Lang }}</span>
+            </div>
+            {{ range .Translations }}
+            <a class="dropdown-item" href="{{ .Permalink }}"><span>{{ index site.Data.i18n.languages .Lang }}</span></a>
+            {{ end }}
+          </div>
+        </li>
+        {{ end }}
+
+      </ul>
 
     </div><!-- /.navbar-collapse -->
 
-    <!-- Optional nav icons (social, search, day/night) -->
-    <ul class="nav-icons navbar-nav flex-row ml-auto d-flex pl-md-2">
-
-      {{/* Social icons */}}
-      {{ range where (where (where site.Pages "Section" "authors") ".Params.superuser" true) ".Params.social" "!=" nil }}
-        {{ range where .Params.social ".display.header" true }}
-          {{ $social_link := partial "functions/get_social_link" . }}
-          <li class="nav-item d-none d-lg-inline-flex">
-            <a class="nav-link" href="{{ $social_link.link | safeURL }}"{{ with $social_link.tooltip }} data-toggle="tooltip" data-placement="bottom" title="{{.}}"{{ end }} {{ $social_link.target | safeHTMLAttr }} aria-label="{{ $social_link.aria_label }}">
-              <i class="{{ $social_link.icon_pack }} {{ $social_link.pack_prefix }}-{{ $social_link.icon }}" aria-hidden="true"></i>
-            </a>
-          </li>
-        {{ end }}
-      {{ end }}
-
-      {{/* Search */}}
-      {{ $show_search := site.Params.main_menu.show_search | default true }}
-      {{ if and site.Params.search.engine $show_search }}
-      <li class="nav-item">
-        <a class="nav-link js-search" href="#" aria-label="{{ i18n "search" }}"><i class="fas fa-search" aria-hidden="true"></i></a>
-      </li>
-      {{ end }}
-
-      {{/* Day/night toggle */}}
-      {{ $show_day_night := site.Params.main_menu.show_day_night | default true }}
-      {{ if and site.Params.day_night $show_day_night }}
-      <li class="nav-item dropdown theme-dropdown">
-        <a href="#" class="nav-link" data-toggle="dropdown" aria-haspopup="true" aria-label="{{ i18n "theme_selector" | default "Display preferences" }}">
-          <i class="fas fa-moon" aria-hidden="true"></i>
-        </a>
-        <div class="dropdown-menu">
-          <a href="#" class="dropdown-item js-set-theme-light">
-            <span>{{ i18n "theme_light" | default "Light" }}</span>
-          </a>
-          <a href="#" class="dropdown-item js-set-theme-dark">
-            <span>{{ i18n "theme_dark" | default "Dark" }}</span>
-          </a>
-          <a href="#" class="dropdown-item js-set-theme-auto">
-            <span>{{ i18n "theme_auto" | default "Automatic" }}</span>
-          </a>
-        </div>
-      </li>
-      {{ end }}
-
-      {{/* Translations */}}
-      {{ if .IsTranslated }}
-      <li class="nav-item dropdown i18n-dropdown">
-        <a href="#" class="nav-link {{ if $show_current_language }}dropdown-toggle{{ end }}" data-toggle="dropdown" aria-haspopup="true" aria-label="{{ i18n "languages" | default "Languages" }}">
-          <i class="fas fa-globe mr-1" aria-hidden="true"></i>
-          {{- if $show_current_language -}}
-            <span class="d-none d-lg-inline">{{ index site.Data.i18n.languages .Lang }}</span>
-          {{- end -}}
-        </a>
-        <div class="dropdown-menu">
-          <div class="dropdown-item dropdown-item-active">
-            <span>{{ index site.Data.i18n.languages .Lang }}</span>
-          </div>
-          {{ range .Translations }}
-          <a class="dropdown-item" href="{{ .Permalink }}">
-            <span>{{ index site.Data.i18n.languages .Lang }}</span>
-          </a>
-          {{ end }}
-        </div>
-      </li>
-      {{ end }}
-
-    </ul>
   </div><!-- /.container -->
 </nav>
+
 {{ end }}
