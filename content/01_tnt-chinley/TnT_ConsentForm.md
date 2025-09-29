@@ -1,8 +1,8 @@
 ---
 title: "TnT Consent Form"
 type: form
-last_reviewed: 2025-09-28
-review_period: 1y
+last_reviewed: 2025-09-20
+review_period: 1m
 reviewed_by: Cheryl Cross
 geometry: margin=2cm
 geometry: a4paper
