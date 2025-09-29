@@ -1,7 +1,6 @@
 ---
 title: "TnT Consent Form"
-headless: true  # This file represents a page section.
-type: document
+type: form
 geometry: margin=2cm
 geometry: a4paper
 share: true
@@ -9,187 +8,147 @@ summary: Parental Consent for TnT
 weight: 40
 ---
 
-{{< rawhtml >}}
+<form action="https://getform.io/f/apjzldwa" method="POST" accept-charset="UTF-8">
+<input type="hidden" name="_gotcha" style="display:none !important">
 
-<style type="text/css">
-.radioCols {width:800px; padding-left: 20px; max-width:100%; box-sizing: border-box;}
-.checkCols {width:800px; padding-left: 20px; max-width:100%; box-sizing: border-box;}
-.textCols {width:800px; padding-left: 20px; max-width:100%; box-sizing: border-box;}
-.textBox {max-width:100%; box-sizing: border-box; width:300px;}
-.textMsg {max-width:100%; box-sizing: border-box; width:800px;}
-</style>
+<h1>Parental Consent Form – Chinley TnT</h1>
+<p>This form should be completed by the child’s parent or other adult with delegated parental responsibility. Parental Consent Forms will be renewed annually at the start of the school year so that the data held is up to date. Please complete the consent form below to enable your child to attend the group.</p>
 
-<div style="max-width: 95%;">
-<form action="https://getform.io/f/apjzldwa" 
-      method="POST"
-      accept-charset="UTF-8">
+<h2>Young Person’s Information</h2>
+<div class="textCols">
+  <label>Child's Full Name:</label>
+  <input class="short-input" type="text" name="child_name" required>
 
-  <hr>
-  <input type="hidden" name="_gotcha" style="display:none !important">
+  <label>Date of Birth:</label>
+  <input type="date" name="dob" required>
 
-  <h1>Parental Consent Form – Chinley TnT</h1>
-  <p>
-    This form should be completed by the child’s parent or other adult with delegated parental responsibility. 
-    Parental Consent Forms will be renewed annually at the start of the school year so that the data held is up to date. 
-    Please complete the consent form below to enable your child to attend the group.
-  </p>
-  <p>
-    Chinley TnT meets on Fridays during term time, from 3.30–4.30pm at Chinley Community Centre.
-  </p>
+  <label>Address & Postcode:</label>
+  <input class="short-input" type="text" name="address" required>
 
-  <h2>Young Person’s Information</h2>
-  <div class="textCols">
-    <label>Child's Full Name:</label><br>
-    <input class="textBox" type="text" name="child_name" required><br><br>
+  <label>If the child does not live with the parent(s)/guardian(s), who do they live with?</label>
+  <input class="short-input" type="text" name="live_with" value="N/A">
 
-    <label>Date of Birth:</label><br>
-    <input type="date" name="dob" required><br><br>
+  <label>Relationship to Child:</label>
+  <input class="short-input" type="text" name="live_with_relationship" value="N/A">
+</div>
 
-    <label>Address & Postcode:</label><br>
-    <input class="textBox" type="text" name="address" required><br><br>
-    
-    <label>If the child does not live with the parent(s)/guardian(s), who do they live with?</label><br>
-    <input class="textBox" type="text" name="live_with" value="N/A"><br><br>
+<hr>
+<h2>Emergency Contact Details</h2>
+<div class="textCols">
+  <label>Name of Parent(s) / other adult(s) with delegated parental authority:</label>
+  <input class="short-input" type="text" name="parent_name" required>
 
-    <label>Relationship to Child:</label><br>
-    <input class="textBox" type="text" name="live_with_relationship" value="N/A">
-  </div>
-  <hr>
-  <h2>Emergency Contact Details</h2>
-  <div class="textCols">
-    <label>Name of Parent(s) / other adult(s) with delegated parental authority:</label><br>
-    <input class="textBox" type="text" name="parent_name" required><br><br>
+  <label>Relationship to Child:</label>
+  <input class="short-input" type="text" name="relationship" required>
 
-    <label>Relationship to Child:</label><br>
-    <input class="textBox" type="text" name="relationship" required><br><br>
+  <label>Phone Number(s):</label>
+  <input class="short-input" type="text" name="phone" required>
 
-    <label>Phone Number(s):</label><br>
-    <input class="textBox" type="text" name="phone" required><br><br>
+  <label>Email Address:</label>
+  <input class="short-input" type="email" name="email">
 
-    <label>Email Address:</label><br>
-    <input class="textBox" type="email" name="email" ><br><br>
+  <label>Alternative Contact Name:</label>
+  <input class="short-input" type="text" name="alt_name">
 
-    <label>Alternative Contact Name:</label><br>
-    <input class="textBox" type="text" name="alt_name"><br><br>
+  <label>Alternative Contact Number:</label>
+  <input class="short-input" type="text" name="alt_phone">
+</div>
 
-    <label>Alternative Contact Number:</label><br>
-    <input class="textBox" type="text" name="alt_phone"><br><br>
-  </div>
-  <hr>
-  <h2>Medical Information</h2>
-  <div class="textCols">
-    <label> Name of family doctor:</label><br>
-    <input class="textBox" type="text" name="doctor_name" ><br><br>
+<hr>
+<h2>Medical Information</h2>
+<div class="textCols">
+  <label>Name of family doctor:</label>
+  <input class="short-input" type="text" name="doctor_name">
 
-    <label>Practice Address:</label><br>
-    <input class="textBox" type="text" name="Practice_Address" ><br><br>
+  <label>Practice Address:</label>
+  <input class="short-input" type="text" name="Practice_Address">
 
-    <label>Practice phone number:</label><br>
-    <input class="textBox" type="text" name="Practice_phone" ><br><br>
+  <label>Practice phone number:</label>
+  <input class="short-input" type="text" name="Practice_phone">
 
-    <label>Any details of your child's health issues, medical conditions, allergies, or dietary requirements:</label><br>
-    <input class="textBox" type="email" name="health_issues" value="None"><br><br>
+  <label>Any details of your child's health issues, medical conditions, allergies, or dietary requirements:</label>
+  <input class="short-input" type="text" name="health_issues" value="None">
 
-    <label>Any additional needs that we should be aware of:</label><br>
-    <input class="textBox" type="text" name="Other_Needs" value="None"><br><br>
+  <label>Any additional needs that we should be aware of:</label>
+  <input class="short-input" type="text" name="Other_Needs" value="None">
 
-    <label>Date of last anti-tetanus injection (if known):</label><br>
-    <input class="textBox" type="text" name="Tetanus_Date" value="None"><br><br>
+  <label>Date of last anti-tetanus injection (if known):</label>
+  <input class="short-input" type="text" name="Tetanus_Date" value="None">
 
-    <label>I give permission for sticking plasters to be used on my child when necessary:</label><br>
+  <fieldset>
+    <legend>Permission for sticking plasters</legend>
+    <label><input type="radio" name="Plaster_Permission" value="Yes" required> Yes</label>
+    <label><input type="radio" name="Plaster_Permission" value="No"> No</label>
+  </fieldset>
+</div>
 
-    <input type="radio" id="plasterYes" name="Plaster_Permission" value="Yes">
-    <label for="plasterYes">Yes</label>
-    <input type="radio" id="plasterNo" name="Plaster_Permission" value="No">
-    <label for="plasterNo">No</label><br><br>   
-  </div>
-  <hr>
-  <h2>Consent</h2>
-  <div class="textCols">
-    <p>
-     To be signed only by a parent or other adult with delegated parental responsibility, and your child if aged 13 or over at the time of completing this form.
-    </p>
-    
-    <h3>Safeguarding and Supervision</h3>
-    <p>
-     All Chinley TnT  group leaders and volunteers have undergone appropriate safeguarding checks in accordance with UK legislation and the group’s safeguarding policy.
-    </p>
-    <label>
-     <input type="checkbox" name="Weekly_Activities_Consent" required>
-     I give permission for my child to take part in the normal weekly activities of Chinley TnT. 
-     I understand that the leaders will take all reasonable care in looking after my child, 
-     but they cannot necessarily be held responsible for any loss or damage to property.
+<hr>
+<h2>Consent</h2>
+<div class="textCols">
+
+  <fieldset>
+    <legend>Weekly Activities Consent</legend>
+    <label class="checkbox-inline">
+      <input type="checkbox" name="Weekly_Activities_Consent" required>
+      I give permission for my child to take part in the normal weekly activities of Chinley TnT.
     </label>
-    
-<h3>Consent for Medical Treatment</h3>
+  </fieldset>
 
-<!-- First aid consent -->
-<p>I give permission for first aid to be administered to my child if necessary:</p>
-<label>
-  <input type="radio" name="FirstAid_Consent" value="Yes" required> Yes
-</label>
-<label>
-  <input type="radio" name="FirstAid_Consent" value="No" required> No
-</label>
-<br><br>
+  <fieldset>
+    <legend>First Aid Consent</legend>
+    <label><input type="radio" name="FirstAid_Consent" value="Yes" required> Yes</label>
+    <label><input type="radio" name="FirstAid_Consent" value="No"> No</label>
+  </fieldset>
 
-<!-- Emergency medical consent -->
-<p>
-In an emergency, if I cannot be contacted despite all reasonable attempts to do so by the leaders, 
-I give permission for my child to undergo emergency medical/dental treatment including the use of anaesthetics as considered necessary by the medical authorities:
-</p>
-<label>
-  <input type="radio" name="Medical_Consent" value="Yes" required> Yes
-</label>
-<label>
-  <input type="radio" name="Medical_Consent" value="No" required> No
-</label>
+  <fieldset>
+    <legend>Emergency Medical Consent</legend>
+    <label><input type="radio" name="Medical_Consent" value="Yes" required> Yes</label>
+    <label><input type="radio" name="Medical_Consent" value="No"> No</label>
+  </fieldset>
 
-<!-- Parent/guardian signature -->
-<fieldset style="margin-bottom:1.5rem; padding:1rem; border:1px solid #ccc;">
+<fieldset>
   <legend>Parent/Guardian Consent</legend>
-    
-    <label>
-     <input type="checkbox" name="Data_Consent" required>
-     I give explicit permission for Chinley TnT to process the personal and medical data (special category data) given on this form for use in relation to my child attending Chinley TnT, taking part in activities with the Group and for use in safeguarding records.  
-    </label>
-    
-    <label>
-     <input type="checkbox" name="Confirm_Accurate" required>
-     I confirm that the information provided is accurate and complete.  
-    </label>
-  
-  <label for="ParentName">Parent/guardian (or adult with delegated responsibility) full name:</label><br>
-  <input type="text" id="ParentName" name="ParentName" required><br><br>
-  
-  <label for="ParentDate">Date:</label><br>
-  <input type="date" id="ParentDate" name="ParentDate" required><br><br>
-  
-  <label>
+
+  <label class="checkbox-inline required">
+    <input type="checkbox" name="Data_Consent" required>
+    I give explicit permission for Chinley TnT to process personal/medical data.
+  </label>
+
+  <label class="checkbox-inline required">
+    <input type="checkbox" name="Confirm_Accurate" required>
+    I confirm the information provided is accurate.
+  </label>
+
+  <label for="ParentName" class="required">Name</label>
+  <input type="text" id="ParentName" name="ParentName" class="short-input" required>
+
+  <label for="ParentDate" class="required">Date</label>
+  <input type="date" id="ParentDate" name="ParentDate" class="short-input" required>
+
+  <label class="checkbox-inline required">
     <input type="checkbox" name="ParentSignatureConfirm" required>
     I confirm that typing my name above acts as my electronic signature.
   </label>
 </fieldset>
 
-<!-- Child signature if aged 13 or over -->
-<fieldset style="margin-bottom:1.5rem; padding:1rem; border:1px solid #ccc;">
+<fieldset>
   <legend>Child Consent (if aged 13 or over)</legend>
-  
-  <label for="ChildName">Child full name:</label><br>
-  <input type="text" id="ChildName" name="ChildName"><br><br>
-  
-  <label for="ChildDate">Date:</label><br>
-  <input type="date" id="ChildDate" name="ChildDate"><br><br>
-  
-  <label>
+
+  <label for="ChildName">Name</label>
+  <input type="text" id="ChildName" name="ChildName" class="short-input">
+
+  <label for="ChildDate">Date</label>
+  <input type="date" id="ChildDate" name="ChildDate" class="short-input">
+
+  <label class="checkbox-inline">
     <input type="checkbox" name="ChildSignatureConfirm">
     I confirm that typing my name above acts as my electronic signature.
   </label>
+</fieldset>
+
 <script>
 document.addEventListener("DOMContentLoaded", function () {
-  const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
-
-  // Match the actual input IDs
+  const today = new Date().toISOString().split("T")[0];
   ["ParentDate", "ChildDate"].forEach(id => {
     const el = document.getElementById(id);
     if (el && !el.value) el.value = today;
@@ -197,13 +156,7 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 </script>
 
-</fieldset>
 
 <br><br>
-
-  <br>
-  <button type="submit">Send</button>
+<button type="submit">Send</button>
 </form>
-</div>
-
-{{< /rawhtml >}}

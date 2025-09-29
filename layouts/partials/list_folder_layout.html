@@ -22,8 +22,7 @@
 	{{ end -}}
 	</div>
 	{{ range $paginator.Pages -}}
-	{{ if eq .Type "document" }}
-	  <div class="summary-style">		
+      {{ if or (eq .Type "document") (eq .Type "form") }}	  <div class="summary-style">		
 		<p><a href="{{ .Permalink }}">{{ .Title }}</a></p>
         {{ if .Params.summary }}
           {{ .Params.summary | plainify | emojify }}
