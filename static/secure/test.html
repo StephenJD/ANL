@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Auth0 SPA Minimal Test</title>
+</head>
+<body>
+  <h1>Auth0 SPA Minimal Test</h1>
+  <pre id="log"></pre>
+
+  <!-- UMD bundle -->
+  <script src="/js/auth0-spa-js.production.js" defer></script>
+
+  <script defer>
+  window.onload = async () => {
+    const logEl = document.getElementById('log');
+
+    if (!window.auth0 || !auth0.createAuth0Client) {
+      logEl.textContent = "Auth0 SPA SDK failed to load.";
+      return;
+    }
+
+    logEl.textContent = "SDK loaded. Creating client...\n";
+
+    try {
+      const client = await auth0.createAuth0Client({
+        domain: "dev-5lsalv0spwawvbl7.uk.auth0.com",
+        client_id: "8FJRW4DzlhHnnUGSbRkF8StwIxQ4zBzf",
+        audience: "https://ascendnextlevel.org.uk",
+        redirect_uri: window.location.origin + "/secure/test.html"
+      });
+
+      logEl.textContent += "Client created successfully.\n";
+      console.log("Auth0 client:", client);
+
+      // Immediately redirect to Auth0 login
+      await client.loginWithRedirect();
+
+    } catch (err) {
+      logEl.textContent += "Error creating Auth0 client or login: " + err + "\n";
+      console.error(err);
+    }
+  };
+  </script>
+</body>
+</html>

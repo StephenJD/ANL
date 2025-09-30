@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Secure Area Debug</title>
+  <style>
+    body { font-family: monospace; padding: 20px; }
+    button { margin: 5px; }
+    pre { background: #f4f4f4; padding: 10px; border: 1px solid #ccc; max-height: 400px; overflow: auto; }
+  </style>
+</head>
+<body>
+  <h1>Secure Area Debug</h1>
+  <button id="login">Login</button>
+  <button id="logout" style="display:none;">Logout</button>
+  <pre id="debug"></pre>
+
+  <script src="/js/auth0-spa-js.production.js" defer></script>
+
+  <script>
+    const pre = document.getElementById('debug');
+    function logDebug(msg, obj) {
+      pre.textContent += msg + ': ' + (obj !== undefined ? JSON.stringify(obj, null, 2) : '') + '\n';
+      console.log(msg, obj);
+    }
+
+    window.onload = async () => {
+      logDebug('window.auth0', window.auth0);
+      logDebug('typeof auth0.createAuth0Client', typeof auth0.createAuth0Client);
+
+      // Step 1: Create Auth0 client
+const client = await auth0.createAuth0Client({
+  domain: "dev-5lsalv0spwawvbl7.uk.auth0.com",
+  client_id: "8FJRW4DzlhHnnUGSbRkF8StwIxQ4zBzf",
+  authorizationParams: {
+    audience: "https://ascendnextlevel.org.uk",
+    redirect_uri: window.location.origin + "/secure/",
+    scope: "openid profile email"
+  }
+});
+
+      logDebug('Auth0 client created', client);
+      logDebug('Client options', client.options);
+      logDebug('Client audience', client.options.audience);
+
+      // Step 2: Show available client methods
+      logDebug('Client methods', {
+        loginWithRedirect: typeof client.loginWithRedirect,
+        logout: typeof client.logout,
+        isAuthenticated: typeof client.isAuthenticated,
+        getUser: typeof client.getUser,
+        handleRedirectCallback: typeof client.handleRedirectCallback
+      });
+
+      // Step 3: Handle redirect callback if returning from Auth0
+      if (window.location.search.includes("code=") && window.location.search.includes("state=")) {
+        logDebug('Handling redirect callback...');
+        try {
+          const result = await client.handleRedirectCallback();
+          logDebug('Redirect callback result', result);
+          window.history.replaceState({}, document.title, "/secure/");
+        } catch (err) {
+          logDebug('Error in handleRedirectCallback', err);
+        }
+      }
+
+      // Step 4: Update UI
+      const updateUI = async () => {
+        try {
+          const isAuth = await client.isAuthenticated();
+          logDebug('Is authenticated?', isAuth);
+
+          if (isAuth) {
+            document.getElementById("login").style.display = "none";
+            document.getElementById("logout").style.display = "block";
+            const user = await client.getUser();
+            logDebug('Authenticated user', user);
+          } else {
+            document.getElementById("login").style.display = "block";
+            document.getElementById("logout").style.display = "none";
+          }
+        } catch (err) {
+          logDebug('Error checking authentication', err);
+        }
+      };
+
+      // Step 5: Wire login/logout buttons
+      document.getElementById("login").onclick = async () => {
+        logDebug('Login button clicked');
+        try {
+          await client.loginWithRedirect();
+        } catch (err) {
+          logDebug('loginWithRedirect error', err);
+        }
+      };
+
+      document.getElementById("logout").onclick = () => {
+        logDebug('Logout button clicked');
+        client.logout({ returnTo: window.location.origin + "/secure/" });
+      };
+
+      // Initial UI update
+      await updateUI();
+    };
+  </script>
+</body>
+</html>
