@@ -27,13 +27,17 @@ window.onload = async () => {
   let client;
   try {
     logDebug('Creating Auth0 client...');
-    client = await auth0.createAuth0Client({
-      domain: "dev-5lsalv0spwawvbl7.uk.auth0.com",
-      client_id: "8FJRW4DzlhHnnUGSbRkF8StwIxQ4zBzf",
-      audience: "https://ascendnextlevel.org.uk",
-      redirect_uri: window.location.origin + "/secure/index.html",
-      useFormData: true
-    });
+client = await auth0.createAuth0Client({
+  domain: "dev-5lsalv0spwawvbl7.uk.auth0.com",
+  client_id: "8FJRW4DzlhHnnUGSbRkF8StwIxQ4zBzf",
+  useFormData: true,
+  authorizationParams: {
+    scope: "openid profile email",
+    audience: "https://ascendnextlevel.org.uk",
+    redirect_uri: window.location.origin + "/secure/index.html",
+    client_id: "8FJRW4DzlhHnnUGSbRkF8StwIxQ4zBzf"  // <-- explicit
+  }
+});
     logDebug('Auth0 client created', client);
   } catch (err) {
     logDebug('FATAL ERROR creating client', err);
