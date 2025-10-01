@@ -1,211 +1,77 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="utf-8">
-<<<<<<< HEAD
-  <title>Auth0 SPA Debug Baseline</title>
-  <script id="auth0script" src="https://cdn.auth0.com/js/auth0-spa-js/2.1.2/auth0-spa-js.production.js"></script>
-  <style>
-    #loginBtn, #logoutBtn { margin: 5px; }
-    #status { font-weight: bold; margin-bottom: 10px; }
-    pre { white-space: pre-wrap; word-wrap: break-word; }
-  </style>
+<meta charset="utf-8">
+<title>Auth0 Baseline with Switch</title>
+<script src="https://cdn.auth0.com/js/auth0-spa-js/2.1.2/auth0-spa-js.production.js"></script>
 </head>
 <body>
-  <div id="status">Status: checking...</div>
-  <button id="loginBtn">Login</button>
-  <button id="logoutBtn">Logout</button>
-  <pre id="debug"></pre>
+<div id="status">Checking authentication...</div>
+<button id="loginBtn">Login</button>
+<button id="logoutBtn">Logout</button>
+<pre id="debug"></pre>
 
 <script>
-const pre = document.getElementById('debug');
 const statusDiv = document.getElementById('status');
+const loginBtn = document.getElementById('loginBtn');
+const logoutBtn = document.getElementById('logoutBtn');
+const debug = document.getElementById('debug');
 
-// Toggle for testing: leave both buttons showing
-const showBothButtons = true;
-=======
-  <title>Auth0 Debug Minimal with Logout</title>
-  <script id="auth0script" src="https://cdn.auth0.com/js/auth0-spa-js/2.1.2/auth0-spa-js.production.js"></script>
-</head>
-<body>
-  <pre id="debug"></pre>
-  <button id="loginBtn">Login</button>
-  <button id="logoutBtn">Logout</button>
+function log(msg, obj){ debug.textContent += msg + (obj ? ': ' + JSON.stringify(obj,null,2) : '') + '\n'; }
 
-<script>
-const pre = document.getElementById('debug');
->>>>>>> c036773b6c09fd6cfce8b9590462f740d4cf96fc
-
-function logDebug(msg, obj) {
-  pre.textContent += msg + (obj ? ": " + JSON.stringify(obj, null, 2) : "") + "\n";
-  console.log(msg, obj);
-}
-
-function logFailureContext(client) {
-  const scriptTag = document.getElementById('auth0script');
-  const scriptSrc = scriptTag ? scriptTag.src : "(no src)";
-  const versionMatch = scriptSrc.match(/auth0-spa-js\/([^/]+)/);
-  const sdkVersion = versionMatch ? versionMatch[1] : "(unknown version)";
-  const clientConfig = client ? client.options : {
-    domain: "dev-5lsalv0spwawvbl7.uk.auth0.com",
-    client_id: "8FJRW4DzlhHnnUGSbRkF8StwIxQ4zBzf",
-    audience: "https://ascendnextlevel.org.uk",
-    redirect_uri: window.location.origin + "/secure/index.html"
-  };
-
-  logDebug("FATAL: Auth0 SPA SDK failure context", {
-    script: scriptSrc,
-    version: sdkVersion,
-    clientConfig: clientConfig
-  });
-}
+// ==== SWITCH: show both buttons always for testing/debugging ====
+const alwaysShowButtons = true;
 
 window.onload = async () => {
-  if (!window.auth0) {
-    logFailureContext();
-    logDebug("FATAL: Auth0 global not found");
-<<<<<<< HEAD
-    statusDiv.textContent = "Status: Auth0 SDK missing";
-=======
->>>>>>> c036773b6c09fd6cfce8b9590462f740d4cf96fc
-    return;
-  }
+  const client = await auth0.createAuth0Client({
+    domain: "dev-5lsalv0spwawvbl7.uk.auth0.com",
+    client_id: "8FJRW4DzlhHnnUGSbRkF8StwIxQ4zBzf",
+    useFormData: true,
+    cacheLocation: "memory",
+    authorizationParams: {
+      redirect_uri: window.location.origin + "/secure/index.html",
+      audience: "https://ascendnextlevel.org.uk",
+      scope: "openid profile email",
+      client_id: "8FJRW4DzlhHnnUGSbRkF8StwIxQ4zBzf"
+    }
+  });
 
-  let client;
-  try {
-    client = await auth0.createAuth0Client({
-      domain: "dev-5lsalv0spwawvbl7.uk.auth0.com",
-      client_id: "8FJRW4DzlhHnnUGSbRkF8StwIxQ4zBzf",
-      useFormData: true,
-<<<<<<< HEAD
-      cacheLocation: "localstorage",
-=======
->>>>>>> c036773b6c09fd6cfce8b9590462f740d4cf96fc
-      authorizationParams: {
-        scope: "openid profile email",
-        audience: "https://ascendnextlevel.org.uk",
-        redirect_uri: window.location.origin + "/secure/index.html",
-        client_id: "8FJRW4DzlhHnnUGSbRkF8StwIxQ4zBzf"
-      }
-    });
-  } catch (err) {
-    logFailureContext();
-<<<<<<< HEAD
-    logDebug("FATAL ERROR creating Auth0 client", err);
-    statusDiv.textContent = "Status: Error creating Auth0 client";
-    return;
-  }
-
-  // ===== HANDLE REDIRECT CALLBACK FIRST =====
-  if (window.location.search.includes('code=') && window.location.search.includes('state=')) {
-    logDebug("Login redirect detected", { query: window.location.search });
-=======
-    logDebug("FATAL ERROR creating client", err);
-    return;
-  }
-
-  // Handle redirect callback
-  if (window.location.search.includes('code=') && window.location.search.includes('state=')) {
->>>>>>> c036773b6c09fd6cfce8b9590462f740d4cf96fc
+  // Handle redirect callback if present
+  if (window.location.search.includes("code=") && window.location.search.includes("state=")) {
     try {
+      log("Login redirect detected", {query: window.location.search});
       await client.handleRedirectCallback();
       window.history.replaceState({}, document.title, "/secure/index.html");
-    } catch (err) {
-      logFailureContext(client);
-      logDebug("Error handling redirect callback", err);
+    } catch(err) {
+      log("Error handling redirect callback", err);
     }
   }
 
-<<<<<<< HEAD
-  // ===== CHECK AUTHENTICATION STATUS =====
+  // Check auth status
   let isAuth = false;
-  try {
-    isAuth = await client.isAuthenticated();
-    statusDiv.textContent = isAuth ? "Status: Logged in" : "Status: Logged out";
-  } catch (err) {
-    logFailureContext(client);
-    logDebug("Error checking authentication", err);
-    statusDiv.textContent = "Status: Error checking authentication";
+  try { isAuth = await client.isAuthenticated(); } catch(e){ log("Auth check error", e); }
+
+  statusDiv.textContent = isAuth ? "Status: Logged in" : "Status: Logged out";
+
+  // BUTTON VISIBILITY LOGIC
+  if (alwaysShowButtons) {
+    loginBtn.style.display = "inline-block";
+    logoutBtn.style.display = "inline-block";
+  } else {
+    loginBtn.style.display = isAuth ? "none" : "inline-block";
+    logoutBtn.style.display = isAuth ? "inline-block" : "none";
   }
 
-  // ===== SHOW/HIDE BUTTONS =====
-  document.getElementById('loginBtn').style.display =
-    showBothButtons || !isAuth ? "inline-block" : "none";
-  document.getElementById('logoutBtn').style.display =
-    showBothButtons || isAuth ? "inline-block" : "none";
-
-  // ===== BUTTON HANDLERS =====
-  document.getElementById('loginBtn').onclick = async () => {
-    try {
-      await client.loginWithRedirect();
-    } catch (err) {
-      logFailureContext(client);
-      logDebug("loginWithRedirect error", err);
-    }
+  // BUTTON HANDLERS
+  loginBtn.onclick = async () => {
+    try { await client.loginWithRedirect(); } catch(e){ log("loginWithRedirect error", e); }
   };
 
-  document.getElementById('logoutBtn').onclick = async () => {
-    try {
-      const returnTo = window.location.origin + "/secure/index.html";
-      window.location.href =
-        `https://${client.options.domain}/v2/logout?returnTo=${encodeURIComponent(returnTo)}&client_id=${client.options.client_id}`;
-    } catch (err) {
-      logFailureContext(client);
-      logDebug("Logout error", err);
-    }
+  logoutBtn.onclick = async () => {
+    const returnTo = window.location.origin + "/secure/index.html";
+    window.location.href = `https://${client.options.domain}/v2/logout?returnTo=${encodeURIComponent(returnTo)}&client_id=${client.options.client_id}`;
   };
 };
 </script>
 </body>
-=======
-  // Check authentication status
-  try {
-    const isAuth = await client.isAuthenticated();
-
-    if (isAuth) {
-      try {
-        const user = await client.getUser();
-        const token = await client.getTokenSilently();
-        // Already logged in, no logs
-      } catch (err) {
-        logFailureContext(client);
-        logDebug("Error fetching user/token", err);
-      }
-    } else {
-      // Not authenticated, setup login button
-      document.getElementById('loginBtn').onclick = async () => {
-        try {
-          await client.loginWithRedirect();
-        } catch (err) {
-          logFailureContext(client);
-          logDebug("loginWithRedirect error", err);
-        }
-      };
-    }
-
-    // Setup logout button
-    document.getElementById('logoutBtn').onclick = async () => {
-      try {
-        const returnTo = window.location.origin + "/secure/index.html";
-        // Clear session on Auth0 server
-        window.location.href = `https://${client.options.domain}/v2/logout?returnTo=${encodeURIComponent(returnTo)}&client_id=${client.options.client_id}`;
-      } catch (err) {
-        logFailureContext(client);
-        logDebug("Logout error", err);
-      }
-    };
-
-  } catch (err) {
-    logFailureContext(client);
-    logDebug("Error checking authentication", err);
-  }
-};
-</script>
-</body>
-</html>      }
-    };
-  }
-};
-</script>
->>>>>>> c036773b6c09fd6cfce8b9590462f740d4cf96fc
 </html>
