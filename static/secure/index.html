@@ -2,82 +2,123 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Auth0 Test</title>
-<script src="https://cdn.auth0.com/js/auth0-spa-js/2.1.2/auth0-spa-js.production.js"></script>
+  <title>Auth0 Debug Minimal with Logout</title>
+  <script id="auth0script" src="https://cdn.auth0.com/js/auth0-spa-js/2.1.2/auth0-spa-js.production.js"></script>
 </head>
 <body>
-  <pre id="debug">Loading...\n</pre>
+  <pre id="debug"></pre>
   <button id="loginBtn">Login</button>
+  <button id="logoutBtn">Logout</button>
 
- <script>
+<script>
 const pre = document.getElementById('debug');
+
 function logDebug(msg, obj) {
   pre.textContent += msg + ': ' + (obj ? JSON.stringify(obj, null, 2) : '') + '\n';
   console.log(msg, obj);
 }
 
-window.onload = async () => {
-  logDebug('Document loaded');
+function logFailureContext(client) {
+  const scriptTag = document.getElementById('auth0script');
+  const scriptSrc = scriptTag ? scriptTag.src : "(no src)";
+  const versionMatch = scriptSrc.match(/auth0-spa-js\/([^/]+)/);
+  const sdkVersion = versionMatch ? versionMatch[1] : "(unknown version)";
+  const clientConfig = client ? client.options : {
+    domain: "dev-5lsalv0spwawvbl7.uk.auth0.com",
+    client_id: "8FJRW4DzlhHnnUGSbRkF8StwIxQ4zBzf",
+    audience: "https://ascendnextlevel.org.uk",
+    redirect_uri: window.location.origin + "/secure/index.html"
+  };
 
+  logDebug("FATAL: Auth0 SPA SDK failure context", {
+    script: scriptSrc,
+    version: sdkVersion,
+    clientConfig: clientConfig
+  });
+}
+
+window.onload = async () => {
   if (!window.auth0) {
-    logDebug('FATAL: Auth0 global not found');
+    logFailureContext();
+    logDebug("FATAL: Auth0 global not found");
     return;
   }
 
   let client;
   try {
-    logDebug('Creating Auth0 client...');
-client = await auth0.createAuth0Client({
-  domain: "dev-5lsalv0spwawvbl7.uk.auth0.com",
-  client_id: "8FJRW4DzlhHnnUGSbRkF8StwIxQ4zBzf",
-  useFormData: true,
-  authorizationParams: {
-    scope: "openid profile email",
-    audience: "https://ascendnextlevel.org.uk",
-    redirect_uri: window.location.origin + "/secure/index.html",
-    client_id: "8FJRW4DzlhHnnUGSbRkF8StwIxQ4zBzf"  // <-- explicit
-  }
-});
-    logDebug('Auth0 client created', client);
+    client = await auth0.createAuth0Client({
+      domain: "dev-5lsalv0spwawvbl7.uk.auth0.com",
+      client_id: "8FJRW4DzlhHnnUGSbRkF8StwIxQ4zBzf",
+      useFormData: true,
+      authorizationParams: {
+        scope: "openid profile email",
+        audience: "https://ascendnextlevel.org.uk",
+        redirect_uri: window.location.origin + "/secure/index.html",
+        client_id: "8FJRW4DzlhHnnUGSbRkF8StwIxQ4zBzf"
+      }
+    });
   } catch (err) {
-    logDebug('FATAL ERROR creating client', err);
+    logFailureContext();
+    logDebug("FATAL ERROR creating client", err);
     return;
   }
 
-  // Check if returning from login redirect
+  // Handle redirect callback
   if (window.location.search.includes('code=') && window.location.search.includes('state=')) {
-    logDebug('Step: Handling redirect callback...');
     try {
-      const result = await client.handleRedirectCallback();
-      logDebug('Redirect callback result', result);
-      // Remove query string after processing
+      await client.handleRedirectCallback();
       window.history.replaceState({}, document.title, "/secure/index.html");
     } catch (err) {
-      logDebug('Error handling redirect callback', err);
+      logFailureContext(client);
+      logDebug("Error handling redirect callback", err);
     }
   }
 
-  const isAuth = await client.isAuthenticated();
-  logDebug('Step 2: isAuthenticated', isAuth);
+  // Check authentication status
+  try {
+    const isAuth = await client.isAuthenticated();
 
-  if (isAuth) {
-    try {
-      const user = await client.getUser();
-      logDebug('Step 3: Authenticated user info', user);
-      const token = await client.getTokenSilently();
-      logDebug('Access token', token);
-    } catch (err) {
-      logDebug('Error fetching user/token', err);
-    }
-  } else {
-    logDebug('Step 3: Not authenticated yet, user will login manually...');
-    document.getElementById('loginBtn').onclick = async () => {
+    if (isAuth) {
       try {
-        logDebug('Step 4: Calling loginWithRedirect...');
-        await client.loginWithRedirect();
+        const user = await client.getUser();
+        const token = await client.getTokenSilently();
+        // Already logged in, no logs
       } catch (err) {
-        logDebug('Step 5: loginWithRedirect error', err);
+        logFailureContext(client);
+        logDebug("Error fetching user/token", err);
       }
+    } else {
+      // Not authenticated, setup login button
+      document.getElementById('loginBtn').onclick = async () => {
+        try {
+          await client.loginWithRedirect();
+        } catch (err) {
+          logFailureContext(client);
+          logDebug("loginWithRedirect error", err);
+        }
+      };
+    }
+
+    // Setup logout button
+    document.getElementById('logoutBtn').onclick = async () => {
+      try {
+        const returnTo = window.location.origin + "/secure/index.html";
+        // Clear session on Auth0 server
+        window.location.href = `https://${client.options.domain}/v2/logout?returnTo=${encodeURIComponent(returnTo)}&client_id=${client.options.client_id}`;
+      } catch (err) {
+        logFailureContext(client);
+        logDebug("Logout error", err);
+      }
+    };
+
+  } catch (err) {
+    logFailureContext(client);
+    logDebug("Error checking authentication", err);
+  }
+};
+</script>
+</body>
+</html>      }
     };
   }
 };
