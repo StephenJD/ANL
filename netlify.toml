@@ -24,3 +24,6 @@
   for = "index.xml"
   [headers.values]
     Content-Type = "application/rss+xml"
+
+[build.environment]
+  SECRETS_SCAN_OMIT_PATHS = "public/**, static/**"

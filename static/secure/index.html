@@ -2,6 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8">
+<<<<<<< HEAD
   <title>Auth0 SPA Debug Baseline</title>
   <script id="auth0script" src="https://cdn.auth0.com/js/auth0-spa-js/2.1.2/auth0-spa-js.production.js"></script>
   <style>
@@ -22,6 +23,18 @@ const statusDiv = document.getElementById('status');
 
 // Toggle for testing: leave both buttons showing
 const showBothButtons = true;
+=======
+  <title>Auth0 Debug Minimal with Logout</title>
+  <script id="auth0script" src="https://cdn.auth0.com/js/auth0-spa-js/2.1.2/auth0-spa-js.production.js"></script>
+</head>
+<body>
+  <pre id="debug"></pre>
+  <button id="loginBtn">Login</button>
+  <button id="logoutBtn">Logout</button>
+
+<script>
+const pre = document.getElementById('debug');
+>>>>>>> c036773b6c09fd6cfce8b9590462f740d4cf96fc
 
 function logDebug(msg, obj) {
   pre.textContent += msg + (obj ? ": " + JSON.stringify(obj, null, 2) : "") + "\n";
@@ -51,7 +64,10 @@ window.onload = async () => {
   if (!window.auth0) {
     logFailureContext();
     logDebug("FATAL: Auth0 global not found");
+<<<<<<< HEAD
     statusDiv.textContent = "Status: Auth0 SDK missing";
+=======
+>>>>>>> c036773b6c09fd6cfce8b9590462f740d4cf96fc
     return;
   }
 
@@ -61,7 +77,10 @@ window.onload = async () => {
       domain: "dev-5lsalv0spwawvbl7.uk.auth0.com",
       client_id: "8FJRW4DzlhHnnUGSbRkF8StwIxQ4zBzf",
       useFormData: true,
+<<<<<<< HEAD
       cacheLocation: "localstorage",
+=======
+>>>>>>> c036773b6c09fd6cfce8b9590462f740d4cf96fc
       authorizationParams: {
         scope: "openid profile email",
         audience: "https://ascendnextlevel.org.uk",
@@ -71,6 +90,7 @@ window.onload = async () => {
     });
   } catch (err) {
     logFailureContext();
+<<<<<<< HEAD
     logDebug("FATAL ERROR creating Auth0 client", err);
     statusDiv.textContent = "Status: Error creating Auth0 client";
     return;
@@ -79,6 +99,14 @@ window.onload = async () => {
   // ===== HANDLE REDIRECT CALLBACK FIRST =====
   if (window.location.search.includes('code=') && window.location.search.includes('state=')) {
     logDebug("Login redirect detected", { query: window.location.search });
+=======
+    logDebug("FATAL ERROR creating client", err);
+    return;
+  }
+
+  // Handle redirect callback
+  if (window.location.search.includes('code=') && window.location.search.includes('state=')) {
+>>>>>>> c036773b6c09fd6cfce8b9590462f740d4cf96fc
     try {
       await client.handleRedirectCallback();
       window.history.replaceState({}, document.title, "/secure/index.html");
@@ -88,6 +116,7 @@ window.onload = async () => {
     }
   }
 
+<<<<<<< HEAD
   // ===== CHECK AUTHENTICATION STATUS =====
   let isAuth = false;
   try {
@@ -128,4 +157,55 @@ window.onload = async () => {
 };
 </script>
 </body>
+=======
+  // Check authentication status
+  try {
+    const isAuth = await client.isAuthenticated();
+
+    if (isAuth) {
+      try {
+        const user = await client.getUser();
+        const token = await client.getTokenSilently();
+        // Already logged in, no logs
+      } catch (err) {
+        logFailureContext(client);
+        logDebug("Error fetching user/token", err);
+      }
+    } else {
+      // Not authenticated, setup login button
+      document.getElementById('loginBtn').onclick = async () => {
+        try {
+          await client.loginWithRedirect();
+        } catch (err) {
+          logFailureContext(client);
+          logDebug("loginWithRedirect error", err);
+        }
+      };
+    }
+
+    // Setup logout button
+    document.getElementById('logoutBtn').onclick = async () => {
+      try {
+        const returnTo = window.location.origin + "/secure/index.html";
+        // Clear session on Auth0 server
+        window.location.href = `https://${client.options.domain}/v2/logout?returnTo=${encodeURIComponent(returnTo)}&client_id=${client.options.client_id}`;
+      } catch (err) {
+        logFailureContext(client);
+        logDebug("Logout error", err);
+      }
+    };
+
+  } catch (err) {
+    logFailureContext(client);
+    logDebug("Error checking authentication", err);
+  }
+};
+</script>
+</body>
+</html>      }
+    };
+  }
+};
+</script>
+>>>>>>> c036773b6c09fd6cfce8b9590462f740d4cf96fc
 </html>
