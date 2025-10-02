@@ -1,40 +1,47 @@
 {{/* partials/form_verified.html */}}
 <!-- Email request box -->
-<div class="email-request">
-  <label>Enter your email to enable the form:</label>
-  <input type="email" placeholder="you@example.com" required id="user-email">
-  <button type="button" id="request-link">Request Link</button>
-  <p id="request-status" style="color: green; display: none;">Check your email for the link.</p>
+
+<div id="email-request">
+  <p>Please enter your email to get a link to fill in the form:</p>
+  <input type="email" id="request-email" placeholder="you@example.com" required>
+  <button id="request-link-btn">Request Link</button>
+  <p id="request-status" style="color: green;"></p>
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-  const form = document.querySelector('form.verified-form');
-  if (!form) return;
+document.getElementById('request-link-btn').addEventListener('click', async function() {
+  const email = document.getElementById('request-email').value.trim();
+  const status = document.getElementById('request-status');
 
-  // Disable all inputs initially
-  form.querySelectorAll('input, textarea, select, button[type="submit"]').forEach(el => el.disabled = true);
+  if (!email) {
+    status.style.color = 'red';
+    status.textContent = 'Please enter a valid email.';
+    return;
+  }
 
-  // Placeholder: request link button
-  document.getElementById('request-link').addEventListener('click', () => {
-    const email = document.getElementById('user-email').value;
-    if (!email) {
-      alert("Please enter a valid email.");
-      return;
+  status.style.color = 'black';
+  status.textContent = 'Sending link…';
+
+  try {
+    const resp = await fetch('/.netlify/functions/generateToken', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+
+    if (resp.ok) {
+      status.style.color = 'green';
+      status.textContent = 'Check your email for the link.';
+    } else {
+      const text = await resp.text();
+      status.style.color = 'red';
+      status.textContent = 'Error sending link: ' + text;
     }
-
-    // Show status message
-    document.getElementById('request-status').style.display = 'block';
-
-    // Temporarily enable form to simulate verification
-    // In real step, this happens after email link click
-    // For now, we just log the email
-    console.log("Verification requested for:", email);
-  });
+  } catch (err) {
+    status.style.color = 'red';
+    status.textContent = 'Error sending link: ' + err.message;
+  }
 });
 </script>
-
-
-
 
 
