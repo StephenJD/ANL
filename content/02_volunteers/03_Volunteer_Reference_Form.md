@@ -127,4 +127,15 @@ summary: Reference form for volunteers working with children or vulnerable adult
   <br><br>
   <button type="submit">Send</button>
 </form>
+
+<script>
+document.querySelector('form[name="volunteer-reference"]').addEventListener('submit', function(e){
+  e.preventDefault();
+  const form = e.target;
+  fetch("/", { method: "POST", body: new FormData(form) })
+    .then(() => alert("Thank you for submitting!"))
+    .catch(err => alert("Submission failed"));
+});
+</script>
+
 {{< /rawhtml >}}
