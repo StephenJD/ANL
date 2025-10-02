@@ -1,47 +1,32 @@
 {{/* partials/form_verified.html */}}
 <!-- Email request box -->
 
-<div id="email-request">
-  <p>Please enter your email to get a link to fill in the form:</p>
-  <input type="email" id="request-email" placeholder="you@example.com" required>
-  <button id="request-link-btn">Request Link</button>
-  <p id="request-status" style="color: green;"></p>
-</div>
+<form id="request-link-form">
+  <input type="email" name="email" required placeholder="Enter your email">
+  <button type="submit">Request Link</button>
+</form>
+
+<div id="request-message" style="display:none;">Check your email for the link.</div>
 
 <script>
-document.getElementById('request-link-btn').addEventListener('click', async function() {
-  const email = document.getElementById('request-email').value.trim();
-  const status = document.getElementById('request-status');
+document.getElementById("request-link-form").addEventListener("submit", async function(e){
+  e.preventDefault();
+  const email = this.email.value;
 
-  if (!email) {
-    status.style.color = 'red';
-    status.textContent = 'Please enter a valid email.';
-    return;
-  }
+  // Use the current page URL as the form link
+  const pageUrl = window.location.href;
 
-  status.style.color = 'black';
-  status.textContent = 'Sending link…';
+  const res = await fetch("/.netlify/functions/generateToken", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, formUrl: pageUrl })
+  });
 
-  try {
-    const resp = await fetch('/.netlify/functions/generateToken', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email })
-    });
-
-    if (resp.ok) {
-      status.style.color = 'green';
-      status.textContent = 'Check your email for the link.';
-    } else {
-      const text = await resp.text();
-      status.style.color = 'red';
-      status.textContent = 'Error sending link: ' + text;
-    }
-  } catch (err) {
-    status.style.color = 'red';
-    status.textContent = 'Error sending link: ' + err.message;
+  if(res.ok){
+    document.getElementById("request-message").style.display = "block";
+    this.style.display = "none";
+  } else {
+    alert("Error sending email");
   }
 });
 </script>
-
-

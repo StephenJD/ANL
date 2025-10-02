@@ -4,45 +4,38 @@ const nodemailer = require("nodemailer");
 
 exports.handler = async function(event, context) {
   try {
-    const { email } = JSON.parse(event.body);
+    const { email, formUrl } = JSON.parse(event.body);
 
-    if (!email) {
-      return { statusCode: 400, body: "Email is required" };
-    }
-
-    // Generate a short random token
-    const token = Math.random().toString(36).substring(2, 15);
-
-    // Construct the link (adjust your site URL)
-    const link = `https://YOUR_SITE_URL/verify?token=${token}&email=${encodeURIComponent(email)}`;
-
-    // Configure SMTP transport using environment variables
+    // Use your Netlify environment variables
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
       port: 587,
-      secure: false,
       auth: {
         user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
+        pass: process.env.SMTP_PASS
+      }
     });
 
-    const mailOptions = {
-      from: process.env.SMTP_USER,
+    await transporter.sendMail({
+      from: `"AscendNextLevel.org.uk" <${process.env.SMTP_USER}>`,
       to: email,
-      subject: "Your form submission link",
-      text: `Click this link to enable the form: ${link}`,
-      html: `<p>Click this link to enable the form:</p><p><a href="${link}">${link}</a></p>`,
-    };
-
-    await transporter.sendMail(mailOptions);
+      subject: "Your form link",
+  text: `Here’s your link to submit the form: ${formUrl}?token=XYZ`
+    });
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ message: "Verification email sent" }),
+      body: JSON.stringify({ message: "Email sent" })
     };
   } catch (err) {
-    console.error(err);
-    return { statusCode: 500, body: "Error sending email" };
+    return { statusCode: 500, body: JSON.stringify({ error: err.message }) };
   }
 };
+
+
+await transporter.sendMail({
+  from: `"Your Site" <${process.env.SMTP_USER}>`,
+  to: email,
+  subject: "Your form link",
+  text: `Here’s your link to submit the form: ${formUrl}?token=XYZ`
+});
