@@ -1,4 +1,22 @@
 {{ define "main" }}
-{{ partial "form_layout.html" . }}
+<div class="container-fluid docs">
+  <div class="row justify-content-center">
+    <main class="py-md-3 pl-md-5 docs-content" role="main"> 
+      <article class="article">
+        <div class="article-style">
+          
+          {{/* Insert verification request box for all forms */}}
+          {{ safeHTML (partial "form_verified.html" .) }}
+
+          {{/* Then render the form from Markdown */}}
+          {{ .Content }}
+
+        </div>
+      </article>
+    </main>
+  </div>
+</div>
 {{ end }}
+
+
 

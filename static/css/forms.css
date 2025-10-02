@@ -144,3 +144,15 @@ fieldset[required] legend::after {
   color: red;
   margin-left: 0.1em;
 }
+
+/* Grey out disabled inputs */
+form.verified-form input:disabled,
+form.verified-form textarea:disabled,
+form.verified-form select:disabled,
+form.verified-form button:disabled {
+  background-color: #f0f0f0;
+  cursor: not-allowed;
+}
+
+
+

@@ -12,6 +12,7 @@ summary: Reference form for volunteers working with children or vulnerable adult
 {{< rawhtml >}}
 <form 
   name="volunteer-reference"
+  class="verified-form"
   netlify
 >
   <input type="hidden" name="form-name" value="volunteer-reference">
