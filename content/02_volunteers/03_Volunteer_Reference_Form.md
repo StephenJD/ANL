@@ -12,10 +12,7 @@ summary: Reference form for volunteers working with children or vulnerable adult
 {{< rawhtml >}}
 <form 
   name="volunteer-reference"
-  method="POST" 
-  data-netlify="true" 
-  netlify-honeypot="bot-field" 
-  action="/thanks/"
+  netlify
 >
   <input type="hidden" name="form-name" value="volunteer-reference">
   
