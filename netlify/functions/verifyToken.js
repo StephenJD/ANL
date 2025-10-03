@@ -1,3 +1,4 @@
+// netlify/functions/verifyToken.js
 import crypto from "crypto";
 
 export async function handler(event) {
