@@ -1,18 +1,19 @@
 // netlify/functions/generateToken.js
-const nodemailer = require("nodemailer");
-const crypto = require("crypto");
+import crypto from "crypto";
+import nodemailer from "nodemailer";
 
-exports.handler = async (event) => {
+export const handler = async (event) => {
   if (event.httpMethod !== "POST") {
     return { statusCode: 405, body: "Method Not Allowed" };
   }
 
   let email = null;
+  let formId = null;
 
-  // Parse JSON body
   try {
     const data = JSON.parse(event.body);
-    email = data.email;
+    email = data.email?.trim();
+    formId = data.formId?.trim();
   } catch {
     return {
       statusCode: 400,
@@ -20,24 +21,26 @@ exports.handler = async (event) => {
     };
   }
 
-  if (!email) {
+  if (!email || !formId) {
     return {
       statusCode: 400,
-      body: JSON.stringify({ success: false, error: "Missing email" }),
+      body: JSON.stringify({ success: false, error: "Missing email or formId" }),
     };
   }
 
-  // Generate token using same HMAC + secret as verifyToken.js
-  const secret = process.env.TOKEN_SECRET || "supersecret";
-  const today = new Date().toISOString().slice(0, 10);
-  const token = crypto
-    .createHmac("sha256", secret)
-    .update(email + today)
-    .digest("hex");
-
-  const link = `https://ascendnextlevel.org.uk/form?token=${token}&email=${encodeURIComponent(email)}`;
-
   try {
+    const today = new Date().toISOString().split("T")[0];
+    const secret = process.env.TOKEN_SECRET || "supersecret";
+
+    // HMAC token to match verifyToken.js
+    const token = crypto
+      .createHmac("sha256", secret)
+      .update(email + today)
+      .digest("hex");
+
+    // Link points to the correct form dynamically using formId
+    const link = `https://ascendnextlevel.org.uk/${formId}?token=${token}&email=${encodeURIComponent(email)}`;
+
     let transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
       port: 587,
