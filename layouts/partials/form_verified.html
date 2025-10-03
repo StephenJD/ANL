@@ -1,6 +1,6 @@
 <!-- Email request box -->
 <div class="form-request-box">
-  <p>Enter your email to enable the form: v9</p>
+  <p>Enter your email to enable the form:v10</p>
   <input type="email" class="request-email" placeholder="Your email" required>
   <button type="button" class="request-token-btn">Request Link</button>
 </div>
@@ -8,33 +8,34 @@
 <script>
 document.addEventListener('DOMContentLoaded', () => {
   const form = document.querySelector('form.verified-form');
-  if (!form) return;
-
   const requestBox = document.querySelector('.form-request-box');
   const btn = requestBox.querySelector('.request-token-btn');
   const emailInput = requestBox.querySelector('.request-email');
 
-  // Disable all form fields initially
+  if (!form || !btn || !emailInput) {
+    console.error('Form, button, or email input not found.');
+    return;
+  }
+
+  // Disable all fields initially
   form.querySelectorAll('input, textarea, select, button[type="submit"]').forEach(el => el.disabled = true);
 
   btn.addEventListener('click', async () => {
     const email = emailInput.value.trim();
-    if (!email) { 
-      alert("Enter your email first"); 
-      return; 
+    if (!email) {
+      alert("Enter your email first");
+      return;
     }
 
     try {
       const resp = await fetch("/.netlify/functions/generateToken", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email,
-          formPath: window.location.pathname
-        })
+        body: JSON.stringify({ email, formId: form.getAttribute('name') })
       });
 
       const data = await resp.json();
+
       if (data.success) {
         alert("Check your email for the link.");
       } else {
@@ -45,27 +46,5 @@ document.addEventListener('DOMContentLoaded', () => {
       alert("Request failed");
     }
   });
-
-  // Enable form if URL has valid token & email
-  const urlParams = new URLSearchParams(window.location.search);
-  const token = urlParams.get('token');
-  const email = urlParams.get('email');
-  if (token && email) {
-    fetch("/.netlify/functions/verifyToken", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token, email })
-    })
-      .then(res => res.json())
-      .then(data => {
-        if (data.valid) {
-          form.querySelectorAll('input, textarea, select, button[type="submit"]').forEach(el => el.disabled = false);
-          requestBox.style.display = 'none';
-        } else {
-          console.warn("Invalid token, form remains disabled");
-        }
-      })
-      .catch(err => console.error("Token verification failed", err));
-  }
 });
 </script>
