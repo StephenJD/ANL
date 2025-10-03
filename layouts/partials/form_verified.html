@@ -1,86 +1,47 @@
 <!-- Email request box -->
 <div class="form-request-box">
-  <p>Enter your email to enable the form: v7</p>
+  <p>Enter your email to enable the form: v8</p>
   <input type="email" class="request-email" placeholder="Your email" required>
   <button type="button" class="request-token-btn">Request Link</button>
 </div>
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-  const forms = document.querySelectorAll('form.verified-form');
+  const form = document.querySelector("form.verified-form");
+  const requestBox = document.querySelector(".form-request-box");
 
-  forms.forEach(form => {
-    let isFormVerified = false; // Only allow submit when verified
+  if (!form || !requestBox) return;
 
-    const requestBox = form.previousElementSibling; // assumes box above form
-    const btn = requestBox.querySelector('.request-token-btn');
-    const emailInput = requestBox.querySelector('.request-email');
+  const btn = requestBox.querySelector(".request-token-btn");
+  const emailInput = requestBox.querySelector(".request-email");
 
-    // Disable all inputs initially
-    form.querySelectorAll('input, textarea, select, button[type="submit"]').forEach(el => el.disabled = true);
+  if (!btn || !emailInput) return;
 
-    // Email request button
-    btn.addEventListener('click', async () => {
-      const email = emailInput.value.trim();
-      if (!email) { alert("Enter your email first"); return; }
+  // Disable all form fields
+  form.querySelectorAll("input, textarea, select, button[type=submit]").forEach(el => {
+    el.disabled = true;
+  });
 
-      try {
-        const resp = await fetch("/.netlify/functions/generateToken", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, formId: form.getAttribute('name') })
-        });
-        const data = await resp.json();
-        if (data.success) {
-          alert("Check your email for the link.");
-        } else {
-          alert("Error sending link: " + (data.error || "unknown error"));
-        }
-      } catch (err) {
-        console.error(err);
-        alert("Request failed");
+  btn.addEventListener("click", async () => {
+    const email = emailInput.value.trim();
+    if (!email) { alert("Enter your email first"); return; }
+
+    try {
+      const resp = await fetch("/.netlify/functions/generateToken", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, formId: form.getAttribute("name") })
+      });
+      const data = await resp.json();
+      if (data.success) {
+        alert("Check your email for the link.");
+      } else {
+        alert("Error sending link: " + (data.error || "unknown error"));
       }
-    });
-
-    // Intercept submit: check token before allowing
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-
-      if (!isFormVerified) {
-        const urlParams = new URLSearchParams(window.location.search);
-        const token = urlParams.get('token');
-        const email = emailInput.value.trim();
-        if (!token || !email) {
-          alert("You must request and click your email link first.");
-          return;
-        }
-
-        try {
-          const resp = await fetch("/.netlify/functions/verifyToken", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ token, email })
-          });
-          const data = await resp.json();
-          if (data.valid) {
-            isFormVerified = true;
-            // Enable all fields
-            form.querySelectorAll('input, textarea, select, button[type="submit"]').forEach(el => el.disabled = false);
-            alert("Form enabled! You can now submit.");
-          } else {
-            alert("Invalid or expired token.");
-            return;
-          }
-        } catch (err) {
-          console.error(err);
-          alert("Token verification failed.");
-          return;
-        }
-      }
-
-      // Now submit normally
-      form.submit();
-    });
+    } catch (err) {
+      console.error(err);
+      alert("Request failed");
+    }
   });
 });
 </script>
