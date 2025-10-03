@@ -2,15 +2,20 @@
 <div class="container-fluid docs">
   <div class="row justify-content-center">
     <main class="py-md-3 pl-md-5 docs-content" role="main"> 
-      <section class="form-container">
-        <!-- Insert verification request box -->
-        {{ safeHTML (partial "form_verified.html" .) }}
+      <section class="form-page">
+        <div class="form-style">
 
-        <!-- Then render the form -->
-        {{ .Content }}
+          {{/* Insert verification request box and give it the page path */}}
+          {{ partial "form_verified.html" (dict "Page" . "Slug" .RelPermalink) }}
+
+          {{/* Render the form from Markdown */}}
+          {{ .Content }}
+
+        </div>
       </section>
     </main>
   </div>
 </div>
 {{ end }}
+
 

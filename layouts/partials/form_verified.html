@@ -1,65 +1,39 @@
-<!-- Email request box -->
 <div class="form-request-box">
-  <p>Enter your email to enable the form: v3</p>
+  <p>Enter your email to enable the form: v5</p>
   <input type="email" class="request-email" placeholder="Your email" required>
   <button type="button" class="request-token-btn">Request Link</button>
 </div>
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-  console.log("form_verified.js running…");
+  const slug = "{{ .Slug }}";   // provided by Hugo
 
-  document.querySelectorAll("section.form-container").forEach(section => {
-    const form = section.querySelector("form.verified-form");
-    const requestBox = section.querySelector(".form-request-box");
+  document.querySelectorAll('form').forEach(form => {
+    const requestBox = form.previousElementSibling; // assumes box above form
+    const btn = requestBox.querySelector('.request-token-btn');
+    const emailInput = requestBox.querySelector('.request-email');
 
-    if (!form || !requestBox) {
-      console.error("Missing form or requestBox in section", section);
-      return;
-    }
+    // Disable all fields initially
+    form.querySelectorAll('input, textarea, select, button[type="submit"]').forEach(el => el.disabled = true);
 
-    console.log("Found form:", form.getAttribute("name"));
-
-    const btn = requestBox.querySelector(".request-token-btn");
-    const emailInput = requestBox.querySelector(".request-email");
-
-    // Disable fields initially
-    form.querySelectorAll("input, textarea, select, button[type='submit']").forEach(el => {
-      el.disabled = true;
-    });
-    console.log("Form fields disabled");
-
-    btn.addEventListener("click", async () => {
+    btn.addEventListener('click', async () => {
       const email = emailInput.value.trim();
-      console.log("Button clicked, email entered:", email);
       if (!email) { alert("Enter your email first"); return; }
 
       try {
         const resp = await fetch("/.netlify/functions/generateToken", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, formId: form.getAttribute("name") })
+          body: JSON.stringify({ email, slug })   // pass slug directly
         });
-
-        const text = await resp.text();
-        console.log("Raw response:", text);
-
-        let data;
-        try {
-          data = JSON.parse(text);
-        } catch (e) {
-          console.error("Failed to parse JSON:", e, text);
-          alert("Server returned invalid response.");
-          return;
-        }
-
+        const data = await resp.json();
         if (data.success) {
           alert("Check your email for the link.");
         } else {
           alert("Error sending link: " + (data.error || "unknown error"));
         }
       } catch (err) {
-        console.error("Fetch failed:", err);
+        console.error(err);
         alert("Request failed");
       }
     });

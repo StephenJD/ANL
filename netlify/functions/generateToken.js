@@ -8,13 +8,11 @@ exports.handler = async (event) => {
     return { statusCode: 405, body: "Method Not Allowed" };
   }
 
-  let email = null;
-  let formId = null;
-
+let email = null, slug = null;
   try {
     const data = JSON.parse(event.body);
     email = data.email;
-    formId = data.formId;
+    slug = data.slug || "form";  // fallback
   } catch (e) {
     console.error("JSON parse error:", e);
   }
@@ -28,12 +26,13 @@ exports.handler = async (event) => {
   }
 
   // Generate a secure token (hash of email + date)
-  const token = crypto
-    .createHash("sha256")
-    .update(email + new Date().toISOString().slice(0, 10))
-    .digest("hex");
+const token = crypto
+  .createHash("sha256")
+  .update(email + new Date().toISOString().slice(0, 10))
+  .digest("hex");
 
-  const link = `https://ascendnextlevel.org.uk/${formId}?token=${token}`;
+// Always build the link using the slug from Hugo
+const link = `https://ascendnextlevel.org.uk${slug}?token=${token}`;
 
   console.log(`Sending token link for ${formId} to ${email}`);
 
