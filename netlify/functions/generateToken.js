@@ -1,19 +1,20 @@
 // netlify/functions/generateToken.js
-import crypto from "crypto";
-import nodemailer from "nodemailer";
+const nodemailer = require("nodemailer");
+const crypto = require("crypto");
 
-export const handler = async (event) => {
+exports.handler = async (event) => {
   if (event.httpMethod !== "POST") {
     return { statusCode: 405, body: "Method Not Allowed" };
   }
 
   let email = null;
-  let formId = null;
+  let formPath = null;
 
+  // Parse JSON body
   try {
     const data = JSON.parse(event.body);
-    email = data.email?.trim();
-    formId = data.formId?.trim();
+    email = data.email;
+    formPath = data.formPath; // pass the full form URL path from the frontend
   } catch {
     return {
       statusCode: 400,
@@ -21,26 +22,26 @@ export const handler = async (event) => {
     };
   }
 
-  if (!email || !formId) {
+  if (!email || !formPath) {
     return {
       statusCode: 400,
-      body: JSON.stringify({ success: false, error: "Missing email or formId" }),
+      body: JSON.stringify({ success: false, error: "Missing email or formPath" }),
     };
   }
 
   try {
-    const today = new Date().toISOString().split("T")[0];
+    // Generate token using HMAC SHA256 with secret
     const secret = process.env.TOKEN_SECRET || "supersecret";
-
-    // HMAC token to match verifyToken.js
+    const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
     const token = crypto
       .createHmac("sha256", secret)
       .update(email + today)
       .digest("hex");
 
-    // Link points to the correct form dynamically using formId
-    const link = `https://ascendnextlevel.org.uk/${formId}?token=${token}&email=${encodeURIComponent(email)}`;
+    // Construct full link to the actual form
+    const link = `${formPath.split("?")[0]}?token=${token}&email=${encodeURIComponent(email)}`;
 
+    // Configure SMTP transporter
     let transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
       port: 587,
@@ -51,6 +52,7 @@ export const handler = async (event) => {
       },
     });
 
+    // Send the email
     await transporter.sendMail({
       from: `"Ascend Next Level" <${process.env.SMTP_USER}>`,
       to: email,

@@ -1,6 +1,6 @@
-<!-- Email request box -->
+<!-- partials/form_verified.html -->
 <div class="form-request-box">
-  <p>Enter your email to enable the form:v10</p>
+  <p>Enter your email to enable the form: v12</p>
   <input type="email" class="request-email" placeholder="Your email" required>
   <button type="button" class="request-token-btn">Request Link</button>
 </div>
@@ -8,34 +8,29 @@
 <script>
 document.addEventListener('DOMContentLoaded', () => {
   const form = document.querySelector('form.verified-form');
-  const requestBox = document.querySelector('.form-request-box');
-  const btn = requestBox.querySelector('.request-token-btn');
-  const emailInput = requestBox.querySelector('.request-email');
-
-  if (!form || !btn || !emailInput) {
-    console.error('Form, button, or email input not found.');
-    return;
-  }
+  if (!form) return;
 
   // Disable all fields initially
   form.querySelectorAll('input, textarea, select, button[type="submit"]').forEach(el => el.disabled = true);
 
+  const requestBox = document.querySelector('.form-request-box');
+  const btn = requestBox.querySelector('.request-token-btn');
+  const emailInput = requestBox.querySelector('.request-email');
+
   btn.addEventListener('click', async () => {
     const email = emailInput.value.trim();
-    if (!email) {
-      alert("Enter your email first");
-      return;
-    }
+    if (!email) { alert("Enter your email first"); return; }
+
+    // Send full page URL as formPath
+    const formUrl = window.location.href;
 
     try {
       const resp = await fetch("/.netlify/functions/generateToken", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, formId: form.getAttribute('name') })
+        body: JSON.stringify({ email, formPath: formUrl })
       });
-
       const data = await resp.json();
-
       if (data.success) {
         alert("Check your email for the link.");
       } else {
