@@ -1,34 +1,57 @@
-<!-- partials/form_verified.html -->
+<!-- Email request box -->
 <div class="form-request-box">
-  <p>Enter your email to enable the form: v12</p>
+  <p>Enter your email to enable the form: v13</p>
   <input type="email" class="request-email" placeholder="Your email" required>
   <button type="button" class="request-token-btn">Request Link</button>
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-  const form = document.querySelector('form.verified-form');
+document.addEventListener("DOMContentLoaded", async () => {
+  const form = document.querySelector("form.verified-form");
+  const requestBox = document.querySelector(".form-request-box");
+  const btn = requestBox.querySelector(".request-token-btn");
+  const emailInput = requestBox.querySelector(".request-email");
+
   if (!form) return;
 
-  // Disable all fields initially
-  form.querySelectorAll('input, textarea, select, button[type="submit"]').forEach(el => el.disabled = true);
+  // Disable all form fields initially
+  form.querySelectorAll("input, textarea, select, button[type='submit']").forEach(el => el.disabled = true);
 
-  const requestBox = document.querySelector('.form-request-box');
-  const btn = requestBox.querySelector('.request-token-btn');
-  const emailInput = requestBox.querySelector('.request-email');
+  // Helper to enable the form
+  const enableForm = () => {
+    form.querySelectorAll("input, textarea, select, button[type='submit']").forEach(el => el.disabled = false);
+    requestBox.style.display = "none";
+  };
 
-  btn.addEventListener('click', async () => {
-    const email = emailInput.value.trim();
-    if (!email) { alert("Enter your email first"); return; }
+  // Check URL params for token + email
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get("token");
+  const email = params.get("email");
 
-    // Send full page URL as formPath
-    const formUrl = window.location.href;
+  if (token && email) {
+    try {
+      const resp = await fetch("/.netlify/functions/verifyToken", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, email })
+      });
+      const data = await resp.json();
+      if (data.valid) enableForm();
+    } catch (err) {
+      console.error("Token verification failed", err);
+    }
+  }
+
+  // Button click to request token
+  btn.addEventListener("click", async () => {
+    const emailVal = emailInput.value.trim();
+    if (!emailVal) { alert("Enter your email first"); return; }
 
     try {
       const resp = await fetch("/.netlify/functions/generateToken", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, formPath: formUrl })
+        body: JSON.stringify({ email: emailVal, formId: form.getAttribute("name") })
       });
       const data = await resp.json();
       if (data.success) {
