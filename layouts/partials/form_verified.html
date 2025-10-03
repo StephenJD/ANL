@@ -44,3 +44,39 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 </script>
+
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  const form = document.querySelector('form.verified-form');
+  const requestBox = document.querySelector('.form-request-box');
+  if (!form) return;
+
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get('token');
+  const email = params.get('email');
+
+  if (token && email) {
+    console.log("Token found in URL:", token);
+    try {
+      const resp = await fetch("/.netlify/functions/verifyToken", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, email })
+      });
+      const data = await resp.json();
+      console.log("verifyToken response:", data);
+
+      if (data.valid) {
+        // Enable form fields
+        form.querySelectorAll('input, textarea, select, button[type="submit"]').forEach(el => el.disabled = false);
+        // Optionally hide request box
+        if (requestBox) requestBox.style.display = 'none';
+      } else {
+        console.log("Invalid token, form remains disabled");
+      }
+    } catch (err) {
+      console.error("Error verifying token:", err);
+    }
+  }
+});
+</script>
