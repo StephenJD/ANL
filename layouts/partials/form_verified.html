@@ -1,6 +1,6 @@
 <!-- partials/form_verified.html -->
 <div class="form-request-box">
-  <p>Enter your email to enable the form: v19</p>
+  <p>Enter your email to enable the form: v20</p>
   <input type="email" class="request-email" placeholder="Your email" required>
   <button type="button" class="request-token-btn">Request Link</button>
 </div>
@@ -58,26 +58,32 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if (token && email) {
     console.log("Token found in URL:", token);
+    console.log("Email from URL:", email);
+
     try {
       const resp = await fetch("/.netlify/functions/verifyToken", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token, email })
       });
+
       const data = await resp.json();
-      console.log("verifyToken response:", data);
+      console.log("verifyToken response JSON:", JSON.stringify(data, null, 2));
 
       if (data.valid) {
+        console.log("Token is valid, enabling form...");
         // Enable form fields
         form.querySelectorAll('input, textarea, select, button[type="submit"]').forEach(el => el.disabled = false);
         // Optionally hide request box
         if (requestBox) requestBox.style.display = 'none';
       } else {
-        console.log("Invalid token, form remains disabled");
+        console.warn("Invalid token, form remains disabled");
       }
     } catch (err) {
       console.error("Error verifying token:", err);
     }
+  } else {
+    console.log("No token/email in URL, form remains disabled");
   }
 });
 </script>
