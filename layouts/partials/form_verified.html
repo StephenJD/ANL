@@ -1,34 +1,83 @@
 {{/* partials/form_verified.html */}}
 <!-- Email request box -->
 
-<script>
-(function() {
-  const params = new URLSearchParams(window.location.search);
-  const token = params.get("token");
-  const email = params.get("email");
+<!-- partials/form_verified.html -->
+<div id="form-access-control">
+  <!-- Request email box (shown by default) -->
+  <div id="request-box">
+    <p>Please enter your email to unlock this form:</p>
+    <input type="email" id="request-email" required>
+    <button id="request-button">Request Link</button>
+    <p id="request-status"></p>
+  </div>
+</div>
 
-  if (!token || !email) {
-    // hide form until access requested
-    document.querySelector("form").style.display = "none";
-    return;
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const form = document.querySelector("form");   // assume one form per page
+  const requestBox = document.getElementById("request-box");
+  const requestButton = document.getElementById("request-button");
+  const requestStatus = document.getElementById("request-status");
+
+  // --- 1. Disable form by default ---
+  if (form) {
+    form.querySelectorAll("input, textarea, select, button")
+        .forEach(el => el.disabled = true);
   }
 
-  // Ask server to verify token (no storage needed)
-  fetch("/.netlify/functions/verifyToken", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ token, email })
-  })
-  .then(res => res.json())
-  .then(result => {
-    if (!result.valid) {
-      document.querySelector("form").style.display = "none";
-      alert("Invalid or expired link. Please request a new one.");
+  // --- 2. Check for token in URL ---
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get("token");
+
+  if (token) {
+    fetch(`/.netlify/functions/verifyToken?token=${token}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.valid) {
+          // Enable form
+          form.querySelectorAll("input, textarea, select, button")
+              .forEach(el => el.disabled = false);
+
+          // Hide request box
+          requestBox.style.display = "none";
+        } else {
+          requestStatus.textContent = "Invalid or expired link. Please request a new one.";
+        }
+      })
+      .catch(err => {
+        console.error("Token verification failed", err);
+        requestStatus.textContent = "Error verifying link.";
+      });
+  }
+
+  // --- 3. Handle request button (send email with token link) ---
+  requestButton.addEventListener("click", function () {
+    const email = document.getElementById("request-email").value;
+    if (!email) {
+      requestStatus.textContent = "Please enter your email address.";
+      return;
     }
-  })
-  .catch(() => {
-    document.querySelector("form").style.display = "none";
-    alert("Verification failed.");
+
+    requestStatus.textContent = "Sending link...";
+
+    fetch("/.netlify/functions/generateToken", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email })
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          requestStatus.textContent = "Check your email for the link.";
+        } else {
+          requestStatus.textContent = "Failed to send link.";
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        requestStatus.textContent = "Error sending request.";
+      });
   });
-})();
+});
 </script>
+
