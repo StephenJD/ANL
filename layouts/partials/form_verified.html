@@ -1,83 +1,41 @@
 {{/* partials/form_verified.html */}}
 <!-- Email request box -->
 
-<!-- partials/form_verified.html -->
-<div id="form-access-control">
-  <!-- Request email box (shown by default) -->
-  <div id="request-box">
-    <p>Please enter your email to unlock this form:</p>
-    <input type="email" id="request-email" required>
-    <button id="request-button">Request Link</button>
-    <p id="request-status"></p>
-  </div>
+<div class="form-request-box">
+  <p>Enter your email to enable the form:</p>
+  <input type="email" class="request-email" placeholder="Your email" required>
+  <button type="button" class="request-token-btn">Request Link</button>
 </div>
 
 <script>
-document.addEventListener("DOMContentLoaded", function () {
-  const form = document.querySelector("form");   // assume one form per page
-  const requestBox = document.getElementById("request-box");
-  const requestButton = document.getElementById("request-button");
-  const requestStatus = document.getElementById("request-status");
+document.querySelectorAll('form').forEach(form => {
+  const requestBox = form.previousElementSibling; // assumes box above form
+  const btn = requestBox.querySelector('.request-token-btn');
+  const emailInput = requestBox.querySelector('.request-email');
 
-  // --- 1. Disable form by default ---
-  if (form) {
-    form.querySelectorAll("input, textarea, select, button")
-        .forEach(el => el.disabled = true);
-  }
+  // Disable all fields initially
+  form.querySelectorAll('input, textarea, select, button[type="submit"]').forEach(el => el.disabled = true);
 
-  // --- 2. Check for token in URL ---
-  const params = new URLSearchParams(window.location.search);
-  const token = params.get("token");
+  btn.addEventListener('click', async () => {
+    const email = emailInput.value.trim();
+    if (!email) { alert("Enter your email first"); return; }
 
-  if (token) {
-    fetch(`/.netlify/functions/verifyToken?token=${token}`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.valid) {
-          // Enable form
-          form.querySelectorAll("input, textarea, select, button")
-              .forEach(el => el.disabled = false);
-
-          // Hide request box
-          requestBox.style.display = "none";
-        } else {
-          requestStatus.textContent = "Invalid or expired link. Please request a new one.";
-        }
-      })
-      .catch(err => {
-        console.error("Token verification failed", err);
-        requestStatus.textContent = "Error verifying link.";
+    try {
+      const resp = await fetch("/.netlify/functions/generateToken", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, formId: form.getAttribute('name') })
       });
-  }
-
-  // --- 3. Handle request button (send email with token link) ---
-  requestButton.addEventListener("click", function () {
-    const email = document.getElementById("request-email").value;
-    if (!email) {
-      requestStatus.textContent = "Please enter your email address.";
-      return;
+      const data = await resp.json();
+      if (data.success) {
+        alert("Check your email for the link.");
+      } else {
+        alert("Error sending link: " + (data.error || "unknown error"));
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Request failed");
     }
-
-    requestStatus.textContent = "Sending link...";
-
-    fetch("/.netlify/functions/generateToken", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email })
-    })
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          requestStatus.textContent = "Check your email for the link.";
-        } else {
-          requestStatus.textContent = "Failed to send link.";
-        }
-      })
-      .catch(err => {
-        console.error(err);
-        requestStatus.textContent = "Error sending request.";
-      });
   });
 });
 </script>
-
