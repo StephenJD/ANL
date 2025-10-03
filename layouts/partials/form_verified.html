@@ -1,6 +1,6 @@
 <!-- Email request box -->
 <div class="form-request-box">
-  <p>Enter your email to enable the form v2:</p>
+  <p>Enter your email to enable the form: v3</p>
   <input type="email" class="request-email" placeholder="Your email" required>
   <button type="button" class="request-token-btn">Request Link</button>
 </div>
@@ -9,19 +9,21 @@
 document.addEventListener("DOMContentLoaded", () => {
   console.log("form_verified.js running…");
 
-  document.querySelectorAll("form.verified-form").forEach(form => {
-    console.log("Found form:", form.getAttribute("name"));
+  document.querySelectorAll("section.form-container").forEach(section => {
+    const form = section.querySelector("form.verified-form");
+    const requestBox = section.querySelector(".form-request-box");
 
-    const requestBox = form.previousElementSibling;
-    if (!requestBox) {
-      console.error("No request box found for form", form);
+    if (!form || !requestBox) {
+      console.error("Missing form or requestBox in section", section);
       return;
     }
+
+    console.log("Found form:", form.getAttribute("name"));
 
     const btn = requestBox.querySelector(".request-token-btn");
     const emailInput = requestBox.querySelector(".request-email");
 
-    // Disable all fields initially
+    // Disable fields initially
     form.querySelectorAll("input, textarea, select, button[type='submit']").forEach(el => {
       el.disabled = true;
     });
