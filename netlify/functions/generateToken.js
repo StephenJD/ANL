@@ -1,25 +1,28 @@
 // netlify/functions/generateToken.js
 
-const nodemailer = require("nodemailer");
-const crypto = require("crypto");
+import nodemailer from "nodemailer";
+import crypto from "crypto";
 
-exports.handler = async function (event, context) {
-  if (event.httpMethod !== "POST") {
-    return { statusCode: 405, body: "Method Not Allowed" };
-  }
-
+export async function handler(event) {
   try {
-    const { email } = JSON.parse(event.body);
-
-    if (!email) {
-      return { statusCode: 400, body: "Email is required" };
+    const { email, pageUrl } = JSON.parse(event.body);
+    if (!email || !pageUrl) {
+      return { statusCode: 400, body: "Email and pageUrl required" };
     }
 
-    // Generate token
-    const token = crypto.randomBytes(32).toString("hex");
+    // Token expires daily: use YYYY-MM-DD
+    const today = new Date().toISOString().split("T")[0]; 
+    const secret = process.env.TOKEN_SECRET || "supersecret"; // set in Netlify env
 
-    // Send email
-    let transporter = nodemailer.createTransport({
+    const token = crypto
+      .createHmac("sha256", secret)
+      .update(email + today)
+      .digest("hex");
+
+    const link = `${pageUrl}?token=${token}&email=${encodeURIComponent(email)}`;
+
+    // Email setup
+    const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
         user: process.env.SMTP_USER,
@@ -28,21 +31,15 @@ exports.handler = async function (event, context) {
     });
 
     await transporter.sendMail({
-      from: process.env.SMTP_USER,
+      from: `"Ascend Next Level" <${process.env.SMTP_USER}>`,
       to: email,
-      subject: "Your secure form link",
-      text: `Here’s your link to submit the form: https://ascendnextlevel.org.uk/form?token=${token}`,
+      subject: "Form access link",
+      text: `Here’s your link to submit the form: ${link}`,
     });
 
-    return {
-      statusCode: 200,
-      body: JSON.stringify({ message: "Email sent", token }),
-    };
-  } catch (error) {
-    console.error(error);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: error.message }),
-    };
+    return { statusCode: 200, body: "Email sent" };
+  } catch (err) {
+    console.error("Error sending email:", err);
+    return { statusCode: 500, body: "Server error" };
   }
-};
+}

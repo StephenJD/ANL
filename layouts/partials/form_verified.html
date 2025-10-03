@@ -1,32 +1,34 @@
 {{/* partials/form_verified.html */}}
 <!-- Email request box -->
 
-<form id="request-link-form">
-  <input type="email" name="email" required placeholder="Enter your email">
-  <button type="submit">Request Link</button>
-</form>
-
-<div id="request-message" style="display:none;">Check your email for the link.</div>
-
 <script>
-document.getElementById("request-link-form").addEventListener("submit", async function(e){
-  e.preventDefault();
-  const email = this.email.value;
+(function() {
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get("token");
+  const email = params.get("email");
 
-  // Use the current page URL as the form link
-  const pageUrl = window.location.href;
+  if (!token || !email) {
+    // hide form until access requested
+    document.querySelector("form").style.display = "none";
+    return;
+  }
 
-  const res = await fetch("/.netlify/functions/generateToken", {
+  // Ask server to verify token (no storage needed)
+  fetch("/.netlify/functions/verifyToken", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, formUrl: pageUrl })
+    body: JSON.stringify({ token, email })
+  })
+  .then(res => res.json())
+  .then(result => {
+    if (!result.valid) {
+      document.querySelector("form").style.display = "none";
+      alert("Invalid or expired link. Please request a new one.");
+    }
+  })
+  .catch(() => {
+    document.querySelector("form").style.display = "none";
+    alert("Verification failed.");
   });
-
-  if(res.ok){
-    document.getElementById("request-message").style.display = "block";
-    this.style.display = "none";
-  } else {
-    alert("Error sending email");
-  }
-});
+})();
 </script>
