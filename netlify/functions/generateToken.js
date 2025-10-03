@@ -1,40 +1,41 @@
+// netlify/functions/generateToken.js
 const nodemailer = require("nodemailer");
 const crypto = require("crypto");
 
 exports.handler = async (event) => {
-  console.log("generateToken invoked", event.httpMethod);
-
   if (event.httpMethod !== "POST") {
     return { statusCode: 405, body: "Method Not Allowed" };
   }
 
-let email = null, slug = null;
+  let email = null;
+
+  // Parse JSON body
   try {
     const data = JSON.parse(event.body);
     email = data.email;
-    slug = data.slug || "form";  // fallback
-  } catch (e) {
-    console.error("JSON parse error:", e);
+  } catch {
+    return {
+      statusCode: 400,
+      body: JSON.stringify({ success: false, error: "Invalid JSON" }),
+    };
   }
 
   if (!email) {
-    console.error("Missing email in request body:", event.body);
     return {
       statusCode: 400,
       body: JSON.stringify({ success: false, error: "Missing email" }),
     };
   }
 
-  // Generate a secure token (hash of email + date)
-const token = crypto
-  .createHash("sha256")
-  .update(email + new Date().toISOString().slice(0, 10))
-  .digest("hex");
+  // Generate token using same HMAC + secret as verifyToken.js
+  const secret = process.env.TOKEN_SECRET || "supersecret";
+  const today = new Date().toISOString().slice(0, 10);
+  const token = crypto
+    .createHmac("sha256", secret)
+    .update(email + today)
+    .digest("hex");
 
-// Always build the link using the slug from Hugo
-const link = `https://ascendnextlevel.org.uk${slug}?token=${token}`;
-
-  console.log(`Sending token link for ${formId} to ${email}`);
+  const link = `https://ascendnextlevel.org.uk/form?token=${token}&email=${encodeURIComponent(email)}`;
 
   try {
     let transporter = nodemailer.createTransport({
@@ -53,8 +54,6 @@ const link = `https://ascendnextlevel.org.uk${slug}?token=${token}`;
       subject: "Your secure form link",
       text: `Here’s your link to submit the form: ${link}`,
     });
-
-    console.log("Email sent OK");
 
     return {
       statusCode: 200,
