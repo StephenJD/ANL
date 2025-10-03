@@ -1,21 +1,25 @@
 <!-- Email request box -->
 <div class="form-request-box">
-  <p>Enter your email to enable the form:</p>
+  <p>Enter your email to enable the form: v7</p>
   <input type="email" class="request-email" placeholder="Your email" required>
   <button type="button" class="request-token-btn">Request Link</button>
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-  // Loop over all forms with class 'verified-form'
-  document.querySelectorAll('form.verified-form').forEach(form => {
-    const requestBox = form.previousElementSibling; // assumes request box is above form
+document.addEventListener("DOMContentLoaded", () => {
+  const forms = document.querySelectorAll('form.verified-form');
+
+  forms.forEach(form => {
+    let isFormVerified = false; // Only allow submit when verified
+
+    const requestBox = form.previousElementSibling; // assumes box above form
     const btn = requestBox.querySelector('.request-token-btn');
     const emailInput = requestBox.querySelector('.request-email');
 
-    // Disable all form fields initially
+    // Disable all inputs initially
     form.querySelectorAll('input, textarea, select, button[type="submit"]').forEach(el => el.disabled = true);
 
+    // Email request button
     btn.addEventListener('click', async () => {
       const email = emailInput.value.trim();
       if (!email) { alert("Enter your email first"); return; }
@@ -38,31 +42,45 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
-    // Check URL for token
-    const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get('token');
-    const emailParam = urlParams.get('email');
+    // Intercept submit: check token before allowing
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
 
-    if (token && emailParam) {
-      // Verify token
-      fetch('/.netlify/functions/verifyToken', {
-        method: 'POST',
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, email: emailParam })
-      })
-      .then(res => res.json())
-      .then(data => {
-        if (data.valid) {
-          // Enable form
-          form.querySelectorAll('input, textarea, select, button[type="submit"]').forEach(el => el.disabled = false);
-          // Hide request box
-          requestBox.style.display = 'none';
-        } else {
-          console.warn("Invalid token, form remains disabled");
+      if (!isFormVerified) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+        const email = emailInput.value.trim();
+        if (!token || !email) {
+          alert("You must request and click your email link first.");
+          return;
         }
-      })
-      .catch(err => console.error("Token verification failed", err));
-    }
+
+        try {
+          const resp = await fetch("/.netlify/functions/verifyToken", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ token, email })
+          });
+          const data = await resp.json();
+          if (data.valid) {
+            isFormVerified = true;
+            // Enable all fields
+            form.querySelectorAll('input, textarea, select, button[type="submit"]').forEach(el => el.disabled = false);
+            alert("Form enabled! You can now submit.");
+          } else {
+            alert("Invalid or expired token.");
+            return;
+          }
+        } catch (err) {
+          console.error(err);
+          alert("Token verification failed.");
+          return;
+        }
+      }
+
+      // Now submit normally
+      form.submit();
+    });
   });
 });
 </script>
