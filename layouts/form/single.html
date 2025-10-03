@@ -1,22 +1,17 @@
 {{ define "main" }}
-<div class="container-fluid docs">
+<div class="container-fluid form-page">
   <div class="row justify-content-center">
-    <main class="py-md-3 pl-md-5 docs-content" role="main"> 
-      <article class="article">
-        <div class="article-style">
-          
-          {{/* Insert verification request box for all forms */}}
-          {{ safeHTML (partial "form_verified.html" .) }}
+    <main class="py-md-3 pl-md-5" role="main"> 
+      <section class="form-wrapper">
+        
+        {{/* Insert verification request box for all forms */}}
+        {{ safeHTML (partial "form_verified.html" .) }}
 
-          {{/* Then render the form from Markdown */}}
-          {{ .Content }}
+        {{/* Then render the form from Markdown */}}
+        {{ .Content }}
 
-        </div>
-      </article>
+      </section>
     </main>
   </div>
 </div>
 {{ end }}
-
-
-

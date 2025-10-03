@@ -1,29 +1,26 @@
-// netlify/functions/generateToken.js
 const nodemailer = require("nodemailer");
 const crypto = require("crypto");
 
 exports.handler = async (event) => {
+  console.log("generateToken invoked", event.httpMethod);
+
   if (event.httpMethod !== "POST") {
     return { statusCode: 405, body: "Method Not Allowed" };
   }
 
   let email = null;
+  let formId = null;
 
-  // Try JSON first
   try {
     const data = JSON.parse(event.body);
     email = data.email;
-  } catch {
-    // Fallback to form-encoded
-    try {
-      const params = new URLSearchParams(event.body);
-      email = params.get("email");
-    } catch {
-      // ignore
-    }
+    formId = data.formId;
+  } catch (e) {
+    console.error("JSON parse error:", e);
   }
 
   if (!email) {
+    console.error("Missing email in request body:", event.body);
     return {
       statusCode: 400,
       body: JSON.stringify({ success: false, error: "Missing email" }),
@@ -33,10 +30,12 @@ exports.handler = async (event) => {
   // Generate a secure token (hash of email + date)
   const token = crypto
     .createHash("sha256")
-    .update(email + new Date().toISOString().slice(0, 10)) // date-limited
+    .update(email + new Date().toISOString().slice(0, 10))
     .digest("hex");
 
-  const link = `https://ascendnextlevel.org.uk/form?token=${token}`;
+  const link = `https://ascendnextlevel.org.uk/${formId}?token=${token}`;
+
+  console.log(`Sending token link for ${formId} to ${email}`);
 
   try {
     let transporter = nodemailer.createTransport({
@@ -55,6 +54,8 @@ exports.handler = async (event) => {
       subject: "Your secure form link",
       text: `Here’s your link to submit the form: ${link}`,
     });
+
+    console.log("Email sent OK");
 
     return {
       statusCode: 200,
