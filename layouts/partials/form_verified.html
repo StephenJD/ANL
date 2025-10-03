@@ -1,6 +1,6 @@
 <!-- partials/form_verified.html -->
 <div class="form-request-box">
-  <p>Enter your email to enable the form: v15</p>
+  <p>Enter your email to enable the form:</p>
   <input type="email" class="request-email" placeholder="Your email" required>
   <button type="button" class="request-token-btn">Request Link</button>
 </div>
@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email,
-          formId: form.getAttribute('name')  // use form's name for identification
+          formPath: window.location.pathname // full path of current form page
         })
       });
 
