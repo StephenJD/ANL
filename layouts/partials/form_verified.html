@@ -26,48 +26,21 @@ document.addEventListener('DOMContentLoaded', () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email,
-          formPath: window.location.pathname // full path of current form page
+          formPath: window.location.pathname,  // path of the current form
+          origin: window.location.origin       // site root for full URL
         })
       });
 
       const data = await resp.json();
-      console.log("generateToken response:", data);
-
       if (data.success) {
         alert("Check your email for the link.");
       } else {
         alert("Error sending link: " + (data.error || "unknown error"));
       }
     } catch (err) {
-      console.error("Request failed:", err);
+      console.error(err);
       alert("Request failed");
     }
   });
-
-  // --- Debug: auto-check token in URL on page load ---
-  const params = new URLSearchParams(window.location.search);
-  const token = params.get('token');
-  const email = params.get('email');
-
-  if (token && email) {
-    console.log("Found token and email in URL:", { token, email });
-    fetch("/.netlify/functions/verifyToken", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token, email })
-    })
-    .then(r => r.json())
-    .then(data => {
-      console.log("verifyToken response:", data);
-      if (data.valid) {
-        console.log("Token valid — enabling form");
-        form.querySelectorAll('input, textarea, select, button[type="submit"]').forEach(el => el.disabled = false);
-        requestBox.style.display = 'none'; // hide request box once form enabled
-      } else {
-        console.log("Token invalid — form remains disabled");
-      }
-    })
-    .catch(err => console.error("Error verifying token:", err));
-  }
 });
 </script>

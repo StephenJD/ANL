@@ -5,6 +5,7 @@ export async function handler(event) {
   try {
     const { token, email } = JSON.parse(event.body);
     if (!token || !email) {
+      console.log("Missing token or email");
       return { statusCode: 400, body: JSON.stringify({ valid: false }) };
     }
 
@@ -16,11 +17,15 @@ export async function handler(event) {
       .update(email + today)
       .digest("hex");
 
+    const valid = token === expected;
+    console.log(`verifyToken: token=${token}, expected=${expected}, valid=${valid}`);
+
     return {
       statusCode: 200,
-      body: JSON.stringify({ valid: token === expected }),
+      body: JSON.stringify({ valid }),
     };
   } catch (err) {
+    console.error("verifyToken error:", err);
     return { statusCode: 500, body: JSON.stringify({ valid: false }) };
   }
 }

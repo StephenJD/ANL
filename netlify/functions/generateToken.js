@@ -9,12 +9,14 @@ exports.handler = async (event) => {
 
   let email = null;
   let formPath = null;
+  let origin = null;
 
   // Parse JSON body
   try {
     const data = JSON.parse(event.body);
     email = data.email;
-    formPath = data.formPath; // pass the full form URL path from the frontend
+    formPath = data.formPath;
+    origin = data.origin;   // dynamic site root
   } catch {
     return {
       statusCode: 400,
@@ -22,10 +24,10 @@ exports.handler = async (event) => {
     };
   }
 
-  if (!email || !formPath) {
+  if (!email || !formPath || !origin) {
     return {
       statusCode: 400,
-      body: JSON.stringify({ success: false, error: "Missing email or formPath" }),
+      body: JSON.stringify({ success: false, error: "Missing email, formPath or origin" }),
     };
   }
 
@@ -39,7 +41,7 @@ exports.handler = async (event) => {
       .digest("hex");
 
     // Construct full link to the actual form
-    const link = `${formPath.split("?")[0]}?token=${token}&email=${encodeURIComponent(email)}`;
+    const link = `${origin}${formPath.split("?")[0]}?token=${token}&email=${encodeURIComponent(email)}`;
 
     // Configure SMTP transporter
     let transporter = nodemailer.createTransport({
