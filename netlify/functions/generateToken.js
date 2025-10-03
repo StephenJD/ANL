@@ -1,41 +1,48 @@
 // netlify/functions/generateToken.js
 
 const nodemailer = require("nodemailer");
+const crypto = require("crypto");
 
-exports.handler = async function(event, context) {
+exports.handler = async function (event, context) {
+  if (event.httpMethod !== "POST") {
+    return { statusCode: 405, body: "Method Not Allowed" };
+  }
+
   try {
-    const { email, formUrl } = JSON.parse(event.body);
+    const { email } = JSON.parse(event.body);
 
-    // Use your Netlify environment variables
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: 587,
+    if (!email) {
+      return { statusCode: 400, body: "Email is required" };
+    }
+
+    // Generate token
+    const token = crypto.randomBytes(32).toString("hex");
+
+    // Send email
+    let transporter = nodemailer.createTransport({
+      service: "gmail",
       auth: {
         user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS
-      }
+        pass: process.env.SMTP_PASS,
+      },
     });
 
     await transporter.sendMail({
-      from: `"AscendNextLevel.org.uk" <${process.env.SMTP_USER}>`,
+      from: process.env.SMTP_USER,
       to: email,
-      subject: "Your form link",
-  text: `Here’s your link to submit the form: ${formUrl}?token=XYZ`
+      subject: "Your secure form link",
+      text: `Here’s your link to submit the form: https://ascendnextlevel.org.uk/form?token=${token}`,
     });
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ message: "Email sent" })
+      body: JSON.stringify({ message: "Email sent", token }),
     };
-  } catch (err) {
-    return { statusCode: 500, body: JSON.stringify({ error: err.message }) };
+  } catch (error) {
+    console.error(error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: error.message }),
+    };
   }
 };
-
-
-await transporter.sendMail({
-  from: `"Your Site" <${process.env.SMTP_USER}>`,
-  to: email,
-  subject: "Your form link",
-  text: `Here’s your link to submit the form: ${formUrl}?token=XYZ`
-});
