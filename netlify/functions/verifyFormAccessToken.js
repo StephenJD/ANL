@@ -1,5 +1,5 @@
 // netlify/functions/verifyFormAccessToken.js
-import { generateSecureToken } from "../generateSecureToken"; // correct relative path
+import { generateSecureToken } from "./generateSecureToken"; // correct relative path
 
 export async function handler(event) {
   try {
