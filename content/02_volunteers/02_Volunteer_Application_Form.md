@@ -8,8 +8,13 @@ geometry: margin=2cm
 geometry: a4paper
 summary: "To be completed by all staff and volunteers of ANL"
 ---
+{{< rawhtml >}}
 
-<form action="https://getform.io/f/apjzldwa" method="POST" enctype="multipart/form-data">
+<form 
+  name="volunteer-Application"
+  class="verified-form"
+  netlify
+>
 
 # Volunteer Application Form
 
@@ -171,3 +176,5 @@ summary: "To be completed by all staff and volunteers of ANL"
 <button type="submit">Submit Application</button>
 
 </form>
+
+{{< /rawhtml >}}

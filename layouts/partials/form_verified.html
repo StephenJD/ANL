@@ -1,6 +1,6 @@
 <!-- partials/form_verified.html -->
 <div class="form-request-box">
-  <p>Enter your email to enable the form: v20</p>
+  <p>Enter your email to enable the form:</p>
   <input type="email" class="request-email" placeholder="Your email" required>
   <button type="button" class="request-token-btn">Request Link</button>
 </div>
@@ -14,7 +14,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const btn = requestBox.querySelector('.request-token-btn');
   const emailInput = requestBox.querySelector('.request-email');
 
-  // Disable all form fields initially
   form.querySelectorAll('input, textarea, select, button[type="submit"]').forEach(el => el.disabled = true);
 
   btn.addEventListener('click', async () => {
@@ -22,16 +21,15 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!email) { alert("Enter your email first"); return; }
 
     try {
-      const resp = await fetch("/.netlify/functions/generateToken", {
+      const resp = await fetch("/.netlify/functions/sendFormAccessLink", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email,
-          formPath: window.location.pathname,  // path of the current form
-          origin: window.location.origin       // site root for full URL
+          formPath: window.location.pathname,
+          origin: window.location.origin
         })
       });
-
       const data = await resp.json();
       if (data.success) {
         alert("Check your email for the link.");
@@ -44,9 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 });
-</script>
 
-<script>
 document.addEventListener('DOMContentLoaded', async () => {
   const form = document.querySelector('form.verified-form');
   const requestBox = document.querySelector('.form-request-box');
@@ -61,29 +57,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.log("Email from URL:", email);
 
     try {
-      const resp = await fetch("/.netlify/functions/verifyToken", {
+      const resp = await fetch("/.netlify/functions/validateFormAccessToken", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token, email })
       });
-
       const data = await resp.json();
-      console.log("verifyToken response JSON:", JSON.stringify(data, null, 2));
+      console.log("Token validation response JSON:", JSON.stringify(data));
 
       if (data.valid) {
-        console.log("Token is valid, enabling form...");
-        // Enable form fields
         form.querySelectorAll('input, textarea, select, button[type="submit"]').forEach(el => el.disabled = false);
-        // Optionally hide request box
         if (requestBox) requestBox.style.display = 'none';
+        console.log("Token is valid, enabling form...");
       } else {
-        console.warn("Invalid token, form remains disabled");
+        console.log("Invalid token, form remains disabled");
       }
     } catch (err) {
       console.error("Error verifying token:", err);
     }
-  } else {
-    console.log("No token/email in URL, form remains disabled");
   }
 });
 </script>
