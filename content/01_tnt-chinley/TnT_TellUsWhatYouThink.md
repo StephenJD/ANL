@@ -1,102 +1,100 @@
 ---
 title: "Feedback"
-headless: true  # This file represents a page section.
-type: document
-geometry: margin=2cm
-geometry: a4paper
-share: true
-summary: Tell us what you think...
-weight: 30
+summary: "Tell us what you think..."
+last_reviewed: 2025-09-28
+review_period: 1y
+reviewed_by: Cheryl Cross
+type: form
 ---
-
 
 <form 
   name="{{ .Title | urlize }}" 
   class="verified-form"
   netlify
 >
-	<hr>
-	<h1>TnT - Tell us what you think</h2>
-	<input type="hidden" name="_gotcha" style="display:none !important">
-	<h2>TnT is provided as a safe place for seconary school children to chill and chat.</h2>
-	<p>Please select:</p>
-	<div class="radioCols">
-		<input type="radio" name="Idea" value="Good Idea" >    
-		<label for="GoodIdea"> I think that is a good idea </label><br>
-		<input type="radio" name="Idea" value="Bad Idea" >    
-		<label for="BadIdea"> I don't think it is needed in Chinley </label><br>
-		<label for="Idea Other"> Other comments about the idea: </label><br>
-		<textarea rows="1" class="textMsg" type="text" name="Idea Other" value="" >
-		</textarea>
-	</div>
-	
-	<h2>TnT  meets in the Parish room opposite the shops in Chinley</h2>
-	<p>Please tick:</p>
-	<div class="checkCols">
-		<input type="checkbox" name="Convenient" value="yes" >
-		<label for="Convenient"> The location is convenient </label><br>
-		<input type="checkbox" name="Small" value="yes" >    
-		<label for="Small"> The room is too small </label><br>
-		<input type="checkbox" name="Uninviting" value="yes" >    
-		<label for="Uninviting"> The room is not very inviting </label><br>
-		<input type="checkbox" name="CommunityCentre" value="yes" >    
-		<label for="CommunityCentre"> Prefer to meet at the Community Centre </label><br>
-		<label for="Location other"> Other comments about the location: </label><br>
-		<textarea rows="2" class="textMsg" type="text" name="Location other" value="" >
-		</textarea>
-	</div>
-	
-	<h2>TnT  meets after school on Fridays</h2>
-	<div class="textCols">
-		<label for="Day">I prefer a different day: When? </label>
-		<input class="textBox" type="text" name="Day" value="" ><br>
-		<label for="Time">I prefer a different time: When?</label>
-		<input class="textBox" type="text" name="Time" value="" ><br>
-		<label for="Day/Time other"> Other comments about the day or time: </label><br>
-		<textarea rows="1" class="textMsg" type="text" name="Day/Time other" value="" >
-		</textarea>
-	</div>
+  <input type="hidden" name="_gotcha" style="display:none !important">
 
-	<h2>TnT  offers hot and cold drinks and buttered toast</h2>
-	<div class="checkCols">
-		<input type="checkbox" name="Takeaway" value="yes" >    
-		<label for="Takeaway"> I would like takeaway drinks </label><br>
-		<input type="checkbox" name="Toast" value="yes" >    
-		<label for="Toast">I like toast</label><br>
-		<input type="checkbox" name="Crumpets" value="yes" >    
-		<label for="Crumpets">I would like crumpets</label><br>
-		<input type="checkbox" name="Waffles" value="yes" >    
-		<label for="Waffles">I would like waffles</label><br>
-		<label for="Snacks Other"> Other comments about the snacks/drinks: </label><br>
-		<textarea rows="1" class="textMsg" type="text" name="Snacks Other" value="" >
-		</textarea>
-	</div>
-	
-	<h2>TnT offers various activities</h2>
-	<div class="checkCols">
-		<input type="checkbox" name="Card games" value="yes" >    
-		<label for="Card games"> I like card games </label><br>
-		<input type="checkbox" name="Boardgames" value="yes" >    
-		<label for="Boardgames">I would like board games</label><br>
-		<input type="checkbox" name="Music" value="yes" >    
-		<label for="Music"> I would like music </label><br>
-		<input type="checkbox" name="Homework" value="yes" >    
-		<label for="Homework"> I would like space to do homework </label><br>
-		<input type="checkbox" name="SmartPhone" value="yes" >    
-		<label for="SmartPhone">I would like to play on my phone</label><br>
-		<input type="checkbox" name="chat-friends" value="yes" >    
-		<label for="chat-friends">I like to chat with my friends</label><br>
-		<input type="checkbox" name="chat-adult" value="yes" >    
-		<label for="chat-adult">I like to chat with a friendly adult</label><br>
-		<label for="Activity Other"> Other comments about activities: </label><br>
-		<textarea rows="4" class="textMsg" type="text" name="Activity Other" value="" >
-		</textarea>
-	</div>
-	<br>
-	<label for="firstName"> First Name (required): </label><br>
-	<input class="textBox" type="text" id="firstName" name="Name" required><br>
-	<br>
-	<button type="submit">Send</button> 
+  <hr>
+  <h1>TnT - Tell us what you think</h1>
 
+  <h2>TnT is provided as a safe place for secondary school children to chill and chat.</h2>
+  <p>Please select:</p>
+
+  <fieldset>
+    <legend>Your opinion on the idea</legend>
+    <div class="radio-group">
+      <label><input type="radio" name="Idea" value="Good Idea"> I think that is a good idea</label>
+      <label><input type="radio" name="Idea" value="Bad Idea"> I don't think it is needed in Chinley</label>
+    </div>
+    <label for="idea_other">Other comments about the idea:</label>
+    <textarea id="idea_other" name="Idea_Other" rows="2"></textarea>
+  </fieldset>
+
+  <h2>TnT meets in the Parish Room opposite the shops in Chinley</h2>
+  <p>Please tick:</p>
+
+  <fieldset>
+    <legend>Location feedback</legend>
+    <div class="checkbox-group">
+      <label class="checkbox-inline"><input type="checkbox" name="Convenient" value="yes"> The location is convenient</label>
+      <label class="checkbox-inline"><input type="checkbox" name="Small" value="yes"> The room is too small</label>
+      <label class="checkbox-inline"><input type="checkbox" name="Uninviting" value="yes"> The room is not very inviting</label>
+      <label class="checkbox-inline"><input type="checkbox" name="CommunityCentre" value="yes"> Prefer to meet at the Community Centre</label>
+    </div>
+    <label for="location_other">Other comments about the location:</label>
+    <textarea id="location_other" name="Location_Other" rows="2"></textarea>
+  </fieldset>
+
+  <h2>TnT meets after school on Fridays</h2>
+
+  <fieldset>
+    <legend>Timing feedback</legend>
+    <label for="day_preference">I prefer a different day: When?</label>
+    <input id="day_preference" name="Day" type="text" class="short-input">
+
+    <label for="time_preference">I prefer a different time: When?</label>
+    <input id="time_preference" name="Time" type="text" class="short-input">
+
+    <label for="daytime_other">Other comments about the day or time:</label>
+    <textarea id="daytime_other" name="DayTime_Other" rows="2"></textarea>
+  </fieldset>
+
+  <h2>TnT offers hot and cold drinks and buttered toast</h2>
+
+  <fieldset>
+    <legend>Snacks and drinks feedback</legend>
+    <div class="checkbox-group">
+      <label class="checkbox-inline"><input type="checkbox" name="Takeaway" value="yes"> I would like takeaway drinks</label>
+      <label class="checkbox-inline"><input type="checkbox" name="Toast" value="yes"> I like toast</label>
+      <label class="checkbox-inline"><input type="checkbox" name="Crumpets" value="yes"> I would like crumpets</label>
+      <label class="checkbox-inline"><input type="checkbox" name="Waffles" value="yes"> I would like waffles</label>
+    </div>
+    <label for="snacks_other">Other comments about the snacks/drinks:</label>
+    <textarea id="snacks_other" name="Snacks_Other" rows="2"></textarea>
+  </fieldset>
+
+  <h2>TnT offers various activities</h2>
+
+  <fieldset>
+    <legend>Activity preferences</legend>
+    <div class="checkbox-group">
+      <label class="checkbox-inline"><input type="checkbox" name="Card_Games" value="yes"> I like card games</label>
+      <label class="checkbox-inline"><input type="checkbox" name="Boardgames" value="yes"> I would like board games</label>
+      <label class="checkbox-inline"><input type="checkbox" name="Music" value="yes"> I would like music</label>
+      <label class="checkbox-inline"><input type="checkbox" name="Homework" value="yes"> I would like space to do homework</label>
+      <label class="checkbox-inline"><input type="checkbox" name="SmartPhone" value="yes"> I would like to play on my phone</label>
+      <label class="checkbox-inline"><input type="checkbox" name="Chat_Friends" value="yes"> I like to chat with my friends</label>
+      <label class="checkbox-inline"><input type="checkbox" name="Chat_Adult" value="yes"> I like to chat with a friendly adult</label>
+    </div>
+    <label for="activity_other">Other comments about activities:</label>
+    <textarea id="activity_other" name="Activity_Other" rows="4"></textarea>
+  </fieldset>
+
+  <fieldset required>
+    <legend>Your details</legend>
+    <label for="firstName" class="required">First Name</label>
+    <input id="firstName" name="Name" type="text" class="short-input" required>
+  </fieldset>
+
+  <button type="submit">Send</button>
 </form>
-</div>

@@ -1,14 +1,10 @@
 ---
 title: "TnT Consent Form"
-type: form
+summary: Parental Consent for TnT
 last_reviewed: 2025-09-20
 review_period: 1m
 reviewed_by: Cheryl Cross
-geometry: margin=2cm
-geometry: a4paper
-share: true
-summary: Parental Consent for TnT
-weight: 40
+type: form
 ---
 
 <form 

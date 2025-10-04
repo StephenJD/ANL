@@ -1,12 +1,10 @@
 ---
 title: "Volunteer Application Form"
-type: form
+summary: "To be completed by all staff and volunteers of ANL"
 last_reviewed: 2025-09-28
 review_period: 1y
 reviewed_by: Cheryl Cross
-geometry: margin=2cm
-geometry: a4paper
-summary: "To be completed by all staff and volunteers of ANL"
+type: form
 ---
 
 <form 

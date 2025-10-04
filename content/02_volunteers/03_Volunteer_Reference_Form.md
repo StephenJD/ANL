@@ -1,23 +1,20 @@
 ---
 title: "Volunteer Reference Form"
-type: form
+summary: Reference form for volunteers working with children or vulnerable adults
 last_reviewed: 2025-09-28
 review_period: 1y
 reviewed_by: Cheryl Cross
-geometry: margin=2cm
-geometry: a4paper
-share: true
-summary: Reference form for volunteers working with children or vulnerable adults
+type: form
 ---
 
 <form 
-  name="{{ .Title | urlize }}" 
+  name="volunteer-reference-form" 
   class="verified-form"
   netlify
 >
   <input type="hidden" name="form-name" value="volunteer-reference">
   
-  <!-- Honeypot field (hidden from users, used to block bots) -->
+  <!-- Honeypot field -->
   <p style="display:none">
     <label>Don’t fill this out: <input name="bot-field"></label>
   </p>
@@ -26,26 +23,30 @@ summary: Reference form for volunteers working with children or vulnerable adult
 
   <h2>Referee and Volunteer Details</h2>
   <div class="textCols">
-    <label>Name and address of referee:</label>
-    <input class="short-input" type="text" name="referee_name_address" required>
+    <label for="referee_name_address" class="required">Name and address of referee:</label>
+    <input class="short-input" type="text" id="referee_name_address" name="referee_name_address" required>
 
-    <label>Name and address of volunteer requesting reference:</label>
-    <input class="short-input" type="text" name="volunteer_name_address" required>
-
+    <label for="volunteer_name_address" class="required">Name and address of volunteer requesting reference:</label>
+    <input class="short-input" type="text" id="volunteer_name_address" name="volunteer_name_address" required>
   </div>
 
   <h2>Applicant Information</h2>
+
   <p>Dear</p>
-
   <p><strong>Request for reference for a voluntary worker with children or vulnerable adults</strong></p>
-
   <p>Re:</p>
-
   <p><strong>Post applicant applying for:</strong> Director, Prayer Room Leader or Helper for Adults, Prayer Room Leader or Helper for Young People</p>
 
-  <p>The above person has given your name as someone who may be contacted in relation to their application for the above role, which may involve working with children or vulnerable adults (i.e. adults experiencing, or at risk of, abuse or neglect).</p>
+  <p>
+    The above person has given your name as someone who may be contacted in relation to their application for the above role, 
+    which may involve working with children or vulnerable adults (i.e. adults experiencing, or at risk of, abuse or neglect).
+  </p>
 
-  <p>Guidelines suggest that all voluntary organisations must take steps to safeguard the children or vulnerable adults entrusted to their care. I would be grateful if you could comment on the following factors, in confidence, as they apply to the applicant:</p>
+  <p>
+    Guidelines suggest that all voluntary organisations must take steps to safeguard the children or vulnerable adults entrusted to their care. 
+    I would be grateful if you could comment on the following factors, in confidence, as they apply to the applicant:
+  </p>
+
   <ul>
     <li>Previous experience of working with children or vulnerable adults</li>
     <li>Their ability to provide kind and consistent care</li>
@@ -62,51 +63,49 @@ summary: Reference form for volunteers working with children or vulnerable adult
 
   <h2>Reference Details</h2>
   <div class="textCols">
-    <label>Applicant’s Name:</label>
-    <input class="short-input" type="text" name="applicant_name" required>
+    <label for="applicant_name" class="required">Applicant’s Name:</label>
+    <input class="short-input" type="text" id="applicant_name" name="applicant_name" required>
 
-    <label>How long have you known the applicant? (years)</label>
-    <input class="short-input" type="number" name="years_known" min="0" required>
+    <label for="years_known" class="required">How long have you known the applicant? (years)</label>
+    <input class="short-input" type="number" id="years_known" name="years_known" min="0" required>
 
-    <label>In what capacity have you known the volunteer?</label>
-    <textarea name="capacity_known" rows="2" required></textarea>
+    <label for="capacity_known" class="required">In what capacity have you known the volunteer?</label>
+    <textarea id="capacity_known" name="capacity_known" rows="2" required></textarea>
 
-    <label>Please share what you know about their previous experience of working with children or vulnerable adults:</label>
-    <textarea name="experience" rows="3" required></textarea>
+    <label for="experience" class="required">Please share what you know about their previous experience of working with children or vulnerable adults:</label>
+    <textarea id="experience" name="experience" rows="3" required></textarea>
 
-    <label>Please share about their ability to provide kind, consistent and safe care:</label>
-    <textarea name="care_ability" rows="3" required></textarea>
+    <label for="care_ability" class="required">Please share about their ability to provide kind, consistent and safe care:</label>
+    <textarea id="care_ability" name="care_ability" rows="3" required></textarea>
 
-    <label>Evidence of their willingness to respect the background and culture of children or vulnerable adults in their care:</label>
-    <textarea name="respect_culture" rows="3" required></textarea>
+    <label for="respect_culture" class="required">Evidence of their willingness to respect the background and culture of children or vulnerable adults in their care:</label>
+    <textarea id="respect_culture" name="respect_culture" rows="3" required></textarea>
 
-    <label>Their commitment to treat all children or vulnerable adults as individuals and with equal concern:</label>
-    <textarea name="equal_concern" rows="3" required></textarea>
+    <label for="equal_concern" class="required">Their commitment to treat all children or vulnerable adults as individuals and with equal concern:</label>
+    <textarea id="equal_concern" name="equal_concern" rows="3" required></textarea>
 
-    <label>Their character qualities:</label>
-    <textarea name="character_qualities" rows="3"></textarea>
+    <label for="character_qualities">Their character qualities:</label>
+    <textarea id="character_qualities" name="character_qualities" rows="3"></textarea>
 
-    <label>Their Christian commitment and experience:</label>
-    <textarea name="christian_commitment" rows="3"></textarea>
+    <label for="christian_commitment">Their Christian commitment and experience:</label>
+    <textarea id="christian_commitment" name="christian_commitment" rows="3"></textarea>
 
-    <label>Are there any other comments you would like to make about the volunteer?</label>
-    <textarea name="other_comments" rows="3"></textarea>
+    <label for="other_comments">Are there any other comments you would like to make about the volunteer?</label>
+    <textarea id="other_comments" name="other_comments" rows="3"></textarea>
 
-    <label>Any health-related comments which would affect their work with children/young people?</label>
-    <textarea name="health_comments" rows="2"></textarea>
+    <label for="health_comments">Any health-related comments which would affect their work with children/young people?</label>
+    <textarea id="health_comments" name="health_comments" rows="2"></textarea>
 
-    <label>Any reservations you have, or any limitations we should bear in mind?</label>
-    <textarea name="limitations" rows="2"></textarea>
+    <label for="limitations">Any reservations you have, or any limitations we should bear in mind?</label>
+    <textarea id="limitations" name="limitations" rows="2"></textarea>
 
     <fieldset>
       <legend>Signature</legend>
 
-      <label class="checkbox-inline required">
-        Signed:
-        <input type="text" id="RefereeName" name="referee_name" class="short-input" required>
-      </label>
+      <label for="RefereeName" class="required">Signed:</label>
+      <input type="text" id="RefereeName" name="referee_name" class="short-input" required>
 
-      <label for="RefereeDate" class="required">Date</label>
+      <label for="RefereeDate" class="required">Date:</label>
       <input type="date" id="RefereeDate" name="referee_date" class="short-input autofill-today" required>
 
       <label class="checkbox-inline required">
@@ -114,13 +113,7 @@ summary: Reference form for volunteers working with children or vulnerable adult
         I confirm that typing my name above acts as my electronic signature.
       </label>
     </fieldset>
-
-    <script>
-      document.getElementById('RefereeDate').valueAsDate = new Date();
-    </script>
   </div>
 
-  <br><br>
   <button type="submit">Send</button>
 </form>
-

@@ -45,12 +45,25 @@ exports.handler = async (event) => {
       },
     });
 
-    await transporter.sendMail({
-      from: `"Ascend Next Level" <${process.env.SMTP_USER}>`,
-      to: email,
-      subject: "Your secure form link",
-      text: `Here’s your link to submit the form: ${link}`,
-    });
+await transporter.sendMail({
+  from: `"Ascend Next Level" <${process.env.SMTP_USER}>`,
+  to: email,
+  subject: "Your secure form link",
+  text: `Delete this email if you did not just request a Form-Link from Ascend Next Level.
+
+The link can only be used today, from this email address and only for this form.
+
+If you are not ready to complete and submit the form, you can request another link when you are ready.
+
+Form link: ${link}`,
+  html: `
+    <p>Delete this email if you did not just request a Form-Link from <strong>Ascend Next Level</strong>.</p>
+    <p>The link can only be used <strong>today</strong>, from this email address and only for this form.</p>
+    <p>If you are not ready to complete and submit the form, you can request another link when you are ready.</p>
+    <p><a href="${link}" style="display:inline-block;padding:10px 15px;background-color:#2a6df4;color:#fff;text-decoration:none;border-radius:5px;">${formName}</a></p>
+  `
+});
+
 
     return { statusCode: 200, body: JSON.stringify({ success: true }) };
   } catch (err) {

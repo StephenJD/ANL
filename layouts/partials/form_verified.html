@@ -76,7 +76,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 	  if (messageBox) messageBox.style.display = 'none'; // hides any previous error message
         console.log("Token is valid, enabling form...");
       } else {
-        messageBox.textContent = "Invalid link. It may have expired (it must be used the same day it was emailed), or it is being used with the wrong the email address, or the wrong form is attempted.";
+        messageBox.textContent = "Invalid link.\n\r It may have expired (it must be used the same day it was emailed),\n\f or it is being used with the wrong the email address,\n\r or for the wrong form.";
         console.log("Invalid token, form remains disabled");
       }
 
