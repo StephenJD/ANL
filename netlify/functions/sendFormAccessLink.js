@@ -1,6 +1,6 @@
 // netlify/functions/sendFormAccessLink.js
 const nodemailer = require("nodemailer");
-const { generateSecureToken } = require("./generateSecureToken"); // correct relative path
+const { generateSecureToken } = require("./generateSecureToken"); // CommonJS require
 
 exports.handler = async (event) => {
   if (event.httpMethod !== "POST") {
