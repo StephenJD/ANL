@@ -1,7 +1,7 @@
 // netlify/functions/verifySecureToken.js
-const { generateSecureToken } = require("./generateSecureToken"); // correct relative path
+const { generateSecureToken } = require("./generateSecureToken"); // CommonJS
 
-export async function handler(event) {
+exports.handler = async function(event) {
   try {
     const { token, site_root, formPath, email } = JSON.parse(event.body);
     if (!token || !site_root || !formPath || !email) {
@@ -11,7 +11,6 @@ export async function handler(event) {
     
     const tokenSeed = email + "|" + formPath;
     const expected = generateSecureToken(tokenSeed);
-
     const valid = token === expected;
 
     console.log(`verifySecureToken: token=${token}, expected=${expected}, valid=${valid}`);
@@ -22,4 +21,5 @@ export async function handler(event) {
     return { statusCode: 500, body: JSON.stringify({ valid: false }) };
   }
 };
+
 
