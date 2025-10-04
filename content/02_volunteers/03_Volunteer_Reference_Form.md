@@ -5,25 +5,21 @@ last_reviewed: 2025-09-28
 review_period: 1y
 reviewed_by: Cheryl Cross
 type: form
-markup:
-  goldmark:
-    renderer:
-      unsafe: true
 ---
 
 <form 
-  name="volunteer-reference-form" 
+  name="{{< getPageTitle >}}" 
   class="verified-form"
   netlify
 >
+  <h1>{{< getPageTitle >}}</h1>
+  
   <input type="hidden" name="form-name" value="volunteer-reference">
   
   <!-- Honeypot field -->
   <p style="display:none">
     <label>Don’t fill this out: <input name="bot-field"></label>
   </p>
-
-  <h1>Volunteer Reference Form</h1>
 
   <h2>Referee and Volunteer Details</h2>
   <div class="textCols">

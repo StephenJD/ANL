@@ -1,24 +1,22 @@
 ---
-title: "TnT Consent Form"
-summary: Parental Consent for TnT
+title: "TnT Parental Consent Form"
+summary: ""
 last_reviewed: 2025-09-20
 review_period: 1m
 reviewed_by: Cheryl Cross
 type: form
-markup:
-  goldmark:
-    renderer:
-      unsafe: true
 ---
 
 <form 
-  name="{{ .Title | urlize }}" 
+  name="{{< getPageTitle >}}" 
   class="verified-form"
   netlify
 >
+
+<h1>{{< getPageTitle >}}</h1>
+
 <input type="hidden" name="_gotcha" style="display:none !important">
 
-<h1>Parental Consent Form – Chinley TnT</h1>
 <p>This form should be completed by the child’s parent or other adult with delegated parental responsibility. Parental Consent Forms will be renewed annually at the start of the school year so that the data held is up to date. Please complete the consent form below to enable your child to attend the group.</p>
 
 <h2>Young Person’s Information</h2>

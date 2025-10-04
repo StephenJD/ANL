@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         body: JSON.stringify({
           email,
           formPath: window.location.pathname,
-	    formName: document.querySelector('form.verified-form').dataset.formName || document.title,
+	    formName: document.querySelector('form.verified-form').name || document.title,
           site_root: window.location.origin
         })
       });

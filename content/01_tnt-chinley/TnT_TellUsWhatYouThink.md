@@ -1,21 +1,19 @@
 ---
-title: "Feedback"
+title: "TnT-Feedback"
 summary: "Tell us what you think..."
 last_reviewed: 2025-09-28
 review_period: 1y
 reviewed_by: Cheryl Cross
 type: form
-markup:
-  goldmark:
-    renderer:
-      unsafe: true
 ---
 
 <form 
-  name="{{ .Title | urlize }}" 
+  name="{{< getPageTitle >}}" 
   class="verified-form"
   netlify
 >
+  <h1>{{< getPageTitle >}}</h1>
+
   <input type="hidden" name="_gotcha" style="display:none !important">
 
   <hr>
