@@ -7,17 +7,25 @@
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   const form = document.querySelector('form.verified-form');
   const requestBox = document.querySelector('.form-request-box');
   
   if (!form || !requestBox) return;
 
+  const messageBox = requestBox.querySelector('.token-message');
   const btn = requestBox.querySelector('.request-token-btn');
   const emailInput = requestBox.querySelector('.request-email');
 
+  // Disable form inputs initially
   form.querySelectorAll('input, textarea, select, button[type="submit"]').forEach(el => el.disabled = true);
 
+  // Autofill date fields
+  document.querySelectorAll('input[type="date"].autofill-today').forEach(input => {
+    input.valueAsDate = new Date();
+  });
+
+  // Request link button
   btn.addEventListener('click', async () => {
     const email = emailInput.value.trim();
     if (!email) { alert("Enter your email first"); return; }
@@ -29,38 +37,25 @@ document.addEventListener('DOMContentLoaded', () => {
         body: JSON.stringify({
           email,
           formPath: window.location.pathname,
+	    formName: document.querySelector('form.verified-form').dataset.formName || document.title,
           site_root: window.location.origin
         })
       });
       const data = await resp.json();
-      if (data.success) {
-        alert("Check your email for the link.");
-      } else {
-        alert("Error sending link: " + (data.error || "unknown error"));
-      }
+      alert(data.success ? "Check your email for the link." : "Error sending link: " + (data.error || "unknown error"));
     } catch (err) {
       console.error(err);
       alert("Request failed");
     }
   });
-});
 
-document.addEventListener('DOMContentLoaded', async () => {
-  const form = document.querySelector('form.verified-form');
-  const requestBox = document.querySelector('.form-request-box');
-  if (!form) return;
-  
-  const messageBox = requestBox.querySelector('.token-message');
+  // Token verification
   const params = new URLSearchParams(window.location.search);
   const token = params.get('token');
   const email = params.get('email');
-  const formPath = window.location.pathname; // <-- send formPath for validation
+  const formPath = window.location.pathname;
 
   if (token && email) {
-    console.log("Token found in URL:", token);
-    console.log("Email from URL:", email);
-    console.log("Form path:", formPath);
-
     try {
       const resp = await fetch("/.netlify/functions/verifySecureToken", {
         method: "POST",
@@ -68,29 +63,19 @@ document.addEventListener('DOMContentLoaded', async () => {
         body: JSON.stringify({ token, email, formPath })
       });
       const data = await resp.json();
-      console.log("Token validation response JSON:", JSON.stringify(data));
 
       if (data.valid) {
         form.querySelectorAll('input, textarea, select, button[type="submit"]').forEach(el => el.disabled = false);
-        if (requestBox) requestBox.style.display = 'none';
-	  if (messageBox) messageBox.style.display = 'none'; // hides any previous error message
-        console.log("Token is valid, enabling form...");
+        requestBox.style.display = 'none';
+        messageBox.style.display = 'none';
+        console.log("Token valid, form enabled.");
       } else {
-        messageBox.textContent = "Invalid link.\n\r It may have expired (it must be used the same day it was emailed),\n\f or it is being used with the wrong the email address,\n\r or for the wrong form.";
-        console.log("Invalid token, form remains disabled");
+        messageBox.textContent = "Invalid link. It may have expired, or is for the wrong email/form.";
       }
-
     } catch (err) {
       console.error("Error verifying token:", err);
     }
   }
 });
-</script>
 
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-  document.querySelectorAll('input[type="date"].autofill-today').forEach(input => {
-    input.valueAsDate = new Date();
-  });
-});
 </script>

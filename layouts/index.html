@@ -8,12 +8,6 @@
     ⚠️ DEBUG: No home bundle found.<br>
     site.Params.home = {{ site.Params.home }}
   </div>
-{{ else }}
-  <div style="border:3px solid green; padding:1rem; text-align:center;">
-    ✅ DEBUG: Home bundle found. v33<br>
-    site.Params.home = {{ site.Params.home }}<br>
-    $homeBundle.Path = {{ $homeBundle.Path }}
-  </div>
 {{ end }}
 
 {{ if $showDebug }}
