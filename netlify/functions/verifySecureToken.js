@@ -13,7 +13,7 @@ exports.handler = async function(event) {
       return { statusCode: 400, body: JSON.stringify({ valid: false }) };
     }
 
-    const tokenSeed = email + "|" + formPath;
+    const tokenSeed = email + formPath;
     const expected = generateSecureToken(tokenSeed);
 
     const valid = token === expected;
