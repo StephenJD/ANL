@@ -3,12 +3,15 @@
   <p>Enter your email to enable the form:</p>
   <input type="email" class="request-email" placeholder="Your email" required>
   <button type="button" class="request-token-btn">Request Link</button>
+  <div class="token-message" style="color:red;margin-top:0.5em;"></div>
 </div>
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
   const form = document.querySelector('form.verified-form');
   const requestBox = document.querySelector('.form-request-box');
+  const messageBox = requestBox.querySelector('.token-message');
+  
   if (!form || !requestBox) return;
 
   const btn = requestBox.querySelector('.request-token-btn');
@@ -70,10 +73,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (data.valid) {
         form.querySelectorAll('input, textarea, select, button[type="submit"]').forEach(el => el.disabled = false);
         if (requestBox) requestBox.style.display = 'none';
+	  if (messageBox) messageBox.style.display = 'none'; // hides any previous error message
         console.log("Token is valid, enabling form...");
       } else {
+        messageBox.textContent = "Invalid link. It may have expired (it must be used the same day it was emailed), or it is being used with the wrong the email address, or the wrong form is attempted.";
         console.log("Invalid token, form remains disabled");
       }
+
     } catch (err) {
       console.error("Error verifying token:", err);
     }

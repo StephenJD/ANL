@@ -8,7 +8,6 @@ geometry: margin=2cm
 geometry: a4paper
 summary: "To be completed by all staff and volunteers of ANL"
 ---
-{{< rawhtml >}}
 
 <form 
   name="volunteer-Application"
@@ -177,4 +176,3 @@ summary: "To be completed by all staff and volunteers of ANL"
 
 </form>
 
-{{< /rawhtml >}}Then
