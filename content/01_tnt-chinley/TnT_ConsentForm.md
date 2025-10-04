@@ -81,9 +81,9 @@ type: form
   <input class="short-input" type="text" name="Tetanus_Date" value="None">
 
   <fieldset>
-    <legend>Permission for sticking plasters</legend>
-    <label><input type="radio" name="Plaster_Permission" value="Yes" required> Yes</label>
-    <label><input type="radio" name="Plaster_Permission" value="No"> No</label>
+  <legend>Permission for sticking plasters</legend>
+  <label><input type="radio" name="Plaster_Permission" value="Yes" required> Yes</label>
+  <label><input type="radio" name="Plaster_Permission" value="No"> No</label>
   </fieldset>
 </div>
 
@@ -92,36 +92,36 @@ type: form
 <div class="textCols">
 
   <fieldset>
-    <legend>Weekly Activities Consent</legend>
-    <label class="checkbox-inline">
-      <input type="checkbox" name="Weekly_Activities_Consent" required>
-      I give permission for my child to take part in the normal weekly activities of Chinley TnT.
-    </label>
+  <legend>Weekly Activities Consent</legend>
+  <label class="checkbox-inline">
+  <input type="checkbox" name="Weekly_Activities_Consent" required>
+  I give permission for my child to take part in the normal weekly activities of Chinley TnT.
+  </label>
   </fieldset>
 
   <fieldset>
-    <legend>First Aid Consent</legend>
-    <label><input type="radio" name="FirstAid_Consent" value="Yes" required> Yes</label>
-    <label><input type="radio" name="FirstAid_Consent" value="No"> No</label>
+  <legend>First Aid Consent</legend>
+  <label><input type="radio" name="FirstAid_Consent" value="Yes" required> Yes</label>
+  <label><input type="radio" name="FirstAid_Consent" value="No"> No</label>
   </fieldset>
 
   <fieldset>
-    <legend>Emergency Medical Consent</legend>
-    <label><input type="radio" name="Medical_Consent" value="Yes" required> Yes</label>
-    <label><input type="radio" name="Medical_Consent" value="No"> No</label>
+  <legend>Emergency Medical Consent</legend>
+  <label><input type="radio" name="Medical_Consent" value="Yes" required> Yes</label>
+  <label><input type="radio" name="Medical_Consent" value="No"> No</label>
   </fieldset>
 
 <fieldset>
   <legend>Parent/Guardian Consent</legend>
 
   <label class="checkbox-inline required">
-    <input type="checkbox" name="Data_Consent" required>
-    I give explicit permission for Chinley TnT to process personal/medical data.
+  <input type="checkbox" name="Data_Consent" required>
+  I give explicit permission for Chinley TnT to process personal/medical data.
   </label>
 
   <label class="checkbox-inline required">
-    <input type="checkbox" name="Confirm_Accurate" required>
-    I confirm the information provided is accurate.
+  <input type="checkbox" name="Confirm_Accurate" required>
+  I confirm the information provided is accurate.
   </label>
 
   <label for="ParentName" class="required">Name</label>
@@ -131,8 +131,8 @@ type: form
   <input type="date" id="ParentDate" name="ParentDate" class="short-input autofill-today" required>
 
   <label class="checkbox-inline required">
-    <input type="checkbox" name="ParentSignatureConfirm" required>
-    I confirm that typing my name above acts as my electronic signature.
+  <input type="checkbox" name="ParentSignatureConfirm" required>
+  I confirm that typing my name above acts as my electronic signature.
   </label>
 </fieldset>
 
@@ -146,8 +146,8 @@ type: form
   <input type="date" id="ChildDate" name="ChildDate" class="short-input autofill-today">
 
   <label class="checkbox-inline">
-    <input type="checkbox" name="ChildSignatureConfirm">
-    I confirm that typing my name above acts as my electronic signature.
+  <input type="checkbox" name="ChildSignatureConfirm">
+  I confirm that typing my name above acts as my electronic signature.
   </label>
 </fieldset>
 
