@@ -1,7 +1,7 @@
 // netlify/functions/verifySecureToken.js
 const { generateSecureToken } = require("./generateSecureToken");
 
-export async function handler(event) {
+exports.handler = async function(event) {
   try {
     console.log("verifySecureToken: raw event.body:", event.body);
 
@@ -25,4 +25,4 @@ export async function handler(event) {
     console.error("verifySecureToken error:", err);
     return { statusCode: 500, body: JSON.stringify({ valid: false }) };
   }
-}
+};
