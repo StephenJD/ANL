@@ -51,16 +51,18 @@ document.addEventListener('DOMContentLoaded', async () => {
   const params = new URLSearchParams(window.location.search);
   const token = params.get('token');
   const email = params.get('email');
+  const formPath = window.location.pathname; // <-- send formPath for validation
 
   if (token && email) {
     console.log("Token found in URL:", token);
     console.log("Email from URL:", email);
+    console.log("Form path:", formPath);
 
     try {
       const resp = await fetch("/.netlify/functions/verifySecureToken", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, email })
+        body: JSON.stringify({ token, email, formPath })
       });
       const data = await resp.json();
       console.log("Token validation response JSON:", JSON.stringify(data));
