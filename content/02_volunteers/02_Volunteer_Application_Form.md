@@ -5,6 +5,10 @@ last_reviewed: 2025-09-28
 review_period: 1y
 reviewed_by: Cheryl Cross
 type: form
+markup:
+  goldmark:
+    renderer:
+      unsafe: true
 ---
 
 <form 

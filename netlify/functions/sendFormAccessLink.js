@@ -9,12 +9,14 @@ exports.handler = async (event) => {
 
   let email = null;
   let formPath = null;
+  let formName = null;
   let site_root = null;
 
   try {
     const data = JSON.parse(event.body);
     email = data.email;
     formPath = data.formPath;
+    formName = data.formName;
     site_root = data.site_root;
   } catch {
     return {
