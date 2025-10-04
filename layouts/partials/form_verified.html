@@ -57,7 +57,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.log("Email from URL:", email);
 
     try {
-      const resp = await fetch("/.netlify/functions/validateFormAccessToken", {
+      const resp = await fetch("/.netlify/functions/verifyFormAccessToken", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token, email })
