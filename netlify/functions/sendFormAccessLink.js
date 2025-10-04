@@ -9,13 +9,13 @@ exports.handler = async (event) => {
 
   let email = null;
   let formPath = null;
-  let origin = null;
+  let site_root = null;
 
   try {
     const data = JSON.parse(event.body);
     email = data.email;
     formPath = data.formPath;
-    origin = data.origin;
+    site_root = data.site_root;
   } catch {
     return {
       statusCode: 400,
@@ -23,17 +23,17 @@ exports.handler = async (event) => {
     };
   }
 
-  if (!email || !formPath || !origin) {
+  if (!email || !formPath || !site_root) {
     return {
       statusCode: 400,
-      body: JSON.stringify({ success: false, error: "Missing email, formPath or origin" }),
+      body: JSON.stringify({ success: false, error: "Missing email, formPath or site_root" }),
     };
   }
 
   try {
-    const token = generateSecureToken(email);
+    const token = generateSecureToken(email + formPath);
 
-    const link = `${origin}${formPath.split("?")[0]}?token=${token}&email=${encodeURIComponent(email)}`;
+    const link = `${site_root}${formPath.split("?")[0]}?token=${token}&email=${encodeURIComponent(email)}`;
 
     let transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
