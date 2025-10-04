@@ -8,22 +8,13 @@ share: true
 summary: Tell us what you think...
 weight: 30
 ---
-{{< rawhtml >}}
 
-<style type="text/css">
-<!--
-.radioCols {width:800px; padding-left: 20px; max-width:100%; box-sizing: border-box;}
-.checkCols {width:800px; padding-left: 20px; max-width:100%; box-sizing: border-box;}
-.textCols {width:800px; padding-left: 20px; max-width:100%; box-sizing: border-box; }
-.textBox {max-width:100%; box-sizing: border-box; width:200px; }
-.textMsg {max-width:100%; box-sizing: border-box; width:800px }
--->
-</style>
 
-<div style="max-width: 95%;">
-<form action="https://getform.io/f/apjzldwa" 
-      method="POST"
-      accept-charset="UTF-8">
+<form 
+  name="{{ .Title | urlize }}" 
+  class="verified-form"
+  netlify
+>
 	<hr>
 	<h1>TnT - Tell us what you think</h2>
 	<input type="hidden" name="_gotcha" style="display:none !important">
@@ -109,4 +100,3 @@ weight: 30
 
 </form>
 </div>
-{{< /rawhtml >}}

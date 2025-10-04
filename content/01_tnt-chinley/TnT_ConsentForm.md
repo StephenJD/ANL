@@ -11,7 +11,11 @@ summary: Parental Consent for TnT
 weight: 40
 ---
 
-<form action="https://getform.io/f/apjzldwa" method="POST" accept-charset="UTF-8">
+<form 
+  name="{{ .Title | urlize }}" 
+  class="verified-form"
+  netlify
+>
 <input type="hidden" name="_gotcha" style="display:none !important">
 
 <h1>Parental Consent Form – Chinley TnT</h1>
@@ -126,7 +130,7 @@ weight: 40
   <input type="text" id="ParentName" name="ParentName" class="short-input" required>
 
   <label for="ParentDate" class="required">Date</label>
-  <input type="date" id="ParentDate" name="ParentDate" class="short-input" required>
+  <input type="date" id="ParentDate" name="ParentDate" class="short-input autofill-today" required>
 
   <label class="checkbox-inline required">
     <input type="checkbox" name="ParentSignatureConfirm" required>
@@ -141,23 +145,13 @@ weight: 40
   <input type="text" id="ChildName" name="ChildName" class="short-input">
 
   <label for="ChildDate">Date</label>
-  <input type="date" id="ChildDate" name="ChildDate" class="short-input">
+  <input type="date" id="ChildDate" name="ChildDate" class="short-input autofill-today">
 
   <label class="checkbox-inline">
     <input type="checkbox" name="ChildSignatureConfirm">
     I confirm that typing my name above acts as my electronic signature.
   </label>
 </fieldset>
-
-<script>
-document.addEventListener("DOMContentLoaded", function () {
-  const today = new Date().toISOString().split("T")[0];
-  ["ParentDate", "ChildDate"].forEach(id => {
-    const el = document.getElementById(id);
-    if (el && !el.value) el.value = today;
-  });
-});
-</script>
 
 
 <br><br>

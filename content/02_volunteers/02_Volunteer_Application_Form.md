@@ -10,7 +10,7 @@ summary: "To be completed by all staff and volunteers of ANL"
 ---
 
 <form 
-  name="volunteer-Application"
+  name="{{ .Title | urlize }}" 
   class="verified-form"
   netlify
 >
@@ -158,17 +158,13 @@ summary: "To be completed by all staff and volunteers of ANL"
   </label>
 
   <label for="RefereeDate" class="required">Date</label>
-  <input type="date" id="RefereeDate" name="referee_date" class="short-input" required>
+  <input type="date" id="RefereeDate" name="referee_date" class="short-input autofill-today" required>
 
   <label class="checkbox-inline required">
     <input type="checkbox" name="RefereeSignatureConfirm" required>
     I confirm that typing my name above acts as my electronic signature.
   </label>
 </fieldset>
-
-<script>
-  document.getElementById('RefereeDate').valueAsDate = new Date();
-</script>
 
 ---
 

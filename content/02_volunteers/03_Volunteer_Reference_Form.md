@@ -9,9 +9,9 @@ geometry: a4paper
 share: true
 summary: Reference form for volunteers working with children or vulnerable adults
 ---
-{{< rawhtml >}}
+
 <form 
-  name="volunteer-reference"
+  name="{{ .Title | urlize }}" 
   class="verified-form"
   netlify
 >
@@ -32,8 +32,6 @@ summary: Reference form for volunteers working with children or vulnerable adult
     <label>Name and address of volunteer requesting reference:</label>
     <input class="short-input" type="text" name="volunteer_name_address" required>
 
-    <label>Date:</label>
-    <input type="date" name="reference_date" required>
   </div>
 
   <h2>Applicant Information</h2>
@@ -109,7 +107,7 @@ summary: Reference form for volunteers working with children or vulnerable adult
       </label>
 
       <label for="RefereeDate" class="required">Date</label>
-      <input type="date" id="RefereeDate" name="referee_date" class="short-input" required>
+      <input type="date" id="RefereeDate" name="referee_date" class="short-input autofill-today" required>
 
       <label class="checkbox-inline required">
         <input type="checkbox" name="RefereeSignatureConfirm" required>
@@ -126,14 +124,3 @@ summary: Reference form for volunteers working with children or vulnerable adult
   <button type="submit">Send</button>
 </form>
 
-<script>
-document.querySelector('form[name="volunteer-reference"]').addEventListener('submit', function(e){
-  e.preventDefault();
-  const form = e.target;
-  fetch("/", { method: "POST", body: new FormData(form) })
-    .then(() => alert("Thank you for submitting!"))
-    .catch(err => alert("Submission failed"));
-});
-</script>
-
-{{< /rawhtml >}}

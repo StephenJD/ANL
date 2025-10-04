@@ -10,7 +10,6 @@
 document.addEventListener('DOMContentLoaded', () => {
   const form = document.querySelector('form.verified-form');
   const requestBox = document.querySelector('.form-request-box');
-  const messageBox = requestBox.querySelector('.token-message');
   
   if (!form || !requestBox) return;
 
@@ -50,7 +49,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   const form = document.querySelector('form.verified-form');
   const requestBox = document.querySelector('.form-request-box');
   if (!form) return;
-
+  
+  const messageBox = requestBox.querySelector('.token-message');
   const params = new URLSearchParams(window.location.search);
   const token = params.get('token');
   const email = params.get('email');
@@ -84,5 +84,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       console.error("Error verifying token:", err);
     }
   }
+});
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('input[type="date"].autofill-today').forEach(input => {
+    input.valueAsDate = new Date();
+  });
 });
 </script>
