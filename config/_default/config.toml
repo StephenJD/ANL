@@ -20,9 +20,6 @@ copyright = "S.J.Dolley"
 [params]
   home = "00_home/index.md"
 
-[markup.goldmark.renderer]
-  unsafe = true
-  
 ############################
 ## Advanced options below ##
 ############################
