@@ -1,11 +1,13 @@
-{{ $homePage := site.GetPage site.Params.home }}
+{{/* \layouts\shortcodes\home_sibling_links.html */}}
 
+{{ $homePage := site.GetPage site.Params.home }}
 {{ $parent := $homePage.Parent }}
 
 <ul class="home-sibling-links">
   {{ if $parent }}
-    {{ range sort $parent.Pages "File.BaseFileName" }}
-      {{ if ne .File.BaseFileName "index" }}
+    {{ range sort $parent.Sections "File.Dir" }}
+      {{ $sectionFolder := path.Base (path.Clean .File.Dir) }}
+      {{ if ne $sectionFolder "" }}
         <li><a href="{{ .RelPermalink }}">{{ .Title }}</a></li>
       {{ end }}
     {{ end }}
@@ -14,12 +16,11 @@
 
 <style>
 .home-sibling-links {
-  list-style: none;        /* remove bullets */
+  list-style: none;
   padding: 0;
   margin: 0;
-  /*display: flex; */          /* horizontal layout */
-  gap: 1rem;               /* spacing between links */
-  justify-content: center; /* center on page */
+  gap: 1rem;
+  justify-content: center;
 }
 
 .home-sibling-links li {
@@ -27,8 +28,8 @@
 }
 
 .home-sibling-links a {
-  color: blue;             /* hyperlink color */
+  color: blue;
   text-decoration: underline;
-  font-size: var(--h2-font-size, 2rem); /* match H2 size */
+  font-size: var(--h2-font-size, 2rem);
 }
 </style>
