@@ -6,10 +6,9 @@
 <ul class="home-sibling-links">
   {{ if $parent }}
     {{ range sort $parent.Sections "File.Dir" }}
-      {{ $sectionFolder := path.Base (path.Clean .File.Dir) }}
-      {{ if ne $sectionFolder "" }}
-        <li><a href="{{ .RelPermalink }}">{{ .Title }}</a></li>
-      {{ end }}
+      {{ $dir := .File.Dir | path.Clean }}
+      {{ $folder := path.Base $dir }}
+      <li><a href="{{ .RelPermalink }}">{{ .Title }}</a></li>
     {{ end }}
   {{ end }}
 </ul>
