@@ -1,11 +1,17 @@
 {{/* layouts/forms/single.html */}}
-
 {{ define "main" }}
-<div class="form-container">
-  {{ partial "form_verified.html" . }}
-  {{ .Content }}
-</div>
+  <!-- Load form-specific stylesheet -->
+  <link rel="stylesheet" href="{{ "css/forms.css" | relURL }}">
+
+  <div class="form-container">
+    <h1>{{ .Title }}</h1>   <!-- Title at top -->
+    {{ partial "form_verified.html" . }}
+    {{ .Content }}
+  </div>
 {{ end }}
+
+
+
 
 
 
