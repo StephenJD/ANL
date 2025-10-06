@@ -130,7 +130,7 @@ if (form) {
         body: JSON.stringify({
           email,
           token,
-          formName: form.name || document.title,
+          formName: form.name || document.title, // use formName consistently
           formattedForm,
           site_root: window.location.origin
         })
@@ -143,9 +143,10 @@ if (form) {
         alert("Error sending email: " + (data.error || "unknown"));
       }
     } catch (err) {
-      console.error(err);
+      console.error("sendFormattedForm fetch failed:", err);
       alert("Failed to send form email.");
     }
   });
 }
 </script>
+
