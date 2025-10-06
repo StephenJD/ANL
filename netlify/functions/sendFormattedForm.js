@@ -1,25 +1,43 @@
 // netlify/functions/sendFormattedForm.js
 const nodemailer = require("nodemailer");
+const { generateSecureToken } = require("./generateSecureToken");
 
 exports.handler = async (event) => {
+  if (event.httpMethod !== "POST") {
+    return { statusCode: 405, body: "Method Not Allowed" };
+  }
+
+  let email = null;
+  let formName = null;
+  let formattedForm = null;
+  let site_root = null;
+
   try {
-    const { email, token, formName, formattedForm, site_root } = JSON.parse(event.body || "{}");
+    const data = JSON.parse(event.body);
+    email = data.email;
+    formName = data.formName;
+    formattedForm = data.formattedForm;
+    site_root = data.site_root;
+  } catch {
+    return {
+      statusCode: 400,
+      body: JSON.stringify({ success: false, error: "Invalid JSON" }),
+    };
+  }
 
-    if (!email || !formName || !formattedForm) {
-      console.error("Missing fields:", { email, formName, formattedForm: !!formattedForm });
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ success: false, error: "Missing fields" }),
-      };
-    }
+  if (!email || !formName || !formattedForm || !site_root) {
+    return {
+      statusCode: 400,
+      body: JSON.stringify({ success: false, error: "Missing email, formName, formattedForm or site_root" }),
+    };
+  }
 
-    // Log received data to confirm frontend values
-    console.log("Received from client:", { email, token, formName });
+  try {
+    // Generate final token and link
+    const finalToken = generateSecureToken(formattedForm);
+    const finalSubmitLink = `${site_root}/${encodeURIComponent(formName)}?token=${finalToken}&email=${encodeURIComponent(email)}&final=1`;
 
-    // Skip token verification for now
-    // Normally you'd verify token here, but we're isolating the mail path.
-
-    // Set up mail transport (adjust for your provider)
+    // ✅ Keep your working transport config
     let transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
       port: 587,
@@ -30,28 +48,34 @@ exports.handler = async (event) => {
       },
     });
 
-
-    const info = await transporter.sendMail({
-      from: process.env.MAIL_FROM || process.env.SMTP_USER,
+    await transporter.sendMail({
+      from: `"Ascend Next Level" <${process.env.SMTP_USER}>`,
       to: email,
-      subject: `Form submission: ${formName}`,
+      subject: `Your completed ${formName} form (Review & Final Submit)`,
+      text: `Here is a copy of your completed ${formName} form.
+
+If everything looks correct, click the link below to complete submission:
+${finalSubmitLink}
+
+----------------------------------
+${formattedForm}
+`,
       html: `
-        <p>This is your formatted form from <strong>${site_root}</strong>:</p>
-        <hr>${formattedForm}
+        <p>Here is a copy of your completed <strong>${formName}</strong> form.</p>
+        <p>If everything looks correct, click below to complete your submission:</p>
+        <p>
+          <a href="${finalSubmitLink}" style="display:inline-block;padding:10px 15px;background-color:#2a6df4;color:#fff;text-decoration:none;border-radius:5px;">
+            Final Submit
+          </a>
+        </p>
+        <hr>
+        <pre style="white-space:pre-wrap;">${formattedForm}</pre>
       `,
     });
 
-    console.log("Mail sent:", info.messageId);
-
-    return {
-      statusCode: 200,
-      body: JSON.stringify({ success: true }),
-    };
+    return { statusCode: 200, body: JSON.stringify({ success: true }) };
   } catch (err) {
-    console.error("sendFormattedForm error:", err);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ success: false, error: err.message }),
-    };
+    console.error("Error sending email:", err);
+    return { statusCode: 500, body: JSON.stringify({ success: false, error: "Error sending email" }) };
   }
 };
