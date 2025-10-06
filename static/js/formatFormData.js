@@ -9,26 +9,28 @@ export function formatFormData(form) {
     const legend = fs.querySelector('legend')?.innerText.trim();
     if (legend) fieldsetLines.push(`<strong>${legend}</strong>`);
 
-    // Process all labels in the fieldset
-    fs.querySelectorAll('label').forEach(label => {
-      const input = label.querySelector('input, textarea');
-      if (!input) return;
+    // Process all inputs and textareas
+    fs.querySelectorAll('input, textarea').forEach(input => {
+      let labelText = '';
 
-      let line = label.textContent.trim();
+      // Try to get label text
+      const label = fs.querySelector(`label[for="${input.id}"]`);
+      if (label) labelText = label.textContent.trim();
+      else if (input.closest('label')) labelText = input.closest('label').textContent.trim();
+      else labelText = input.name || '';
+
+      let line = labelText;
 
       if (input.type === 'checkbox' || input.type === 'radio') {
-        // Checked = normal text, unchecked = strikethrough
         line = input.checked ? line : `<s>${line}</s>`;
-      } else if (['text', 'email', 'number', 'date'].includes(input.type) || input.tagName === 'TEXTAREA') {
+      } else {
         line += `: ${input.value || ''}`;
       }
 
       fieldsetLines.push(line);
     });
 
-    if (fieldsetLines.length) {
-      output.push(...fieldsetLines, '<br>'); // spacing between fieldsets
-    }
+    if (fieldsetLines.length) output.push(...fieldsetLines, '<br>');
   });
 
   return output.join('<br>');

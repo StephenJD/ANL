@@ -1,5 +1,6 @@
 // netlify/functions/sendFormattedForm.js
 const nodemailer = require("nodemailer");
+const { generateSecureToken } = require("./generateSecureToken");
 
 console.log("sendFormattedForm file loaded");
 try {
@@ -26,6 +27,8 @@ exports.handler = async (event) => {
     formattedForm = data.formattedForm;
     site_root = data.site_root;
 
+    const finalToken = generateSecureToken(formattedForm);
+
     console.log("Parsed request body:", { email, formName, site_root });
   } catch (err) {
     console.error("Invalid JSON in request body:", err);
@@ -38,8 +41,7 @@ exports.handler = async (event) => {
   }
 
   try {
-    const link = `${site_root}/${formName}`;
-    console.log("Email link to include:", link);
+    const finalSubmitLink = `${site_root}/${formName}?token=${finalToken}&email=${encodeURIComponent(email)}&formName=${formName}`;
 
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
@@ -54,9 +56,12 @@ exports.handler = async (event) => {
       to: email,
       subject: `Your ${formName} submission`,
       html: `
-        <p>Here is your submitted form. You can edit and submit it using the link below:</p>
-        <pre>${formattedForm}</pre>
-        <p><a href="${link}" style="display:inline-block;padding:10px 15px;background-color:#2a6df4;color:#fff;text-decoration:none;border-radius:5px;">Edit and Submit</a></p>
+         <p>Check your form, then click Final Submit to complete submission:</p>
+         <a href="${finalSubmitLink}" 
+            style="display:inline-block;padding:10px 15px;background-color:#2a6df4;color:#fff;text-decoration:none;border-radius:5px;">
+            Final Submit
+         </a>
+         <div>${formattedForm}</div>
       `,
     });
     console.log("Email sent successfully to:", email);
