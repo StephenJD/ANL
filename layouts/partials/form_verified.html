@@ -6,22 +6,6 @@
   <div class="token-message" style="color:red;margin-top:0.5em;"></div>
 </div>
 
-<form class="verified-form" name="Test Form">
-  <fieldset>
-    <legend>Your opinion</legend>
-    <label><input type="radio" name="Idea" value="Good Idea"> Good Idea</label>
-    <label><input type="radio" name="Idea" value="Bad Idea"> Bad Idea</label>
-    <label for="idea_other">Other:</label>
-    <textarea id="idea_other" name="Idea_Other"></textarea>
-  </fieldset>
-  <fieldset>
-    <legend>Details</legend>
-    <label for="firstName">First Name</label>
-    <input type="text" id="firstName" name="Name" required>
-  </fieldset>
-  <button type="submit">Submit</button>
-</form>
-
 <script>
 document.addEventListener('DOMContentLoaded', async () => {
   const form = document.querySelector('form.verified-form');
