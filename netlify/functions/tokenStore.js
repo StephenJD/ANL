@@ -1,50 +1,62 @@
 // netlify/functions/tokenStore.js
-const fs = require("fs");
-const path = require("path");
+const fetch = require('node-fetch'); // Ensure node-fetch is installed
 
-const FILE_PATH = path.join(__dirname, "finalForms.json");
+const BIN_ID = '68e43a3343b1c97be95cd728 '; // Replace with your actual bin ID
+const API_KEY = '$2a$10$YwW//q5MO8157tszJVX53.pQXPzZn50nL6dmi4dWGEt56nmwFl4PS'; // Replace with your actual master key
 const TTL_MS = 10 * 60 * 1000; // 10 minutes
 
-function readStore() {
-  try {
-    const data = fs.readFileSync(FILE_PATH, "utf8");
-    return JSON.parse(data);
-  } catch {
-    return {}; // empty store if file doesn't exist
+// Helper function to make API requests
+const apiRequest = async (method, url, body = null) => {
+  const options = {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Master-Key': API_KEY,
+    },
+    body: body ? JSON.stringify(body) : null,
+  };
+  const response = await fetch(url, options);
+  if (!response.ok) {
+    throw new Error(`API request failed: ${response.statusText}`);
   }
-}
+  return response.json();
+};
 
-function writeStore(store) {
-  fs.writeFileSync(FILE_PATH, JSON.stringify(store), "utf8");
-}
-
-// Clean up expired entries
-function cleanup(store) {
-  const now = Date.now();
-  for (const token in store) {
-    if (store[token].expires < now) delete store[token];
-  }
-}
-
-// Store a form
-function storeFinalForm(token, formattedForm) {
-  const store = readStore();
+// Store form data in JSONBin
+const storeFinalForm = async (token, formattedForm) => {
+  const store = await readStore();
   store[token] = { data: formattedForm, expires: Date.now() + TTL_MS };
-  cleanup(store);
-  writeStore(store);
-}
+  await writeStore(store);
+};
 
-// Retrieve a form
-function retrieveFinalForm(token) {
-  const store = readStore();
+// Retrieve form data from JSONBin
+const retrieveFinalForm = async (token) => {
+  const store = await readStore();
   const entry = store[token];
-  if (!entry) return null;
-  if (Date.now() > entry.expires) {
-    delete store[token];
-    writeStore(store);
+  if (!entry || Date.now() > entry.expires) {
     return null;
   }
   return entry.data;
-}
+};
+
+// Read the current store from JSONBin
+const readStore = async () => {
+  try {
+    const data = await apiRequest('GET', `https://api.jsonbin.io/v3/b/${BIN_ID}`);
+    return data.record || {};
+  } catch (error) {
+    console.error('Error reading store:', error);
+    return {};
+  }
+};
+
+// Write the updated store to JSONBin
+const writeStore = async (store) => {
+  try {
+    await apiRequest('PUT', `https://api.jsonbin.io/v3/b/${BIN_ID}`, { record: store });
+  } catch (error) {
+    console.error('Error writing store:', error);
+  }
+};
 
 module.exports = { storeFinalForm, retrieveFinalForm };
