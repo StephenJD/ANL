@@ -48,33 +48,52 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
-  // Token verification
+  // Token verification (handles two flows: initial enable-link and final-submit link)
   const params = new URLSearchParams(window.location.search);
   const token = params.get('token');
   const email = params.get('email');
   const formPath = window.location.pathname;
+  const isFinal = params.get('final') === '1' || params.get('final') === 'true';
 
   if (token && email) {
-    try {
-      const resp = await fetch("/.netlify/functions/verifyToken_ClientWrapper", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, email, formPath })
+    if (!isFinal) {
+      // --- ORIGINAL initial enable flow (no change) ---
+      try {
+        const resp = await fetch("/.netlify/functions/verifyToken_ClientWrapper", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token, email, formPath })
+        });
+        const data = await resp.json();
+
+        if (data.valid) {
+          form.querySelectorAll('input, textarea, select, button[type="submit"]').forEach(el => el.disabled = false);
+          requestBox.style.display = 'none';
+          messageBox.style.display = 'none';
+          console.log("Token valid, form enabled.");
+        } else {
+          messageBox.textContent = "Invalid link. It may have expired, or is for the wrong email/form.";
+        }
+      } catch (err) {
+        console.error("Error verifying token:", err);
+      }
+    } else {
+      // --- FINAL link flow: verify token against the formatted form content ---
+      const resp = await fetch('/.netlify/functions/verifyFinalToken', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token })
       });
       const data = await resp.json();
-
       if (data.valid) {
-        form.querySelectorAll('input, textarea, select, button[type="submit"]').forEach(el => el.disabled = false);
-        requestBox.style.display = 'none';
-        messageBox.style.display = 'none';
-        console.log("Token valid, form enabled.");
+        console.log("Final token valid — proceed with submission.");
+        // enable final submission / auto-submit etc.
       } else {
-        messageBox.textContent = "Invalid link. It may have expired, or is for the wrong email/form.";
+        messageBox.textContent = "Final link expired or invalid.";
       }
-    } catch (err) {
-      console.error("Error verifying token:", err);
     }
   }
+
 
   // Inline-fit layout (optional)
   function updateInlineFit() {
