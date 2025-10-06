@@ -1,6 +1,7 @@
 // netlify/functions/sendFormattedForm.js
 const nodemailer = require("nodemailer");
-const { verifySecureToken } = require("./verifySecureToken"); // adjust path if needed
+const verifySecureToken = require("./verifySecureToken");
+
 
 exports.handler = async (event) => {
   console.log("sendFormattedForm invoked. HTTP method:", event.httpMethod);
