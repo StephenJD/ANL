@@ -1,74 +1,56 @@
 // netlify/functions/sendFormattedForm.js
 const nodemailer = require("nodemailer");
-const { generateSecureToken } = require("./generateSecureToken");
-
-console.log("sendFormattedForm file loaded");
-try {
-  console.log("Nodemailer import succeeded");
-} catch (err) {
-  console.error("Nodemailer import failed:", err);
-}
 
 exports.handler = async (event) => {
-  console.log("sendFormattedForm handler invoked");
-  console.log("HTTP method:", event.httpMethod);
-  console.log("Raw event.body:", event.body);
-
-  if (event.httpMethod !== "POST") {
-    return { statusCode: 405, body: "Method Not Allowed" };
-  }
-
-  let email, formName, formattedForm, site_root;
-
   try {
-    const data = JSON.parse(event.body);
-    email = data.email;
-    formName = data.formName;
-    formattedForm = data.formattedForm;
-    site_root = data.site_root;
+    const { email, token, formName, formattedForm, site_root } = JSON.parse(event.body || "{}");
 
-    const finalToken = generateSecureToken(formattedForm);
+    if (!email || !formName || !formattedForm) {
+      console.error("Missing fields:", { email, formName, formattedForm: !!formattedForm });
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ success: false, error: "Missing fields" }),
+      };
+    }
 
-    console.log("Parsed request body:", { email, formName, site_root });
-  } catch (err) {
-    console.error("Invalid JSON in request body:", err);
-    return { statusCode: 400, body: JSON.stringify({ success: false, error: "Invalid JSON" }) };
-  }
+    // Log received data to confirm frontend values
+    console.log("Received from client:", { email, token, formName });
 
-  if (!email || !formattedForm || !site_root) {
-    console.warn("Missing required fields:", { email, formattedForm, site_root });
-    return { statusCode: 400, body: JSON.stringify({ success: false, error: "Missing required fields" }) };
-  }
+    // Skip token verification for now
+    // Normally you'd verify token here, but we're isolating the mail path.
 
-  try {
-    const finalSubmitLink = `${site_root}/${formName}?token=${finalToken}&email=${encodeURIComponent(email)}&formName=${formName}`;
-
+    // Set up mail transport (adjust for your provider)
     const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
+      host: "smtp.yourmailhost.com",
       port: 587,
       secure: false,
-      auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
     });
 
-    console.log("Sending email to:", email);
-    await transporter.sendMail({
-      from: `"Ascend Next Level" <${process.env.SMTP_USER}>`,
+    const info = await transporter.sendMail({
+      from: process.env.MAIL_FROM || process.env.SMTP_USER,
       to: email,
-      subject: `Your ${formName} submission`,
+      subject: `Form submission: ${formName}`,
       html: `
-         <p>Check your form, then click Final Submit to complete submission:</p>
-         <a href="${finalSubmitLink}" 
-            style="display:inline-block;padding:10px 15px;background-color:#2a6df4;color:#fff;text-decoration:none;border-radius:5px;">
-            Final Submit
-         </a>
-         <div>${formattedForm}</div>
+        <p>This is your formatted form from <strong>${site_root}</strong>:</p>
+        <hr>${formattedForm}
       `,
     });
-    console.log("Email sent successfully to:", email);
 
-    return { statusCode: 200, body: JSON.stringify({ success: true }) };
+    console.log("Mail sent:", info.messageId);
+
+    return {
+      statusCode: 200,
+      body: JSON.stringify({ success: true }),
+    };
   } catch (err) {
-    console.error("sendFormattedForm unhandled error:", err);
-    return { statusCode: 500, body: JSON.stringify({ success: false, error: "Server error" }) };
+    console.error("sendFormattedForm error:", err);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ success: false, error: err.message }),
+    };
   }
 };
