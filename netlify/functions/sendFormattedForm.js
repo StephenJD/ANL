@@ -3,11 +3,16 @@ const nodemailer = require("nodemailer");
 const { verifySecureToken } = require("./verifySecureToken"); // adjust path if needed
 
 exports.handler = async (event) => {
+  console.log("sendFormattedForm invoked. HTTP method:", event.httpMethod);
+  console.log("Raw event.body:", event.body);
+
   if (event.httpMethod !== "POST") {
+    console.warn("Non-POST request received");
     return { statusCode: 405, body: "Method Not Allowed" };
   }
 
   let email, token, formName, formattedForm, site_root;
+
   try {
     const data = JSON.parse(event.body);
     email = data.email;
@@ -16,9 +21,9 @@ exports.handler = async (event) => {
     formattedForm = data.formattedForm;
     site_root = data.site_root;
 
-    console.log("sendFormattedForm called with:", { email, token, formName, site_root });
+    console.log("Parsed request body:", { email, token, formName, site_root });
   } catch (err) {
-    console.error("Invalid JSON in request body:", err);
+    console.error("Invalid JSON in request body:", err, "body:", event.body);
     return { statusCode: 400, body: JSON.stringify({ success: false, error: "Invalid JSON" }) };
   }
 
@@ -28,20 +33,20 @@ exports.handler = async (event) => {
   }
 
   try {
+    console.log("Verifying token...");
     const valid = await verifySecureToken(token, email + formName);
     console.log("Token verification result:", valid);
 
     if (!valid) {
+      console.warn("Invalid or expired token for email:", email);
       return { statusCode: 403, body: JSON.stringify({ success: false, error: "Invalid or expired token" }) };
     }
 
     const link = `${site_root}/${formName}?token=${token}&email=${encodeURIComponent(email)}`;
+    console.log("Email link to include:", link);
 
-    // Check SMTP environment
-    console.log("SMTP config:", {
-      host: process.env.SMTP_HOST,
-      user: process.env.SMTP_USER,
-    });
+    // Log SMTP config (without password)
+    console.log("SMTP config:", { host: process.env.SMTP_HOST, user: process.env.SMTP_USER });
 
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
@@ -51,6 +56,7 @@ exports.handler = async (event) => {
     });
 
     try {
+      console.log("Sending email to:", email);
       await transporter.sendMail({
         from: `"Ascend Next Level" <${process.env.SMTP_USER}>`,
         to: email,
@@ -63,14 +69,13 @@ exports.handler = async (event) => {
       });
       console.log("Email sent successfully to:", email);
     } catch (mailErr) {
-      console.error("sendMail error:", mailErr);
+      console.error("sendMail failed:", mailErr);
       throw mailErr;
     }
 
     return { statusCode: 200, body: JSON.stringify({ success: true }) };
-
   } catch (err) {
-    console.error("Server error:", err);
+    console.error("Unhandled server error:", err);
     return { statusCode: 500, body: JSON.stringify({ success: false, error: "Server error" }) };
   }
 };
