@@ -131,6 +131,7 @@ if (form) {
           email,
           token,
           formName: form.name || document.title, // use formName consistently
+          formPath: window.location.pathname, 
           formattedForm,
           site_root: window.location.origin
         })

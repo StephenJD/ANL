@@ -9,6 +9,7 @@ exports.handler = async (event) => {
 
   let email = null;
   let formName = null;
+  let formPath = null;
   let formattedForm = null;
   let site_root = null;
 
@@ -16,6 +17,7 @@ exports.handler = async (event) => {
     const data = JSON.parse(event.body);
     email = data.email;
     formName = data.formName;
+    formPath = data.formPath;  
     formattedForm = data.formattedForm;
     site_root = data.site_root;
   } catch {
@@ -35,7 +37,8 @@ exports.handler = async (event) => {
   try {
     // Generate final token and link
     const finalToken = generateSecureToken(formattedForm);
-    const finalSubmitLink = `${site_root}/${encodeURIComponent(formName)}?token=${finalToken}&email=${encodeURIComponent(email)}&final=1`;
+    const finalSubmitLink = `${site_root}${formPath.split("?")[0]}?token=${finalToken}&email=${encodeURIComponent(email)}&formName=${encodeURIComponent(formName)}&final=1`;
+
 
     // ✅ Keep your working transport config
     let transporter = nodemailer.createTransport({
