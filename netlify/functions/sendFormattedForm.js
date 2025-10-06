@@ -1,7 +1,6 @@
 // netlify/functions/sendFormattedForm.js
 const nodemailer = require("nodemailer");
-const { generateSecureToken } = require("./generateSecureToken"); // token utils
-const { verifySecureToken } = require("./verifySecureToken"); // adjust if needed
+const { verifySecureToken } = require("./verifySecureToken"); // adjust path if needed
 
 exports.handler = async (event) => {
   if (event.httpMethod !== "POST") {
@@ -16,21 +15,33 @@ exports.handler = async (event) => {
     formName = data.formName;
     formattedForm = data.formattedForm;
     site_root = data.site_root;
-  } catch {
+
+    console.log("sendFormattedForm called with:", { email, token, formName, site_root });
+  } catch (err) {
+    console.error("Invalid JSON in request body:", err);
     return { statusCode: 400, body: JSON.stringify({ success: false, error: "Invalid JSON" }) };
   }
 
   if (!email || !token || !formattedForm || !site_root) {
+    console.warn("Missing required fields:", { email, token, formattedForm, site_root });
     return { statusCode: 400, body: JSON.stringify({ success: false, error: "Missing required fields" }) };
   }
 
   try {
     const valid = await verifySecureToken(token, email + formName);
+    console.log("Token verification result:", valid);
+
     if (!valid) {
       return { statusCode: 403, body: JSON.stringify({ success: false, error: "Invalid or expired token" }) };
     }
 
     const link = `${site_root}/${formName}?token=${token}&email=${encodeURIComponent(email)}`;
+
+    // Check SMTP environment
+    console.log("SMTP config:", {
+      host: process.env.SMTP_HOST,
+      user: process.env.SMTP_USER,
+    });
 
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
@@ -39,20 +50,27 @@ exports.handler = async (event) => {
       auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
     });
 
-    await transporter.sendMail({
-      from: `"Ascend Next Level" <${process.env.SMTP_USER}>`,
-      to: email,
-      subject: `Your ${formName} submission`,
-      html: `
-        <p>Here is your submitted form. You can edit and submit it using the link below:</p>
-        <pre>${formattedForm}</pre>
-        <p><a href="${link}" style="display:inline-block;padding:10px 15px;background-color:#2a6df4;color:#fff;text-decoration:none;border-radius:5px;">Edit and Submit</a></p>
-      `,
-    });
+    try {
+      await transporter.sendMail({
+        from: `"Ascend Next Level" <${process.env.SMTP_USER}>`,
+        to: email,
+        subject: `Your ${formName} submission`,
+        html: `
+          <p>Here is your submitted form. You can edit and submit it using the link below:</p>
+          <pre>${formattedForm}</pre>
+          <p><a href="${link}" style="display:inline-block;padding:10px 15px;background-color:#2a6df4;color:#fff;text-decoration:none;border-radius:5px;">Edit and Submit</a></p>
+        `,
+      });
+      console.log("Email sent successfully to:", email);
+    } catch (mailErr) {
+      console.error("sendMail error:", mailErr);
+      throw mailErr;
+    }
 
     return { statusCode: 200, body: JSON.stringify({ success: true }) };
+
   } catch (err) {
-    console.error(err);
+    console.error("Server error:", err);
     return { statusCode: 500, body: JSON.stringify({ success: false, error: "Server error" }) };
   }
 };

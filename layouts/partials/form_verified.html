@@ -6,6 +6,22 @@
   <div class="token-message" style="color:red;margin-top:0.5em;"></div>
 </div>
 
+<form class="verified-form" name="Test Form">
+  <fieldset>
+    <legend>Your opinion</legend>
+    <label><input type="radio" name="Idea" value="Good Idea"> Good Idea</label>
+    <label><input type="radio" name="Idea" value="Bad Idea"> Bad Idea</label>
+    <label for="idea_other">Other:</label>
+    <textarea id="idea_other" name="Idea_Other"></textarea>
+  </fieldset>
+  <fieldset>
+    <legend>Details</legend>
+    <label for="firstName">First Name</label>
+    <input type="text" id="firstName" name="Name" required>
+  </fieldset>
+  <button type="submit">Submit</button>
+</form>
+
 <script>
 document.addEventListener('DOMContentLoaded', async () => {
   const form = document.querySelector('form.verified-form');
@@ -36,7 +52,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         body: JSON.stringify({
           email,
           formPath: window.location.pathname,
-          formName: document.querySelector('form.verified-form').name || document.title,
+          formName: form.name || document.title,
           site_root: window.location.origin
         })
       });
@@ -76,38 +92,26 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-/* --- INLINE-FIT LABEL+INPUT LAYOUT (after paint) --- */
+  // Inline-fit layout (optional)
   function updateInlineFit() {
     const form = document.querySelector("form.verified-form");
     if (!form) return;
-  
     const formWidth = form.offsetWidth;
-  
-    // All inputs and selects (exclude textareas)
     const allInputs = form.querySelectorAll("input, select");
-  
     allInputs.forEach(inputElem => {
       const label = inputElem.previousElementSibling;
-      const style = window.getComputedStyle(inputElem);
-      if (style.display !== "inline-block") return; // only short inputs
       if (!label || label.tagName !== "LABEL") return;
-  
-      // Only use the input's width, ignore full label width
       const inputWidth = inputElem.getBoundingClientRect().width;
-      if (inputWidth + 16 < formWidth) { // small margin allowance
+      if (inputWidth + 16 < formWidth) {
         label.classList.add("inline-fit");
         inputElem.classList.add("inline-fit");
-        //console.log("Added inline-fit:", label.textContent, inputElem.name);
       } else {
         label.classList.remove("inline-fit");
         inputElem.classList.remove("inline-fit");
-        //console.log("Removed inline-fit:", label.textContent, inputElem.name);
       }
     });
-  }  
+  }
   requestAnimationFrame(updateInlineFit);
-
-  // Recalculate on load and resize
   window.addEventListener("load", updateInlineFit);
   window.addEventListener("resize", updateInlineFit);
 });
@@ -122,7 +126,6 @@ if (form) {
   form.addEventListener('submit', async (e) => {
     e.preventDefault(); // stop default submission
 
-    // Get query params
     const params = new URLSearchParams(window.location.search);
     const token = params.get('token');
     const email = params.get('email');
@@ -134,6 +137,7 @@ if (form) {
 
     // Format form data
     const formattedForm = formatFormData(form);
+    console.log("Formatted form HTML preview:\n", formattedForm);
 
     try {
       const resp = await fetch('/.netlify/functions/sendFormattedForm', {
@@ -161,68 +165,3 @@ if (form) {
   });
 }
 </script>
-
-
-<script type="module">
-  // this just for console testing.
-  import { formatFormData } from '/js/formatFormData.js';
-
-  const form = document.querySelector('form.verified-form');
-  if (form) {
-    const formatted = formatFormData(form);
-    console.log("Formatted HTML preview:\n", formatted);
-
-    // Optional: preview on page
-    const preview = document.createElement('div');
-    preview.innerHTML = formatted;
-    document.body.appendChild(preview);
-  } else {
-    console.warn('No verified-form found.');
-  }
-</script>
-
-<form class="verified-form" name="Test Form">
-  <fieldset>
-    <legend>Your opinion</legend>
-    <label><input type="radio" name="Idea" value="Good Idea"> Good Idea</label>
-    <label><input type="radio" name="Idea" value="Bad Idea"> Bad Idea</label>
-    <label for="idea_other">Other:</label>
-    <textarea id="idea_other" name="Idea_Other"></textarea>
-  </fieldset>
-  <fieldset>
-    <legend>Details</legend>
-    <label for="firstName">First Name</label>
-    <input type="text" id="firstName" name="Name" required>
-  </fieldset>
-  <button type="submit">Submit</button>
-</form>
-
-<script type="module">
-import { formatFormData } from '/js/formatFormData.js';
-
-const form = document.querySelector('form.verified-form');
-
-// Fake URL query for testing
-const fakeEmail = 'test@example.com';
-const fakeToken = '12345';
-
-form.addEventListener('submit', async (e) => {
-  e.preventDefault();
-
-  const formatted = formatFormData(form);
-  console.log("=== Formatted form preview ===\n", formatted);
-
-  // Simulate sending to Netlify function
-  console.log("Simulating POST to sendFormattedForm with:");
-  console.log({
-    email: fakeEmail,
-    token: fakeToken,
-    formName: form.name,
-    formattedForm: formatted,
-    site_root: window.location.origin
-  });
-
-  alert("Check console for simulated formatted email output.");
-});
-</script>
-
