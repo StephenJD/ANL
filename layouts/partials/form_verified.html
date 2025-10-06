@@ -1,4 +1,4 @@
-<!-- partials/form_verified.html -->
+<!-- layouts/partials/form_verified.html -->
 <div class="form-request-box">
   <p>Enter your email to enable the form:</p>
   <input type="email" class="request-email" placeholder="Your email" required>
@@ -112,3 +112,117 @@ document.addEventListener('DOMContentLoaded', async () => {
   window.addEventListener("resize", updateInlineFit);
 });
 </script>
+
+<script type="module">
+import { formatFormData } from '/js/formatFormData.js';
+
+const form = document.querySelector('form.verified-form');
+
+if (form) {
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault(); // stop default submission
+
+    // Get query params
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token');
+    const email = params.get('email');
+
+    if (!token || !email) {
+      alert("Missing token or email in URL. Cannot send formatted email.");
+      return;
+    }
+
+    // Format form data
+    const formattedForm = formatFormData(form);
+
+    try {
+      const resp = await fetch('/.netlify/functions/sendFormattedForm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email,
+          token,
+          formName: form.name || document.title,
+          formattedForm,
+          site_root: window.location.origin
+        })
+      });
+
+      const data = await resp.json();
+      if (data.success) {
+        alert("Your form has been emailed to you for review. Please check your inbox.");
+      } else {
+        alert("Error sending email: " + (data.error || "unknown"));
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Failed to send form email.");
+    }
+  });
+}
+</script>
+
+
+<script type="module">
+  // this just for console testing.
+  import { formatFormData } from '/js/formatFormData.js';
+
+  const form = document.querySelector('form.verified-form');
+  if (form) {
+    const formatted = formatFormData(form);
+    console.log("Formatted HTML preview:\n", formatted);
+
+    // Optional: preview on page
+    const preview = document.createElement('div');
+    preview.innerHTML = formatted;
+    document.body.appendChild(preview);
+  } else {
+    console.warn('No verified-form found.');
+  }
+</script>
+
+<form class="verified-form" name="Test Form">
+  <fieldset>
+    <legend>Your opinion</legend>
+    <label><input type="radio" name="Idea" value="Good Idea"> Good Idea</label>
+    <label><input type="radio" name="Idea" value="Bad Idea"> Bad Idea</label>
+    <label for="idea_other">Other:</label>
+    <textarea id="idea_other" name="Idea_Other"></textarea>
+  </fieldset>
+  <fieldset>
+    <legend>Details</legend>
+    <label for="firstName">First Name</label>
+    <input type="text" id="firstName" name="Name" required>
+  </fieldset>
+  <button type="submit">Submit</button>
+</form>
+
+<script type="module">
+import { formatFormData } from '/js/formatFormData.js';
+
+const form = document.querySelector('form.verified-form');
+
+// Fake URL query for testing
+const fakeEmail = 'test@example.com';
+const fakeToken = '12345';
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const formatted = formatFormData(form);
+  console.log("=== Formatted form preview ===\n", formatted);
+
+  // Simulate sending to Netlify function
+  console.log("Simulating POST to sendFormattedForm with:");
+  console.log({
+    email: fakeEmail,
+    token: fakeToken,
+    formName: form.name,
+    formattedForm: formatted,
+    site_root: window.location.origin
+  });
+
+  alert("Check console for simulated formatted email output.");
+});
+</script>
+
