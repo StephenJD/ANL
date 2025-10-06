@@ -35,6 +35,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email,
+          formPath: window.location.pathname,
           formName: form.name || document.title,
           site_root: window.location.origin
         })
@@ -47,17 +48,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
-  // Token verification on page load
+  // Token verification
   const params = new URLSearchParams(window.location.search);
   const token = params.get('token');
   const email = params.get('email');
+  const formPath = window.location.pathname;
 
   if (token && email) {
     try {
       const resp = await fetch("/.netlify/functions/verifyToken_ClientWrapper", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, email, formName: form.name || document.title })
+        body: JSON.stringify({ token, email, formPath })
       });
       const data = await resp.json();
 
@@ -65,7 +67,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         form.querySelectorAll('input, textarea, select, button[type="submit"]').forEach(el => el.disabled = false);
         requestBox.style.display = 'none';
         messageBox.style.display = 'none';
-        console.log("Token valid, form enabled for form:", form.name || document.title);
+        console.log("Token valid, form enabled.");
       } else {
         messageBox.textContent = "Invalid link. It may have expired, or is for the wrong email/form.";
       }
