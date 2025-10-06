@@ -1,28 +1,28 @@
 // netlify/functions/verifySecureToken.js
 const { generateSecureToken } = require("./generateSecureToken");
 
-exports.handler = async function(event) {
+/**
+ * verifySecureToken
+ * Pure function that validates a token based on email and formPath.
+ * Returns true if valid, false otherwise.
+ */
+function verifySecureToken(token, email, formPath) {
   try {
-    console.log("verifySecureToken: raw event.body:", event.body);
-
-    const { token, email, formPath } = JSON.parse(event.body);
-    console.log("verifySecureToken: parsed body:", { token, email, formPath });
-
     if (!token || !email || !formPath) {
-      console.log("Missing token, email, or formPath");
-      return { statusCode: 400, body: JSON.stringify({ valid: false }) };
+      console.warn("verifySecureToken: missing token, email, or formPath");
+      return false;
     }
 
     const tokenSeed = email + formPath;
     const expected = generateSecureToken(tokenSeed);
-
     const valid = token === expected;
 
     console.log(`verifySecureToken: token=${token}, expected=${expected}, valid=${valid}`);
-
-    return { statusCode: 200, body: JSON.stringify({ valid }) };
+    return valid;
   } catch (err) {
     console.error("verifySecureToken error:", err);
-    return { statusCode: 500, body: JSON.stringify({ valid: false }) };
+    return false;
   }
-};
+}
+
+module.exports = { verifySecureToken };
