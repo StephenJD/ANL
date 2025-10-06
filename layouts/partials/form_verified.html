@@ -56,7 +56,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if (token && email) {
     try {
-      const resp = await fetch("/.netlify/functions/verifySecureToken", {
+      const resp = await fetch("/.netlify/functions/verifyToken_ClientWrapper", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token, email, formPath })
