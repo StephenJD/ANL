@@ -20,8 +20,8 @@ exports.handler = async (event) => {
     // Normally you'd verify token here, but we're isolating the mail path.
 
     // Set up mail transport (adjust for your provider)
-    const transporter = nodemailer.createTransport({
-      host: "smtp.yourmailhost.com",
+    let transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
       port: 587,
       secure: false,
       auth: {
@@ -29,6 +29,7 @@ exports.handler = async (event) => {
         pass: process.env.SMTP_PASS,
       },
     });
+
 
     const info = await transporter.sendMail({
       from: process.env.MAIL_FROM || process.env.SMTP_USER,
