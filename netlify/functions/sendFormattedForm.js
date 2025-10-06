@@ -1,6 +1,7 @@
 // netlify/functions/sendFormattedForm.js
 const nodemailer = require("nodemailer");
 const { generateSecureToken } = require("./generateSecureToken");
+const { storeFinalForm } = require("./tokenStore");
 
 exports.handler = async (event) => {
   if (event.httpMethod !== "POST") {
@@ -37,8 +38,8 @@ exports.handler = async (event) => {
   try {
     // Generate final token and link
     const finalToken = generateSecureToken(formattedForm);
-    const finalSubmitLink = `${site_root}${formPath.split("?")[0]}?token=${finalToken}&email=${encodeURIComponent(email)}&formName=${encodeURIComponent(formName)}&final=1`;
-
+    storeFinalForm(finalToken, formattedForm);
+    const finalSubmitLink = `${site_root}/submit_final?token=${finalToken}`;
 
     // ✅ Keep your working transport config
     let transporter = nodemailer.createTransport({

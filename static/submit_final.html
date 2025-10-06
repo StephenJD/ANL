@@ -1,0 +1,53 @@
+<- static/submit_final.html ->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Final Form Submission</title>
+</head>
+<body>
+  <p id="status">Verifying...</p>
+  <script>
+    (async () => {
+      const params = new URLSearchParams(window.location.search);
+      const token = params.get('token');
+      const status = document.getElementById('status');
+
+      if (!token) {
+        status.textContent = "Invalid or missing token.";
+        return;
+      }
+
+      try {
+        // Verify and retrieve stored form
+        const verifyResp = await fetch("/.netlify/functions/verifyFinalToken", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token })
+        });
+        const data = await verifyResp.json();
+
+        if (!data.valid) {
+          status.textContent = "This submission link has expired or is invalid.";
+          return;
+        }
+
+        // Send final form onward
+        const finalResp = await fetch("/.netlify/functions/finalSubmitForm", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token })
+        });
+        const finalData = await finalResp.json();
+
+        status.textContent = finalData.success
+          ? "✅ Your form has been successfully submitted!"
+          : "❌ Submission failed. Please try again.";
+      } catch (err) {
+        console.error(err);
+        status.textContent = "Error verifying or submitting form.";
+      }
+    })();
+  </script>
+</body>
+</html>
