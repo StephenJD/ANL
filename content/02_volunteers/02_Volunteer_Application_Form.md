@@ -10,6 +10,7 @@ type: form
 <form 
   name="{{< getPageTitle >}}" 
   class="verified-form"
+  data-netlify="true"
   netlify
 >
 
