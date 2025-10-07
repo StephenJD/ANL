@@ -10,13 +10,6 @@ restrict_users: false
 validation: submit   # options: "requestLink" &| "submit", "none" (default)
 ---
 
-<form 
-  name="{{< getPageTitle >}}" 
-  class="verified-form"
-  data-netlify="true"
-  netlify
->
-
 <input type="hidden" name="_gotcha" style="display:none !important">
 
 <p>This form should be completed by the child’s parent or other adult with delegated parental responsibility. Parental Consent Forms will be renewed annually at the start of the school year so that the data held is up to date. Please complete the consent form below to enable your child to attend the group.</p>
@@ -139,4 +132,3 @@ validation: submit   # options: "requestLink" &| "submit", "none" (default)
   </label>
 </fieldset>
 
-</form>

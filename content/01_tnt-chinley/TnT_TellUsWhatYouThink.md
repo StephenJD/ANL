@@ -9,14 +9,6 @@ include_unselected_options: false
 restrict_users: false
 validation: none
 ---
-
-<form 
-   name="{{< getPageTitle >}}" 
-   class="verified-form"
-   data-netlify="true"
-   netlify
->
-
 <input type="hidden" name="_gotcha" style="display:none !important">
 
 <hr>
@@ -71,5 +63,3 @@ validation: none
    <label>First Name</label>
    <input class="name" type="text" required>
 </fieldset>
-
-</form>

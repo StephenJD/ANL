@@ -12,10 +12,15 @@
   <link rel="stylesheet" href="{{ "css/forms.css" | relURL }}">
 
   <div class="form-container">
-    <h1>{{ .Title }}</h1>   <!-- Title at top -->
-    {{ partial "form_verified.html" . }}
-    {{ .Content }}
+    <h1>{{ .Title }}</h1>
+  
+    <form name="{{< getPageTitle >}}" class="verified-form" data-netlify="true" netlify>
+      {{ partial "form_verified.html" . }}      <!-- top Request-link box -->
+      {{ .Content }}                            <!-- fieldsets only -->
+      {{ partial "form_submit_button.html" . }} <!-- optional email + submit -->
+    </form>
   </div>
+
 {{ end }}
 
 
