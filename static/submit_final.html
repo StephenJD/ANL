@@ -21,11 +21,13 @@
 
       try {
         // Verify and retrieve stored form
-        const verifyResp = await fetch("/.netlify/functions/verifyFinalToken", {
+        const verifyResp = await fetch("/.netlify/functions/verifyFinal", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ token })
         });
+
+        if (!verifyResp.ok) throw new Error("verifyFinal " + verifyResp.status);
         const data = await verifyResp.json();
 
         if (!data.valid) {
@@ -34,11 +36,13 @@
         }
 
         // Send final form onward
-        const finalResp = await fetch("/.netlify/functions/finalSubmitForm", {
+        const finalResp = await fetch("/.netlify/functions/finalSubmit", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ token })
         });
+
+        if (!finalResp.ok) throw new Error("finalSubmit " + finalResp.status);
         const finalData = await finalResp.json();
 
         status.textContent = finalData.success
