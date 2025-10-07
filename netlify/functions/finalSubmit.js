@@ -8,7 +8,7 @@ exports.handler = async (event) => {
 
   try {
     const { token } = JSON.parse(event.body);
-    const storedForm = retrieveFinalForm(token);
+    const storedForm = await retrieveFinalForm(token);  
     if (!storedForm) {
       return { statusCode: 400, body: JSON.stringify({ success: false, error: "Invalid or expired token" }) };
     }
