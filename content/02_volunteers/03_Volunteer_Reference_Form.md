@@ -103,6 +103,8 @@ validation: submit # options: "requestLink" &| "submit", "none" (default)
 
 <fieldset>
   <legend>Signature</legend>
+  <label for="email">E-mail address</label>
+  <input type="email" id="submitted_by" name="email" required placeholder="you@example.com">
 
   <label for="RefereeName" class="required">Signed:</label>
   <input type="text" id="RefereeName" name="referee_name" class="short-input" required>

@@ -35,7 +35,7 @@ validation: requestLink # options: "requestLink" &| "submit", "none" (default)
   <input type="tel" id="mobile" name="mobile" class="short-input" placeholder="Optional">
 
   <label for="email">E-mail address</label>
-  <input type="email" id="email" name="email" class="short-input" required placeholder="you@example.com">
+  <input type="email" id="submitted_by" name="email" required placeholder="you@example.com">
 
 </fieldset>
 
@@ -84,7 +84,7 @@ validation: requestLink # options: "requestLink" &| "submit", "none" (default)
   <input type="tel" id="ref1_phone" name="ref1_phone" class="short-input" placeholder="Optional">
 
   <label for="ref1_email">E-mail address</label>
-  <input type="email" id="ref1_email" name="ref1_email" class="short-input" placeholder="Optional">
+  <input type="email" id="ref1_email" name="ref1_email" placeholder="Optional">
 
   <strong>Reference 2</strong>
 
@@ -101,7 +101,7 @@ validation: requestLink # options: "requestLink" &| "submit", "none" (default)
   <input type="tel" id="ref2_phone" name="ref2_phone" class="short-input" placeholder="Optional">
 
   <label for="ref2_email">E-mail address</label>
-  <input type="email" id="ref2_email" name="ref2_email" class="short-input" placeholder="Optional">
+  <input type="email" id="ref2_email" name="ref2_email" placeholder="Optional">
 
 </fieldset>
 

@@ -49,7 +49,7 @@ validation: submit   # options: "requestLink" &| "submit", "none" (default)
 <input type="tel" name="phone" required>
 
 <label>Email Address:</label>
-<input type="email" name="email">
+<input id="submitted_by" type="email" name="email">
 
 <label>Alternative Contact Name:</label>
 <input class="name" type="text" name="alt_name">

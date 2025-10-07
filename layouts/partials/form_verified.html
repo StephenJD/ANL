@@ -36,6 +36,36 @@ document.addEventListener('DOMContentLoaded', async () => {
     input.valueAsDate = new Date();
   });
 
+  // --- NEW: submitted_by input logic ---
+  let submittedByInput = form.querySelector('#submitted_by');
+  if (!submittedByInput) {
+    const wrapper = document.createElement('div');
+    wrapper.style.marginTop = '1em';
+
+    const label = document.createElement('label');
+    label.setAttribute('for', 'submitted_by');
+    label.textContent = "Optional email to receive a copy of your submission:";
+
+    submittedByInput = document.createElement('input');
+    submittedByInput.type = 'email';
+    submittedByInput.id = 'submitted_by';
+    submittedByInput.name = 'submitted_by';
+    submittedByInput.placeholder = 'you@example.com';
+
+    wrapper.appendChild(label);
+    wrapper.appendChild(submittedByInput);
+    form.appendChild(wrapper);
+  }
+
+  // Validate optional email on submit
+  form.addEventListener('submit', (e) => {
+    const emailVal = submittedByInput.value.trim();
+    if (emailVal && !/\S+@\S+\.\S+/.test(emailVal)) {
+      e.preventDefault();
+      alert("Please enter a valid email address or leave the field empty.");
+    }
+  });
+
   // Request link button behavior
   if (requireRequestLink) {
     btn.addEventListener('click', async () => {
@@ -103,7 +133,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         const data = await resp.json();
         if (data.valid) {
           console.log("Final token valid — proceed with submission.");
-          // Optional: enable submission button if disabled
         } else {
           messageBox.textContent = "Final link expired or invalid.";
         }
@@ -113,7 +142,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-  // Inline-fit layout (optional)
+  // Inline-fit layout
   function updateInlineFit() {
     const form = document.querySelector("form.verified-form");
     if (!form) return;
@@ -136,54 +165,4 @@ document.addEventListener('DOMContentLoaded', async () => {
   window.addEventListener("load", updateInlineFit);
   window.addEventListener("resize", updateInlineFit);
 });
-</script>
-
-<script type="module">
-import { formatFormData } from '/js/formatFormData.js';
-
-const form = document.querySelector('form.verified-form');
-
-if (form) {
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-
-    const params = new URLSearchParams(window.location.search);
-    const token = params.get('token');
-    const email = params.get('email');
-
-    if (!token || !email) {
-      alert("Missing token or email in URL. Cannot send formatted email.");
-      return;
-    }
-
-    // ✅ formatFormData automatically reads window.PAGE_FRONTMATTER
-    const formattedForm = formatFormData(form);
-    console.log("Formatted form HTML preview:\n", formattedForm);
-
-    try {
-      const resp = await fetch('/.netlify/functions/sendFormattedForm', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email,
-          token,
-          formName: form.name || document.title,
-          formPath: window.location.pathname,
-          formattedForm,
-          site_root: window.location.origin
-        })
-      });
-
-      const data = await resp.json();
-      if (data.success) {
-        alert("Your form has been emailed to you for review. Please check your inbox.");
-      } else {
-        alert("Error sending email: " + (data.error || "unknown"));
-      }
-    } catch (err) {
-      console.error("sendFormattedForm fetch failed:", err);
-      alert("Failed to send form email.");
-    }
-  });
-}
 </script>
