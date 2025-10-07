@@ -21,13 +21,13 @@
 
       try {
         // Verify and retrieve stored form
-        const verifyResp = await fetch("/.netlify/functions/verifyFinal", {
+        const verifyResp = await fetch("/.netlify/functions/verifyFinalToken", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ token })
         });
 
-        if (!verifyResp.ok) throw new Error("verifyFinal " + verifyResp.status);
+        if (!verifyResp.ok) throw new Error("verifyFinalToken " + verifyResp.status);
         const data = await verifyResp.json();
 
         if (!data.valid) {
