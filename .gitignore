@@ -58,3 +58,5 @@ __pycache__/
 # Hugo
 /resources/
 public/
+# Local Netlify folder
+.netlify

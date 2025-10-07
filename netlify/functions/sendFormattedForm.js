@@ -18,7 +18,7 @@ exports.handler = async (event) => {
     const data = JSON.parse(event.body);
     email = data.email;
     formName = data.formName;
-    formPath = data.formPath;  
+    formPath = data.formPath;
     formattedForm = data.formattedForm;
     site_root = data.site_root;
   } catch {
@@ -31,17 +31,34 @@ exports.handler = async (event) => {
   if (!email || !formName || !formattedForm || !site_root) {
     return {
       statusCode: 400,
-      body: JSON.stringify({ success: false, error: "Missing email, formName, formattedForm or site_root" }),
+      body: JSON.stringify({
+        success: false,
+        error: "Missing email, formName, formattedForm or site_root",
+      }),
     };
   }
 
   try {
     // Generate final token and link
     const finalToken = generateSecureToken(formattedForm);
-    storeFinalForm(finalToken, formattedForm);
-    const finalSubmitLink = `${site_root}/submit_final?token=${finalToken}`;
+    await storeFinalForm(finalToken, formattedForm);
+    const finalSubmitLink = `${site_root}/submit_final.html?token=${finalToken}`;
 
-    // ✅ Keep your working transport config
+    // Detect local/dev environment safely
+    const isDev =
+      process.env.NODE_ENV === "development" ||
+      !process.env.SMTP_HOST ||
+      !process.env.SMTP_USER ||
+      !process.env.SMTP_PASS;
+
+    if (isDev) {
+      console.log("DEV MODE: would send email to", email);
+      console.log("Final Submit Link:", finalSubmitLink);
+      console.log("Formatted Form:", formattedForm);
+      return { statusCode: 200, body: JSON.stringify({ success: true }) };
+    }
+
+    // Production SMTP
     let transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
       port: 587,
@@ -80,6 +97,9 @@ ${formattedForm}
     return { statusCode: 200, body: JSON.stringify({ success: true }) };
   } catch (err) {
     console.error("Error sending email:", err);
-    return { statusCode: 500, body: JSON.stringify({ success: false, error: "Error sending email" }) };
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ success: false, error: "Error sending email" }),
+    };
   }
 };

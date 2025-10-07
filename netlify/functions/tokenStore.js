@@ -3,7 +3,7 @@ const fetch = (...args) =>
   import('node-fetch').then(({ default: fetch }) => fetch(...args));
 
 const BIN_ID = '68e43a3343b1c97be95cd728';
-const API_KEY = '$2a$10$YwW//q5MO8157tszJVX53.pQXPzZn50nL6dmi4dWGEt56nmwFl4PS';
+const API_KEY = '$2a$10$Hl3M2PrOLZHxxqzxAgUzSOlGAKoGI2Zd/JtcIucdBCCxVV4aefriW';
 const TTL_MS = 10 * 60 * 1000; // 10 minutes
 
 // Helper for JSONBin API
