@@ -1,5 +1,12 @@
 {{/* layouts/forms/single.html */}}
 {{ define "main" }}
+  <!-- Expose front matter for JS -->
+  <script>
+    window.PAGE_FRONTMATTER = {
+      include_unselected_options: {{ with .Params.include_unselected_options }}{{ . | jsonify }}{{ else }}false{{ end }},
+      title: {{ .Title | jsonify }}
+    };
+  </script>
   <!-- Load form-specific stylesheet -->
   <link rel="stylesheet" href="{{ "css/forms.css" | relURL }}">
 

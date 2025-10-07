@@ -138,8 +138,12 @@ if (form) {
       return;
     }
 
+    // Determine includeUnselected from page front-matter
+    // Assuming you have JSON in a script tag or data attribute; adjust as needed
+    const fmIncludeUnselected = window.PAGE_FRONTMATTER?.include_unselected_options || false;
+
     // Format form data
-    const formattedForm = formatFormData(form);
+    const formattedForm = formatFormData(form, { includeUnselected: fmIncludeUnselected });
     console.log("Formatted form HTML preview:\n", formattedForm);
 
     try {
@@ -169,4 +173,5 @@ if (form) {
   });
 }
 </script>
+
 
