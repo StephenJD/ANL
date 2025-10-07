@@ -2,7 +2,7 @@
 const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 
 
-const BIN_ID = '68e43a3343b1c97be95cd728 '; // Replace with your actual bin ID
+const BIN_ID = '68e43a3343b1c97be95cd728'; // Replace with your actual bin ID
 const API_KEY = '$2a$10$YwW//q5MO8157tszJVX53.pQXPzZn50nL6dmi4dWGEt56nmwFl4PS'; // Replace with your actual master key
 const TTL_MS = 10 * 60 * 1000; // 10 minutes
 
@@ -54,7 +54,7 @@ const readStore = async () => {
 // Write the updated store to JSONBin
 const writeStore = async (store) => {
   try {
-    await apiRequest('PUT', `https://api.jsonbin.io/v3/b/${BIN_ID}`, { record: store });
+    await apiRequest('PUT', `https://api.jsonbin.io/v3/b/${BIN_ID}?versioning=false`, store});
   } catch (error) {
     console.error('Error writing store:', error);
   }
