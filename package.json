@@ -2,7 +2,7 @@
   "name": "hugo-netlify-functions",
   "version": "1.0.0",
   "dependencies": {
-    "nodemailer": "^6.9.5"
+    "nodemailer": "^6.9.5",
     "node-fetch": "^3.3.2"
   }
 }
