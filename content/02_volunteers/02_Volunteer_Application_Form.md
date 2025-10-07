@@ -10,13 +10,6 @@ restrict_users: false
 validation: requestLink # options: "requestLink" &| "submit", "none" (default)
 ---
 
-<form 
-  name="{{< getPageTitle >}}" 
-  class="verified-form"
-  data-netlify="true"
-  netlify
->
-
 <input type="hidden" name="_gotcha" style="display:none!important">
 
 <fieldset>
@@ -147,4 +140,3 @@ validation: requestLink # options: "requestLink" &| "submit", "none" (default)
 
 </fieldset>
 
-</form>

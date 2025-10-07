@@ -10,13 +10,6 @@ restrict_users: false
 validation: submit # options: "requestLink" &| "submit", "none" (default)
 ---
 
-<form 
-  name="{{< getPageTitle >}}" 
-  class="verified-form"
-  data-netlify="true"
-  netlify
->
-
 <input type="hidden" name="form-name" value="volunteer-reference">
 
 <!-- Honeypot field -->
@@ -118,4 +111,3 @@ validation: submit # options: "requestLink" &| "submit", "none" (default)
   </label>
 </fieldset>
 
-</form>

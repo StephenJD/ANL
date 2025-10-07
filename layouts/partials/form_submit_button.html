@@ -8,14 +8,16 @@
 <button type="submit">Send</button>
 
 <script>
-  document.addEventListener("DOMContentLoaded", () => {
-    const form = document.currentScript.closest("form");
-    const optionalEmail = form.querySelector("#optional_email_field");
-    const hasSubmittedBy = form.querySelector("#submitted_by") !== null;
+document.addEventListener("DOMContentLoaded", () => {
+  const form = document.querySelector("form.verified-form");
+  if (!form) return;
 
-    if (!hasSubmittedBy && optionalEmail) {
-      optionalEmail.style.display = "block";
-    }
-  });
+  const optionalEmail = form.querySelector("#optional_email_field");
+  const hasSubmittedBy = form.querySelector("#submitted_by") !== null;
+
+  if (!hasSubmittedBy && optionalEmail) {
+    optionalEmail.style.display = "block";
+  }
+});
 </script>
 
