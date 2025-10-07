@@ -3,8 +3,9 @@
   <!-- Expose front matter for JS -->
   <script>
     window.PAGE_FRONTMATTER = {
-      include_unselected_options: {{ with .Params.include_unselected_options }}{{ . | jsonify }}{{ else }}false{{ end }},
-      title: {{ .Title | jsonify }}
+      params: {{ .Params | jsonify }},
+      title: {{ .Title | jsonify }},
+      path: {{ .RelPermalink | jsonify }}
     };
   </script>
   <!-- Load form-specific stylesheet -->

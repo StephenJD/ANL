@@ -16,39 +16,53 @@ document.addEventListener('DOMContentLoaded', async () => {
   const btn = requestBox.querySelector('.request-token-btn');
   const emailInput = requestBox.querySelector('.request-email');
 
-  // Disable form inputs initially
-  form.querySelectorAll('input, textarea, select, button[type="submit"]').forEach(el => el.disabled = true);
+  // --- Read validation mode ---
+  const validationMode = window.PAGE_FRONTMATTER?.params?.validation || "none";
+  const requireRequestLink = validationMode.includes("requestLink");
+  const requireFinalSubmit = validationMode.includes("submit");
+
+  // Disable inputs initially if requestLink is required
+  form.querySelectorAll('input, textarea, select, button[type="submit"]').forEach(el => {
+    el.disabled = requireRequestLink;
+  });
+
+  // Hide request box if not needed
+  if (!requireRequestLink) {
+    requestBox.style.display = 'none';
+  }
 
   // Autofill date fields
   document.querySelectorAll('input[type="date"].autofill-today').forEach(input => {
     input.valueAsDate = new Date();
   });
 
-  // Request link button
-  btn.addEventListener('click', async () => {
-    const email = emailInput.value.trim();
-    if (!email) { alert("Enter your email first"); return; }
+  // Request link button behavior
+  if (requireRequestLink) {
+    btn.addEventListener('click', async () => {
+      const email = emailInput.value.trim();
+      if (!email) { alert("Enter your email first"); return; }
 
-    try {
-      const resp = await fetch("/.netlify/functions/sendFormAccessLink", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email,
-          formPath: window.location.pathname,
-          formName: form.name || document.title,
-          site_root: window.location.origin
-        })
-      });
-      const data = await resp.json();
-      alert(data.success ? "Check your email for the link." : "Error sending link: " + (data.error || "unknown error"));
-    } catch (err) {
-      console.error(err);
-      alert("Request failed");
-    }
-  });
+      try {
+        const resp = await fetch("/.netlify/functions/sendFormAccessLink", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email,
+            formPath: window.location.pathname,
+            formName: form.name || document.title,
+            site_root: window.location.origin
+          })
+        });
+        const data = await resp.json();
+        alert(data.success ? "Check your email for the link." : "Error sending link: " + (data.error || "unknown error"));
+      } catch (err) {
+        console.error(err);
+        alert("Request failed");
+      }
+    });
+  }
 
-  // Token verification (handles two flows: initial enable-link and final-submit link)
+  // Token verification (initial enable / final submit)
   const params = new URLSearchParams(window.location.search);
   const token = params.get('token');
   const email = params.get('email');
@@ -56,8 +70,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   const isFinal = params.get('final') === '1' || params.get('final') === 'true';
 
   if (token && email) {
-    if (!isFinal) {
-      // --- ORIGINAL initial enable flow (no change) ---
+    // --- requestLink flow ---
+    if (!isFinal && requireRequestLink) {
       try {
         const resp = await fetch("/.netlify/functions/verifyToken_ClientWrapper", {
           method: "POST",
@@ -65,7 +79,6 @@ document.addEventListener('DOMContentLoaded', async () => {
           body: JSON.stringify({ token, email, formPath })
         });
         const data = await resp.json();
-
         if (data.valid) {
           form.querySelectorAll('input, textarea, select, button[type="submit"]').forEach(el => el.disabled = false);
           requestBox.style.display = 'none';
@@ -77,23 +90,28 @@ document.addEventListener('DOMContentLoaded', async () => {
       } catch (err) {
         console.error("Error verifying token:", err);
       }
-    } else {
-      // --- FINAL link flow: verify token against the formatted form content ---
-      const resp = await fetch('/.netlify/functions/verifyFinalToken', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token })
-      });
-      const data = await resp.json();
-      if (data.valid) {
-        console.log("Final token valid — proceed with submission.");
-        // enable final submission / auto-submit etc.
-      } else {
-        messageBox.textContent = "Final link expired or invalid.";
+    }
+
+    // --- submit flow ---
+    if (isFinal && requireFinalSubmit) {
+      try {
+        const resp = await fetch('/.netlify/functions/verifyFinalToken', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token })
+        });
+        const data = await resp.json();
+        if (data.valid) {
+          console.log("Final token valid — proceed with submission.");
+          // Optional: enable submission button if disabled
+        } else {
+          messageBox.textContent = "Final link expired or invalid.";
+        }
+      } catch (err) {
+        console.error("Error verifying final token:", err);
       }
     }
   }
-
 
   // Inline-fit layout (optional)
   function updateInlineFit() {
@@ -127,7 +145,7 @@ const form = document.querySelector('form.verified-form');
 
 if (form) {
   form.addEventListener('submit', async (e) => {
-    e.preventDefault(); // stop default submission
+    e.preventDefault();
 
     const params = new URLSearchParams(window.location.search);
     const token = params.get('token');
@@ -169,5 +187,3 @@ if (form) {
   });
 }
 </script>
-
-

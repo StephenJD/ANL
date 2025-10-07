@@ -1,46 +1,57 @@
 export function formatFormData(form) {
+  const includeUnselected =
+  window.PAGE_FRONTMATTER?.params?.include_unselected_options || false;
+
   const output = [];
 
-  // Read from front matter (default false)
-  const includeUnselected =
-    (window.PAGE_FRONTMATTER &&
-     window.PAGE_FRONTMATTER.include_unselected_options === true);
-
-  form.querySelectorAll('fieldset').forEach(fs => {
+  form.querySelectorAll("fieldset").forEach((fs) => {
     const fieldsetLines = [];
 
     // Include legend
-    const legend = fs.querySelector('legend')?.innerText.trim();
+    const legend = fs.querySelector("legend")?.innerText.trim();
     if (legend) fieldsetLines.push(`<strong>${legend}</strong>`);
 
     // Process inputs and textareas
-    fs.querySelectorAll('input, textarea, select').forEach(input => {
-      let labelText = '';
+    fs.querySelectorAll("input, textarea").forEach((input) => {
+      let labelText = "";
 
       // Try to get label text
       const label = fs.querySelector(`label[for="${input.id}"]`);
       if (label) labelText = label.textContent.trim();
-      else if (input.closest('label')) labelText = input.closest('label').textContent.trim();
-      else labelText = input.name || '';
+      else if (input.closest("label"))
+        labelText = input.closest("label").textContent.trim();
+      else labelText = input.name || "";
 
-      let line = '';
-
-      if (input.type === 'checkbox' || input.type === 'radio') {
-        if (includeUnselected || input.checked) {
-          line = input.checked ? labelText : `<s>${labelText}</s>`;
-          fieldsetLines.push(line);
+      // Skip empty values if include_unselected_options=false
+      if (!includeUnselected) {
+        if (
+          (input.type === "checkbox" || input.type === "radio") &&
+          !input.checked
+        ) {
+          return; // skip unselected
         }
-      } else {
-        const value = input.value?.trim() || '';
-        if (includeUnselected || value !== '') {
-          line = `${labelText}: ${value}`;
-          fieldsetLines.push(line);
+        if (
+          input.type !== "checkbox" &&
+          input.type !== "radio" &&
+          !input.value.trim()
+        ) {
+          return; // skip empty text fields
         }
       }
+
+      let line = labelText;
+      if (input.type === "checkbox" || input.type === "radio") {
+        line = input.checked ? line : `<s>${line}</s>`;
+      } else {
+        line += `: ${input.value || ""}`;
+      }
+
+      fieldsetLines.push(line);
     });
 
-    if (fieldsetLines.length) output.push(...fieldsetLines, '<br>');
+    if (fieldsetLines.length) output.push(...fieldsetLines);
   });
 
-  return output.join('<br>');
+  // Join lines and remove any empty <br> or stray whitespace
+  return output.filter((l) => l && l.trim() !== "").join("<br>");
 }
