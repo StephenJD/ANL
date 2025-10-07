@@ -1,7 +1,5 @@
 // netlify/functions/finalSubmit.js
 
-// netlify/functions/finalSubmitForm.js
-
 const { retrieveFinalForm } = require("./tokenStore");
 const nodemailer = require("nodemailer");
 

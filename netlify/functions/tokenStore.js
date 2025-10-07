@@ -1,5 +1,6 @@
 // netlify/functions/tokenStore.js
-const fetch = require('node-fetch'); // Ensure node-fetch is installed
+const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
+
 
 const BIN_ID = '68e43a3343b1c97be95cd728 '; // Replace with your actual bin ID
 const API_KEY = '$2a$10$YwW//q5MO8157tszJVX53.pQXPzZn50nL6dmi4dWGEt56nmwFl4PS'; // Replace with your actual master key
