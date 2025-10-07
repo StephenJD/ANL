@@ -1,3 +1,4 @@
+// static/js/formatFormData.js
 export function formatFormData(form) {
   const includeUnselected =
   window.PAGE_FRONTMATTER?.params?.include_unselected_options || false;

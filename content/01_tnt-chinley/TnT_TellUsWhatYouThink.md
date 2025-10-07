@@ -72,5 +72,4 @@ validation: none
    <input class="name" type="text" required>
 </fieldset>
 
-<button type="submit">Send</button>
 </form>

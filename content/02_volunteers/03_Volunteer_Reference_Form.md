@@ -118,6 +118,4 @@ validation: submit # options: "requestLink" &| "submit", "none" (default)
   </label>
 </fieldset>
 
-<button type="submit">Send</button>
-
 </form>

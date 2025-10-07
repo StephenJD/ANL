@@ -36,36 +36,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     input.valueAsDate = new Date();
   });
 
-  // --- NEW: submitted_by input logic ---
-  let submittedByInput = form.querySelector('#submitted_by');
-  if (!submittedByInput) {
-    const wrapper = document.createElement('div');
-    wrapper.style.marginTop = '1em';
-
-    const label = document.createElement('label');
-    label.setAttribute('for', 'submitted_by');
-    label.textContent = "Optional email to receive a copy of your submission:";
-
-    submittedByInput = document.createElement('input');
-    submittedByInput.type = 'email';
-    submittedByInput.id = 'submitted_by';
-    submittedByInput.name = 'submitted_by';
-    submittedByInput.placeholder = 'you@example.com';
-
-    wrapper.appendChild(label);
-    wrapper.appendChild(submittedByInput);
-    form.appendChild(wrapper);
-  }
-
-  // Validate optional email on submit
-  form.addEventListener('submit', (e) => {
-    const emailVal = submittedByInput.value.trim();
-    if (emailVal && !/\S+@\S+\.\S+/.test(emailVal)) {
-      e.preventDefault();
-      alert("Please enter a valid email address or leave the field empty.");
-    }
-  });
-
   // Request link button behavior
   if (requireRequestLink) {
     btn.addEventListener('click', async () => {

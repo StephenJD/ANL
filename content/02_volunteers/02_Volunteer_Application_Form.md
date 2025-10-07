@@ -147,6 +147,4 @@ validation: requestLink # options: "requestLink" &| "submit", "none" (default)
 
 </fieldset>
 
-<button type="submit">Submit Application</button>
-
 </form>
