@@ -1,38 +1,42 @@
-// static/js/formatFormData.js
-export function formatFormData(form, options = {}) {
-  const includeUnselected = options.includeUnselected ??
-    (window.PAGE_FRONTMATTER?.include_unselected_options || false);
-
+export function formatFormData(form) {
   const output = [];
+
+  // Read from front matter (default false)
+  const includeUnselected =
+    (window.PAGE_FRONTMATTER &&
+     window.PAGE_FRONTMATTER.include_unselected_options === true);
 
   form.querySelectorAll('fieldset').forEach(fs => {
     const fieldsetLines = [];
 
+    // Include legend
     const legend = fs.querySelector('legend')?.innerText.trim();
     if (legend) fieldsetLines.push(`<strong>${legend}</strong>`);
 
-    fs.querySelectorAll('input, textarea').forEach(input => {
+    // Process inputs and textareas
+    fs.querySelectorAll('input, textarea, select').forEach(input => {
       let labelText = '';
+
+      // Try to get label text
       const label = fs.querySelector(`label[for="${input.id}"]`);
       if (label) labelText = label.textContent.trim();
       else if (input.closest('label')) labelText = input.closest('label').textContent.trim();
       else labelText = input.name || '';
 
-      let line = labelText;
+      let line = '';
 
       if (input.type === 'checkbox' || input.type === 'radio') {
-        if (input.checked) {
-          line = line;
-        } else if (includeUnselected) {
-          line = `<s>${line}</s>`;
-        } else {
-          return; // skip unselected if flag is false
+        if (includeUnselected || input.checked) {
+          line = input.checked ? labelText : `<s>${labelText}</s>`;
+          fieldsetLines.push(line);
         }
       } else {
-        line += `: ${input.value || ''}`;
+        const value = input.value?.trim() || '';
+        if (includeUnselected || value !== '') {
+          line = `${labelText}: ${value}`;
+          fieldsetLines.push(line);
+        }
       }
-
-      fieldsetLines.push(line);
     });
 
     if (fieldsetLines.length) output.push(...fieldsetLines, '<br>');

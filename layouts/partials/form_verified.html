@@ -138,12 +138,8 @@ if (form) {
       return;
     }
 
-    // Determine includeUnselected from page front-matter
-    // Assuming you have JSON in a script tag or data attribute; adjust as needed
-    const fmIncludeUnselected = window.PAGE_FRONTMATTER?.include_unselected_options || false;
-
-    // Format form data
-    const formattedForm = formatFormData(form, { includeUnselected: fmIncludeUnselected });
+    // ✅ formatFormData automatically reads window.PAGE_FRONTMATTER
+    const formattedForm = formatFormData(form);
     console.log("Formatted form HTML preview:\n", formattedForm);
 
     try {
@@ -153,8 +149,8 @@ if (form) {
         body: JSON.stringify({
           email,
           token,
-          formName: form.name || document.title, // use formName consistently
-          formPath: window.location.pathname, 
+          formName: form.name || document.title,
+          formPath: window.location.pathname,
           formattedForm,
           site_root: window.location.origin
         })
