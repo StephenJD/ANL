@@ -1,4 +1,4 @@
-// netlify/functions/verifyFinalToken.js
+// File location: /netlify/functions/verifyFinalToken.js
 const { retrieveFinalForm } = require("./tokenStore");
 
 exports.handler = async (event) => {
@@ -8,14 +8,15 @@ exports.handler = async (event) => {
 
   try {
     const { token } = JSON.parse(event.body);
-    const stored = retrieveFinalForm(token);
+    const storedForm = await retrieveFinalForm(token);  
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ valid: !!stored }),
+      body: JSON.stringify({ valid: !!storedForm }),
     };
   } catch (err) {
     console.error("verifyFinalToken error:", err);
     return { statusCode: 500, body: JSON.stringify({ valid: false }) };
   }
 };
+
