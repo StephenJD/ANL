@@ -11,7 +11,7 @@ validation: none # options: "requestLink" &| "submit", "none" (default)
 ---
 
 <!--
-# Form Rules
+Form Rules
 1. Default: No attributes except type (email, tel, date, text) — except...
 2. Add ONE class: name, address, or short-input where relevant.
 3. Use class address for name & address field.
@@ -20,6 +20,7 @@ validation: none # options: "requestLink" &| "submit", "none" (default)
 6. Use <fieldset> and <legend> to group fields, instead of headings.
 7. NO MORE THAN 3 SPACE INDENT
 8. Attribute order: <required> <id> <class> <type> .
+9. Add "None" default text in all required text fields that ask for additional information.
 -->
 
 <h2>TnT is provided as a safe place for secondary school children to chill and chat.</h2>
@@ -70,6 +71,5 @@ validation: none # options: "requestLink" &| "submit", "none" (default)
 
 <fieldset>
    <legend>Your details</legend>
-   <label>First Name</label>
-   <input class="name" type="text" required>
+   <label>First Name<input class="name" type="text" required></label>
 </fieldset>
