@@ -135,7 +135,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
 
       console.log("[DEBUG] Redirecting to send_submission_page.html");
-      window.location.href = `/send_submission_page.html`;
+      const params = new URLSearchParams({
+        token: token || "",
+        validationMode: validationMode.join(",")
+      });
+      window.location.href = `/send_submission_page.html?${params.toString()}`;
+
     });
   }
 });
