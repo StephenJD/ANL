@@ -4,6 +4,7 @@
   <input type="email" class="request-email" placeholder="Your email" required>
   <button type="button" class="request-token-btn">Request Link</button>
   <div class="token-message" style="color:red;margin-top:0.5em;"></div>
+  <input type="hidden" style="display:none !important">
 </div>
 
 <script>
@@ -16,10 +17,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   const btn = requestBox.querySelector('.request-token-btn');
   const emailInput = requestBox.querySelector('.request-email');
 
-  // --- Read validation mode ---
-  const validationMode = window.PAGE_FRONTMATTER?.params?.validation || "none";
+  let validationMode = window.PAGE_FRONTMATTER?.params?.validation || "none";
+  
+  // Normalize to array
+  if (typeof validationMode === "string") {
+    // Split on commas, spaces, or semicolons, remove comments
+    validationMode = validationMode.split('#')[0].trim().split(/[\s,;]+/).filter(Boolean);
+  }
+  
   const requireRequestLink = validationMode.includes("requestLink");
   const requireFinalSubmit = validationMode.includes("submit");
+
 
   // Disable inputs initially if requestLink is required
   form.querySelectorAll('input, textarea, select, button[type="submit"]').forEach(el => {
@@ -63,12 +71,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   // Token verification (initial enable / final submit)
-  const params = new URLSearchParams(window.location.search);
-  const token = params.get('token');
-  const email = params.get('email');
+  const urlQuery = new URLSearchParams(window.location.search);
+  const token = urlQuery.get('token');
+  const email = urlQuery.get('email');
   const formPath = window.location.pathname;
-  const isFinal = params.get('final') === '1' || params.get('final') === 'true';
-
+  const isFinal = urlQuery.get('final') === '1' || urlQuery.get('final') === 'true';
+  
   if (token && email) {
     // --- requestLink flow ---
     if (!isFinal && requireRequestLink) {
@@ -111,28 +119,5 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     }
   }
-
-  // Inline-fit layout
-  function updateInlineFit() {
-    const form = document.querySelector("form.verified-form");
-    if (!form) return;
-    const formWidth = form.offsetWidth;
-    const allInputs = form.querySelectorAll("input, select");
-    allInputs.forEach(inputElem => {
-      const label = inputElem.previousElementSibling;
-      if (!label || label.tagName !== "LABEL") return;
-      const inputWidth = inputElem.getBoundingClientRect().width;
-      if (inputWidth + 16 < formWidth) {
-        label.classList.add("inline-fit");
-        inputElem.classList.add("inline-fit");
-      } else {
-        label.classList.remove("inline-fit");
-        inputElem.classList.remove("inline-fit");
-      }
-    });
-  }
-  requestAnimationFrame(updateInlineFit);
-  window.addEventListener("load", updateInlineFit);
-  window.addEventListener("resize", updateInlineFit);
 });
 </script>

@@ -14,18 +14,54 @@
   <div class="form-container">
     <h1>{{ .Title }}</h1>
   
-    <form name="{{ .Title | urlize }}" class="verified-form" data-netlify="true" netlify>
+    <form name="{{ .Title | urlize }}" autocomplete="off" class="verified-form" data-netlify="true" netlify>
       {{ partial "form_verified.html" . }}      <!-- top Request-link box -->
       {{ .Content }}                            <!-- fieldsets only -->
       {{ partial "form_submit_button.html" . }} <!-- optional email + submit -->
     </form>
+    
+    <script>
+      // Inline-fit layout
+      function updateInlineFit() {
+        const form = document.querySelector("form.verified-form");
+        if (!form) return;
+        const formWidth = form.offsetWidth;
+        const allInputs = form.querySelectorAll("input, select");
+        allInputs.forEach(inputElem => {
+          const label = inputElem.previousElementSibling;
+          if (!label || label.tagName !== "LABEL") return;
+          const inputWidth = inputElem.getBoundingClientRect().width;
+          if (inputWidth + 16 < formWidth) {
+            label.classList.add("inline-fit");
+            inputElem.classList.add("inline-fit");
+          } else {
+            label.classList.remove("inline-fit");
+            inputElem.classList.remove("inline-fit");
+          }
+        });
+
+        // Ensure date fields have autocomplete off
+        form.querySelectorAll('input[type="date"]').forEach(input => {
+          input.setAttribute('autocomplete', 'off');
+        });
+      }
+
+      // Add star to legend if all inputs in fieldset are required
+      function markAllRequiredFieldsets() {
+        document.querySelectorAll("fieldset").forEach(fs => {
+          const inputs = fs.querySelectorAll("input, textarea, select");
+          const allRequired = Array.from(inputs).every(input => input.hasAttribute("required"));
+          if (allRequired) fs.classList.add("all-required");
+        });
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        updateInlineFit();
+        markAllRequiredFieldsets();
+      });
+
+      window.addEventListener("resize", updateInlineFit);
+    </script>
+
   </div>
-
-
 {{ end }}
-
-
-
-
-
-

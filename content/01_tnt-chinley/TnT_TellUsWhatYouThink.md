@@ -7,11 +7,21 @@ reviewed_by: Cheryl Cross
 type: form
 include_unselected_options: false
 restrict_users: false
-validation: none
+validation: none # options: "requestLink" &| "submit", "none" (default)
 ---
-<input type="hidden" name="_gotcha" style="display:none !important">
 
-<hr>
+<!--
+# Form Rules
+1. Default: No attributes except type (email, tel, date, text) — except...
+2. Add ONE class: name, address, or short-input where relevant.
+3. Use class address for name & address field.
+4. Inexact dates use short-input (not type="date").
+5. id="submitted_by" for the submitter’s email field.
+6. Use <fieldset> and <legend> to group fields, instead of headings.
+7. NO MORE THAN 3 SPACE INDENT
+8. Attribute order: <required> <id> <class> <type> .
+-->
+
 <h2>TnT is provided as a safe place for secondary school children to chill and chat.</h2>
 
 <fieldset>

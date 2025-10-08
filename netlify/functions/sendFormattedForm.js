@@ -42,7 +42,7 @@ exports.handler = async (event) => {
     // Generate final token and link
     const finalToken = generateSecureToken(formattedForm);
     await storeFinalForm(finalToken, formattedForm);
-    const finalSubmitLink = `${site_root}/submit_final.html?token=${finalToken}`;
+    const finalSubmitLink = `${site_root}/send_submission_page.html?token=${finalToken}`;
 
     // Detect local/dev environment safely
     const isDev =

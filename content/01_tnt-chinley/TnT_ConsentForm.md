@@ -5,130 +5,89 @@ last_reviewed: 2025-09-20
 review_period: 1m
 reviewed_by: Cheryl Cross
 type: form
-include_unselected_options: true # options: "true", "false" (default)
+include_unselected_options: true
 restrict_users: false
-validation: submit   # options: "requestLink" &| "submit", "none" (default)
+validation: submit
 ---
 
-<input type="hidden" name="_gotcha" style="display:none !important">
+<!--
+# Form Rules
+1. Default: No attributes except type (email, tel, date, text) — except...
+2. Add ONE class: name, address, or short-input where relevant.
+3. Use class address for name & address field.
+4. Inexact dates use short-input (not type="date").
+5. id="submitted_by" for the submitter’s email field.
+6. Use <fieldset> and <legend> to group fields, instead of headings.
+7. NO MORE THAN 3 SPACE INDENT
+8. Attribute order: <required> <id> <class> <type> .
+-->
 
 <p>This form should be completed by the child’s parent or other adult with delegated parental responsibility. Parental Consent Forms will be renewed annually at the start of the school year so that the data held is up to date. Please complete the consent form below to enable your child to attend the group.</p>
 
-<h2>Young Person’s Information</h2>
-<label>Child's Full Name:</label>
-<input class="name" type="text" name="child_name" required>
+<fieldset>
+  <legend>Young Person’s Information</legend>
+  <label>Child's Full Name:<input type="text" class="name" required></label>
+  <label>Date of Birth:<input type="date" autocomplete="off" required></label>
+  <label>Address & Postcode:<input type="text" class="address" required></label>
+  <label>If the child does not live with the parent(s)/guardian(s), who do they live with?<input type="text" class="name" value="N/A"></label>
+  <label>Relationship to Child:<input type="text" class="short-input" value="N/A"></label>
+</fieldset>
 
-<label>Date of Birth:</label>
-<input type="date" name="dob" required>
+<fieldset>
+  <legend>Emergency Contact Details</legend>
+  <label>Name of Parent(s) / other adult(s) with delegated parental authority:<input type="text" class="name" required></label>
+  <label>Relationship to Child:<input type="text" class="short-input" required></label>
+  <label>Phone Number(s):<input type="tel" required></label>
+  <label>Email Address:<input required id="submitted_by" type="email" placeholder="you@example.com"></label>
+  <label>Alternative Contact Name:<input type="text" class="name"></label>
+  <label>Alternative Contact Number:<input type="tel"></label>
+</fieldset>
 
-<label>Address & Postcode:</label>
-<input class="address" type="text" name="address" required>
-
-<label>If the child does not live with the parent(s)/guardian(s), who do they live with?</label>
-<input class="name" type="text" name="live_with" value="N/A">
-
-<label>Relationship to Child:</label>
-<input class="short-input" type="text" name="live_with_relationship" value="N/A">
-
-<hr>
-<h2>Emergency Contact Details</h2>
-<label>Name of Parent(s) / other adult(s) with delegated parental authority:</label>
-<input class="name" type="text" name="parent_name" required>
-
-<label>Relationship to Child:</label>
-<input class="short-input" type="text" name="relationship" required>
-
-<label>Phone Number(s):</label>
-<input type="tel" name="phone" required>
-
-<label>Email Address:</label>
-<input id="submitted_by" type="email" name="email">
-
-<label>Alternative Contact Name:</label>
-<input class="name" type="text" name="alt_name">
-
-<label>Alternative Contact Number:</label>
-<input type="tel" name="alt_phone">
-
-<hr>
-<h2>Medical Information</h2>
-<label>Name of family doctor:</label>
-<input class="name" type="text" name="doctor_name">
-
-<label>Practice Address:</label>
-<input class="address" type="text" name="Practice_Address">
-
-<label>Practice phone number:</label>
-<input type="tel" name="Practice_phone">
-
-<label>Any details of your child's health issues, medical conditions, allergies, or dietary requirements:</label>
-<input type="text" name="health_issues" value="None">
-
-<label>Any additional needs that we should be aware of:</label>
-<input type="text" name="Other_Needs" value="None">
-
-<label>Date of last anti-tetanus injection (if known):</label>
-<input class="short-input" type="text" name="Tetanus_Date" value="None">
+<fieldset>
+  <legend>Medical Information</legend>
+  <label>Name of family doctor:<input type="text" class="name"></label>
+  <label>Practice Address:<input type="text" class="address"></label>
+  <label>Practice phone number:<input type="tel"></label>
+  <label>Any details of your child's health issues, medical conditions, allergies, or dietary requirements:<input type="text" value="None"></label>
+  <label>Any additional needs that we should be aware of:<input type="text" value="None"></label>
+  <label>Date of last anti-tetanus injection (if known):<input type="text" class="short-input" value="None"></label>
+</fieldset>
 
 <fieldset>
   <legend>Permission for sticking plasters</legend>
-  <label><input type="radio" name="Plaster_Permission" value="Yes" required> Yes</label>
-  <label><input type="radio" name="Plaster_Permission" value="No"> No</label>
+  <label><input type="radio" required> Yes</label>
+  <label><input type="radio"> No</label>
 </fieldset>
-
-<hr>
-<h2>Consent</h2>
 
 <fieldset>
   <legend>Weekly Activities Consent</legend>
-  <label><input type="checkbox" name="Weekly_Activities_Consent" required>
-  I give permission for my child to take part in the normal weekly activities of Chinley TnT.
-  </label>
+  <label><input type="checkbox" required> I give permission for my child to take part in the normal weekly activities of Chinley TnT.</label>
 </fieldset>
 
 <fieldset>
   <legend>First Aid Consent</legend>
-  <label><input type="radio" name="FirstAid_Consent" value="Yes" required> Yes</label>
-  <label><input type="radio" name="FirstAid_Consent" value="No"> No</label>
+  <label><input type="radio" required> Yes</label>
+  <label><input type="radio"> No</label>
 </fieldset>
 
 <fieldset>
   <legend>Emergency Medical Consent</legend>
-  <label><input type="radio" name="Medical_Consent" value="Yes" required> Yes</label>
-  <label><input type="radio" name="Medical_Consent" value="No"> No</label>
+  <label><input type="radio" required> Yes</label>
+  <label><input type="radio"> No</label>
 </fieldset>
 
 <fieldset>
   <legend>Parent/Guardian Consent</legend>
-  <label><input type="checkbox" name="Data_Consent" required>
-  I give explicit permission for Chinley TnT to process personal/medical data.
-  </label>
-
-  <label><input type="checkbox" name="Confirm_Accurate" required>
-  I confirm the information provided is accurate.
-  </label>
-
-  <label for="ParentName">Name</label>
-  <input type="text" id="ParentName" name="ParentName" class="name" required>
-
-  <label for="ParentDate">Date</label>
-  <input class="autofill-today" type="date" id="ParentDate" name="ParentDate" required>
-
-  <label><input type="checkbox" name="ParentSignatureConfirm" required>
-  I confirm that typing my name above acts as my electronic signature.
-  </label>
+  <label><input type="checkbox" required> I give explicit permission for Chinley TnT to process personal/medical data.</label>
+  <label><input type="checkbox" required> I confirm the information provided is accurate.</label>
+  <label><input type="checkbox" required> I confirm that typing my name below acts as my electronic signature.</label>
+  <label>Name:<input type="text" class="name" required></label>
+  <label>Date:<input type="date" class="autofill-today" required></label>
 </fieldset>
 
 <fieldset>
   <legend>Child Consent (if aged 13 or over)</legend>
-  <label for="ChildName">Name</label>
-  <input class="name" type="text" id="ChildName" name="ChildName">
-
-  <label for="ChildDate">Date</label>
-  <input class="autofill-today" type="date" id="ChildDate" name="ChildDate">
-
-  <label><input type="checkbox" name="ChildSignatureConfirm">
-  I confirm that typing my name above acts as my electronic signature.
-  </label>
+  <label><input type="checkbox"> I confirm that typing my name below acts as my electronic signature.</label>
+  <label>Name:<input type="text" class="name"></label>
+  <label>Date:<input type="date" class="autofill-today"></label>
 </fieldset>
-

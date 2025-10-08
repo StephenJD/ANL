@@ -45,15 +45,39 @@ label {
   margin-top: 0.5em;
 }
 
-/* === Required indicators === */
-label:has(+ input:required)::after,
-label:has(+ textarea:required)::after,
-label:has(+ select:required)::after,
-fieldset:has(input[required]) legend::after {
+/* Horizontal gap between label text and inline input */
+label > input.short-input,
+label > input.name,
+label > input[type="tel"],
+label > input[type="email"],
+label > input[type="date"] {
+  display: inline-block;
+  width: auto;
+  max-width: 400px;
+  margin-left: 1em; /* horizontal gap from label text */
+}
+
+/* Regular inputs (exclude radios) - only for fieldsets not all-required */
+fieldset:not(.all-required) label:has(input[required]):not(:has(input[type="radio"]))::before,
+fieldset:not(.all-required) label:has(textarea[required])::before,
+fieldset:not(.all-required) label:has(select[required])::before {
+  content: "* ";
+  color: red;
+}
+
+/* Star for fieldsets with required radios */
+fieldset:has(input[type="radio"][required]) > legend::after {
   content: " *";
   color: red;
-  margin-left: 0.1em;
 }
+
+/* All-required fieldsets: only legend star */
+fieldset.all-required legend::after {
+  content: " *";
+  color: red;
+}
+
+
 
 /* === Input Elements === */
 input, select, textarea {
@@ -64,28 +88,6 @@ input, select, textarea {
   padding: 0.25em 0.5em;
   box-sizing: border-box;
   vertical-align: middle;
-}
-
-/* Short inputs that may go inline */
-input.short-input,
-input.name,
-input[type="tel"],
-input[type="email"],
-input[type="date"] {
-  display: inline-block;
-  width: auto;
-  max-width: 400px;
-  margin-right: 1em;
-}
-
-/* Inline-fit pairs (set dynamically by JS) */
-label.inline-fit,
-label.inline-fit + input.inline-fit {
-  display: inline-block;
-}
-
-label.inline-fit {
-  margin-right: 0.5em;
 }
 
 /* === Focus highlight === */
@@ -144,15 +146,15 @@ legend {
 /* Shared radio/checkbox input styling */
 fieldset input[type="radio"],
 fieldset input[type="checkbox"] {
-  margin: 0;              /* spacing handled by label gap */
+  margin: 0;
   vertical-align: middle;
 }
 
 fieldset input[type="radio"] {
-  width: auto;          /* natural circle width */
+  width: auto;
 }
 
-/* Shared label styling */
+/* Shared label styling for radios/checkboxes */
 fieldset label:has(input[type="radio"]),
 fieldset label:has(input[type="checkbox"]) {
   align-items: center;
@@ -165,8 +167,8 @@ fieldset label:has(input[type="checkbox"]) {
 fieldset label:has(input[type="radio"]) {
   display: inline-flex;
   gap: 1em;
-  margin-right: 2em;       /* space between multiple radio options */
-  width: auto;             /* <-- important: shrink to fit content */
+  margin-right: 2em;
+  width: auto;
 }
 
 /* Checkboxes stacked */
