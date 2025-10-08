@@ -1,5 +1,3 @@
-<!-- static/send_submission_page.html -->
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,50 +5,26 @@
   <title>Final Form Submission</title>
 </head>
 <body>
-  <p id="status">Verifying...</p>
+  <p id="status">Submitting...</p>
   <script>
     (async () => {
-      const params = new URLSearchParams(window.location.search);
-      const token = params.get('token');
       const status = document.getElementById('status');
-
-      if (!token) {
-        status.textContent = "Invalid or missing token.";
-        return;
-      }
+      const token = new URLSearchParams(window.location.search).get('token');
 
       try {
-        // Verify and retrieve stored form
-        const verifyResp = await fetch("/.netlify/functions/verifyFinalToken", {
+        const resp = await fetch("/.netlify/functions/finalSubmit", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ token })
         });
-
-        if (!verifyResp.ok) throw new Error("verifyFinalToken " + verifyResp.status);
-        const data = await verifyResp.json();
-
-        if (!data.valid) {
-          status.textContent = "This submission link has expired or is invalid.";
-          return;
-        }
-
-        // Send final form onward
-        const finalResp = await fetch("/.netlify/functions/finalSubmit", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ token })
-        });
-
-        if (!finalResp.ok) throw new Error("finalSubmit " + finalResp.status);
-        const finalData = await finalResp.json();
-
-        status.textContent = finalData.success
+        if (!resp.ok) throw new Error("finalSubmit " + resp.status);
+        const data = await resp.json();
+        status.textContent = data.success
           ? "✅ Your form has been successfully submitted!"
           : "❌ Submission failed. Please try again.";
       } catch (err) {
         console.error(err);
-        status.textContent = "Error verifying or submitting form.";
+        status.textContent = "Error submitting form.";
       }
     })();
   </script>
