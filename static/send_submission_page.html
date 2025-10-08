@@ -30,34 +30,38 @@
           status.textContent = 'Invalid or missing token.';
           return;
         }
-  
+      
         const verifyResp = await fetch('/.netlify/functions/verifyFinalToken', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ token })
         });
-  
+      
         if (!verifyResp.ok) throw new Error('verifyFinalToken ' + verifyResp.status);
         const data = await verifyResp.json();
-  
+      
         if (!data.valid) {
           status.textContent = 'This submission link has expired or is invalid.';
           return;
         }
+      
+        const finalResp = await fetch('/.netlify/functions/finalSubmit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token })
+        });
+      
+        if (!finalResp.ok) throw new Error('finalSubmit ' + finalResp.status);
+        const finalData = await finalResp.json();
+      
+        status.textContent = finalData.success
+          ? '✅ Your form has been successfully submitted!'
+          : '❌ Submission failed. Please try again.';
+      } else {
+        // No-validation form → skip finalSubmit entirely
+        status.textContent = '✅ Your form has been successfully submitted!';
       }
-  
-      const finalResp = await fetch('/.netlify/functions/finalSubmit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: token || null })
-      });
-  
-      if (!finalResp.ok) throw new Error('finalSubmit ' + finalResp.status);
-      const finalData = await finalResp.json();
-  
-      status.textContent = finalData.success
-        ? '✅ Your form has been successfully submitted!'
-        : '❌ Submission failed. Please try again.';
+
     } catch (err) {
       console.error('[DEBUG]', err);
       status.textContent = 'Error verifying or submitting form.';
