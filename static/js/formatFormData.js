@@ -1,33 +1,33 @@
 // Client-Side: /static/js/formatFormData.js
-
 /**
- * Convert a form into a readable string.
+ * Convert a form into structured HTML for emails.
+ * Collapses multiple empty lines between fieldsets.
  * @param {HTMLFormElement} form
- * @param {boolean} includeUnselected - If true, includes unchecked checkboxes/radios and empty fields
- * @returns {string} Formatted string
+ * @param {boolean} includeUnselected - Include unchecked/empty fields
+ * @returns {string} HTML string
  */
 export function formatFormEmail(form, includeUnselected = false) {
   const output = [];
 
   form.querySelectorAll("fieldset").forEach((fs) => {
-    const fieldsetLines = [];
+    const items = [];
 
-    // Include legend
+    // Include legend as heading
     const legend = fs.querySelector("legend")?.innerText.trim();
-    if (legend) fieldsetLines.push(`<strong>${legend}</strong>`);
+    if (legend) output.push(`<p><strong>${legend}</strong></p>`);
 
     // Process inputs and textareas
     fs.querySelectorAll("input, textarea").forEach((input) => {
       let labelText = "";
 
-      // Try to get label text
+      // Get label text
       const label = fs.querySelector(`label[for="${input.id}"]`);
       if (label) labelText = label.textContent.trim();
       else if (input.closest("label"))
         labelText = input.closest("label").textContent.trim();
       else labelText = input.name || "";
 
-      // Skip empty/unselected fields unless includeUnselected=true
+      // Skip empty/unselected fields unless includeUnselected
       if (!includeUnselected) {
         if ((input.type === "checkbox" || input.type === "radio") && !input.checked)
           return;
@@ -39,17 +39,19 @@ export function formatFormEmail(form, includeUnselected = false) {
       if (input.type === "checkbox" || input.type === "radio") {
         line = input.checked ? line : `<s>${line}</s>`;
       } else {
-        line += `: ${input.value || ""}`;
+        const value = input.value.replace(/\n/g, "<br>");
+        line += `: ${value || ""}`;
       }
 
-      fieldsetLines.push(line);
+      items.push(`<li>${line}</li>`);
     });
 
-    if (fieldsetLines.length) output.push(...fieldsetLines, ""); // spacing
+    if (items.length) output.push(`<ul>${items.join("")}</ul>`);
   });
 
-  // Remove trailing empty lines
-  while (output.length && !output[output.length - 1].trim()) output.pop();
+  // Collapse multiple empty lines between groups
+  let html = output.join("\n");
+  html = html.replace(/(\n\s*){2,}/g, "\n");
 
-  return output.join("\n");
+  return html;
 }

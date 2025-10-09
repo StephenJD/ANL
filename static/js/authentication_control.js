@@ -3,7 +3,24 @@
 // - Sends formatted form to server (/.netlify/functions/storeFinalForm) to generate/store token securely
 // - Optionally emails the form via /.netlify/functions/sendFormattedForm
 // - Works for validation: "none", "requestLink", and "submit"
+/*
+Client-side: 
+1. Serialize and format the form (/static/js/formatFormData.js). 
+2. Send the formatted form to /netlify/functions/storeFinalForm.js 
+3. storeFinalForm.js generates the secure token, stores the form along with the token, and returns the token to the client. 
+4.
+  a) If validate-submit then email form to client with link to send_submission_page.html, no immediate redirection. 
+  b) If not validate-submit [if optional email given, email form to client] then redirect to send_submission_page.html. 
 
+Server-side: 
+1. storeFinalForm.js receives { formattedForm }. 
+2. Calls generateSecureToken(formattedForm). 
+3. Stores { token, formattedForm } using tokenStore. 
+4. Returns { token } to the client. 
+5. On send_submission_page.html, Retrieve form using query-token (will fail if client attempts with wrong token) 
+6. Send to Netlify.
+
+*/
 // --- Helper: formatFormEmail (client-side only) ---
 function formatFormEmail(form, includeUnselected = false) {
   const output = [];

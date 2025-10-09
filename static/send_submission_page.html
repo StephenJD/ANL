@@ -13,9 +13,7 @@
   const status = document.getElementById("status");
   const params = new URLSearchParams(window.location.search);
   const token = params.get("token");
-  const validationMode = (params.get("validationMode") || "none")
-    .split(/[\s,;]+/)
-    .filter(Boolean);
+  const validationMode = (params.get("validationMode") || "none").split(/[\s,;]+/).filter(Boolean);
   const requireFinalSubmit = validationMode.includes("submit");
 
   console.log("[DEBUG] token:", token);
@@ -28,7 +26,7 @@
   }
 
   try {
-    // 4. Verify token for all forms
+    // Verify token first
     const verifyResp = await fetch("/.netlify/functions/verifyFinalToken", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -40,24 +38,26 @@
       return;
     }
 
-    // 5. Submit to Netlify **if validationMode = "submit" OR "none"**
+    // Submit stored form to Netlify using sendFormattedForm
     if (requireFinalSubmit || validationMode.includes("none")) {
-      const finalResp = await fetch("/.netlify/functions/finalSubmit", {
+      const finalResp = await fetch("/.netlify/functions/sendFormattedForm", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token })
+        body: JSON.stringify({
+          email: process.env.ADMIN_EMAIL || "admin@example.com",
+          token,
+          includeSubmissionLink: requireFinalSubmit // only append submit link if validated
+        })
       });
 
-      if (!finalResp.ok) throw new Error("finalSubmit " + finalResp.status);
+      if (!finalResp.ok) throw new Error("sendFormattedForm " + finalResp.status);
       const finalData = await finalResp.json();
 
-      // 6. Show submission status
       status.textContent = finalData.success
         ? "✅ Your form has been successfully submitted!"
         : "❌ Submission failed. Please try again.";
-    } else {
-      status.textContent = "✅ Token verified. Ready for submission.";
     }
+
   } catch (err) {
     console.error("[DEBUG]", err);
     status.textContent = "❌ Error verifying or submitting form.";
