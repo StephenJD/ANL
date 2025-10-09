@@ -13,7 +13,10 @@
   const status = document.getElementById("status");
   const params = new URLSearchParams(window.location.search);
   const token = params.get("token");
-  const validationMode = (params.get("validationMode") || "none").split(/[\s,;]+/).filter(Boolean);
+  const validationMode = (params.get("validationMode") || "none")
+    .split(/[\s,;]+/)
+    .filter(Boolean);
+
   const requireFinalSubmit = validationMode.includes("submit");
 
   console.log("[DEBUG] token:", token);
@@ -26,7 +29,7 @@
   }
 
   try {
-    // Verify token first
+    // Always verify token first
     const verifyResp = await fetch("/.netlify/functions/verifyFinalToken", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -38,25 +41,22 @@
       return;
     }
 
-    // Submit stored form to Netlify using sendFormattedForm
-    if (requireFinalSubmit || validationMode.includes("none")) {
-      const finalResp = await fetch("/.netlify/functions/sendFormattedForm", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: process.env.ADMIN_EMAIL || "admin@example.com",
-          token,
-          includeSubmissionLink: requireFinalSubmit // only append submit link if validated
-        })
-      });
+    // Send the form to server to trigger email (optional or validated)
+    const includeSubmissionLink = requireFinalSubmit;
+    const email = verifyData.userEmail || null; // optional: client email if needed
 
-      if (!finalResp.ok) throw new Error("sendFormattedForm " + finalResp.status);
-      const finalData = await finalResp.json();
+    const sendResp = await fetch("/.netlify/functions/sendFormattedForm", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token, email, includeSubmissionLink })
+    });
 
-      status.textContent = finalData.success
-        ? "✅ Your form has been successfully submitted!"
-        : "❌ Submission failed. Please try again.";
-    }
+    if (!sendResp.ok) throw new Error("sendFormattedForm " + sendResp.status);
+    const sendData = await sendResp.json();
+
+    status.textContent = sendData.success
+      ? "✅ Your form has been successfully submitted!"
+      : "❌ Emailing form failed. Please try again.";
 
   } catch (err) {
     console.error("[DEBUG]", err);
