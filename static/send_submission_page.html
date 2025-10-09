@@ -14,9 +14,7 @@
   const params = new URLSearchParams(window.location.search);
   const token = params.get("token");
   const validationMode = (params.get("validationMode") || "none")
-    .split(/[\s,;]+/)
-    .filter(Boolean);
-
+    .split(/[\s,;]+/).filter(Boolean);
   const requireFinalSubmit = validationMode.includes("submit");
 
   console.log("[DEBUG] token:", token);
@@ -29,7 +27,7 @@
   }
 
   try {
-    // Always verify token first
+    // 1. Verify token
     const verifyResp = await fetch("/.netlify/functions/verifyFinalToken", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -41,23 +39,27 @@
       return;
     }
 
-    // Send the form to server to trigger email (optional or validated)
-    const includeSubmissionLink = requireFinalSubmit;
-    const email = verifyData.userEmail || null; // optional: client email if needed
+    // 2. Non-validated submission: send form to ANL (and optionally to client)
+    const clientEmail = params.get("clientEmail") || null; // optional email
+    const includeSubmissionLink = false; // no submit link for non-validated
+    const bodyPayload = { token, includeSubmissionLink };
+
+    if (clientEmail) bodyPayload.email = clientEmail;
 
     const sendResp = await fetch("/.netlify/functions/sendFormattedForm", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token, email, includeSubmissionLink })
+      body: JSON.stringify(bodyPayload)
     });
 
     if (!sendResp.ok) throw new Error("sendFormattedForm " + sendResp.status);
     const sendData = await sendResp.json();
+    console.log("[DEBUG] sendFormattedForm response:", sendData);
 
+    // 3. Show confirmation
     status.textContent = sendData.success
       ? "✅ Your form has been successfully submitted!"
-      : "❌ Emailing form failed. Please try again.";
-
+      : "❌ Submission failed. Please try again.";
   } catch (err) {
     console.error("[DEBUG]", err);
     status.textContent = "❌ Error verifying or submitting form.";

@@ -1,4 +1,7 @@
 // Server-Side: /netlify/functions/sendFormattedForm.js
+// - Sends stored HTML form to ANL or optional client
+// - Optionally appends submission link for validated submissions
+
 const { retrieveFinalForm } = require("./tokenStore");
 const nodemailer = require("nodemailer");
 
@@ -10,11 +13,11 @@ exports.handler = async function(event) {
   try {
     const { email, token, includeSubmissionLink = false } = JSON.parse(event.body);
 
-    if (!email || !token) {
-      return { statusCode: 400, body: JSON.stringify({ success: false, error: "Missing email or token" }) };
+    if (!token) {
+      return { statusCode: 400, body: JSON.stringify({ success: false, error: "Missing token" }) };
     }
 
-    // Retrieve the stored form HTML
+    // Retrieve the stored HTML-formatted form
     const storedForm = await retrieveFinalForm(token);
     if (!storedForm) {
       return { statusCode: 400, body: JSON.stringify({ success: false, error: "Invalid or expired token" }) };
@@ -22,11 +25,14 @@ exports.handler = async function(event) {
 
     let htmlContent = storedForm;
 
-    // If this is a validated submission email, append the submit link/button
+    // Add submission link only if requested (validated submission)
     if (includeSubmissionLink) {
       const submitUrl = `${process.env.SITE_ROOT || "https://example.com"}/send_submission_page.html?token=${encodeURIComponent(token)}`;
       htmlContent += `<p><a href="${submitUrl}" style="display:inline-block;padding:10px 20px;background:#007bff;color:#fff;text-decoration:none;border-radius:4px;">Click to Submit</a></p>`;
     }
+
+    // Determine recipient(s)
+    const recipients = email ? [email] : [process.env.ADMIN_EMAIL || process.env.SMTP_USER];
 
     // Setup email transport
     const transporter = nodemailer.createTransport({
@@ -39,12 +45,16 @@ exports.handler = async function(event) {
       }
     });
 
-    await transporter.sendMail({
-      from: `"Ascend Next Level" <${process.env.SMTP_USER}>`,
-      to: email,
-      subject: includeSubmissionLink ? "Final Form Submission" : "Your Form Copy",
-      html: htmlContent
-    });
+    // Send email to each recipient
+    for (const recipient of recipients) {
+      await transporter.sendMail({
+        from: `"Ascend Next Level" <${process.env.SMTP_USER}>`,
+        to: recipient,
+        subject: includeSubmissionLink ? "Final Form Submission" : "Your Form Copy",
+        html: htmlContent
+      });
+      console.log(`[DEBUG] Email sent to ${recipient}`);
+    }
 
     return { statusCode: 200, body: JSON.stringify({ success: true }) };
   } catch (err) {
