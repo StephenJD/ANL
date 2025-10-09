@@ -1,7 +1,6 @@
 // netlify/functions/sendFormattedForm.js
 const nodemailer = require("nodemailer");
 const { generateSecureToken } = require("./generateSecureToken");
-const { storeFinalForm } = require("./tokenStore");
 
 exports.handler = async (event) => {
   if (event.httpMethod !== "POST") {
@@ -41,7 +40,6 @@ exports.handler = async (event) => {
   try {
     // Generate final token and link
     const finalToken = generateSecureToken(formattedForm);
-    await storeFinalForm(finalToken, formattedForm);
     const finalSubmitLink = `${site_root}/send_submission_page.html?token=${finalToken}`;
 
     // Detect local/dev environment safely

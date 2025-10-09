@@ -1,4 +1,4 @@
-// netlify/functions/verifyToken_ClientWrapper.js
+// Server-Side: netlify/functions/verifyToken_ClientWrapper.js
 
 const verifySecureToken = require("./verifySecureToken");
 

@@ -1,8 +1,8 @@
-<!-- File location: /static/send_submission_page.html -->
+<!-- Client-Side: /static/send_submission_page.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Final Form Submission</title>
 </head>
 <body>
@@ -10,142 +10,51 @@
 
 <script>
 (async () => {
+  const status = document.getElementById("status");
   const params = new URLSearchParams(window.location.search);
-  const token = params.get('token');
-  let validationMode = params.get('validationMode') || 'none';
+  const token = params.get("token");
+  const validationMode = (params.get("validationMode") || "none").split(/[\s,;]+/).filter(Boolean);
+  const requireFinalSubmit = validationMode.includes("submit");
 
-  if (typeof validationMode === 'string') {
-    validationMode = validationMode.split('#')[0].trim().split(/[\s,;]+/).filter(Boolean);
-  }
+  console.log("[DEBUG] token:", token);
+  console.log("[DEBUG] validationMode:", validationMode);
+  console.log("[DEBUG] requireFinalSubmit:", requireFinalSubmit);
 
-  const requireFinalSubmit = validationMode.includes('submit');
-  const status = document.getElementById('status');
-
-  console.log('[DEBUG] token:', token);
-  console.log('[DEBUG] validationMode:', validationMode);
-  console.log('[DEBUG] requireFinalSubmit:', requireFinalSubmit);
-
-  const form = document.querySelector('form.verified-form');
-  if (!form) {
-    status.textContent = 'Form not found on this page.';
+  if (!token) {
+    status.textContent = "❌ Missing token.";
     return;
   }
 
-  // Helper to submit to Netlify
-  async function submitToNetlify() {
-    try {
-      const fd = new FormData(form);
-      const pairs = [];
-      for (const [k, v] of fd.entries()) pairs.push(`${k}: ${v}`);
-      const formattedForm = pairs.join('\n');
-
-      const resp = await fetch('/.netlify/functions/sendFormattedForm', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: null,             // No email needed for Netlify admin submission here
-          formName: form.name || document.title,
-          formPath: window.location.pathname,
-          formattedForm,
-          site_root: window.location.origin
-        })
-      });
-
-      if (!resp.ok) throw new Error('Netlify submission failed: ' + resp.status);
-      const data = await resp.json();
-      status.textContent = data.success
-        ? '✅ Your form has been successfully submitted!'
-        : '❌ Submission failed. Please try again.';
-    } catch (err) {
-      console.error('[DEBUG] Netlify submission error:', err);
-      status.textContent = 'Error submitting form to Netlify.';
-    }
-  }
-
   try {
-    if (requireFinalSubmit) {
-      // --- Token verification flow ---
-      if (!token) {
-        status.textContent = 'Invalid or missing token.';
-        return;
-      }
-
-      const verifyResp = await fetch('/.netlify/functions/verifyFinalToken', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token })
-      });
-
-      if (!verifyResp.ok) throw new Error('verifyFinalToken ' + verifyResp.status);
-      const verifyData = await verifyResp.json();
-
-      if (!verifyData.valid) {
-        status.textContent = 'This submission link has expired or is invalid.';
-        return;
-      }
-
-      console.log('[DEBUG] Token valid, sending email if required before Netlify submission');
-
-      // Email the client (required for final-submit forms)
-      const fd = new FormData(form);
-      const pairs = [];
-      for (const [k, v] of fd.entries()) pairs.push(`${k}: ${v}`);
-      const formattedForm = pairs.join('\n');
-
-      const emailResp = await fetch('/.netlify/functions/sendFormattedForm', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: verifyData.email,  // client email from token verification step
-          formName: form.name || document.title,
-          formPath: window.location.pathname,
-          formattedForm,
-          site_root: window.location.origin
-        })
-      });
-
-      if (!emailResp.ok) throw new Error('sendFormattedForm ' + emailResp.status);
-
-      // After email succeeds → submit to Netlify
-      await submitToNetlify();
-
-    } else {
-      // --- No-validation flow ---
-      const optionalEmailInput = form.querySelector('#optional_email_field input[type="email"]');
-      const submittedByElem = form.querySelector('#submitted_by');
-      const emailToSend = optionalEmailInput?.value?.trim() || submittedByElem?.value?.trim() || null;
-
-      if (emailToSend) {
-        const fd = new FormData(form);
-        const pairs = [];
-        for (const [k, v] of fd.entries()) pairs.push(`${k}: ${v}`);
-        const formattedForm = pairs.join('\n');
-
-        try {
-          const emailResp = await fetch('/.netlify/functions/sendFormattedForm', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              email: emailToSend,
-              formName: form.name || document.title,
-              formPath: window.location.pathname,
-              formattedForm,
-              site_root: window.location.origin
-            })
-          });
-          if (!emailResp.ok) throw new Error('sendFormattedForm ' + emailResp.status);
-        } catch (err) {
-          console.error('[DEBUG] Optional email failed:', err);
-          // Optional email failure does not block Netlify submission
-        }
-      }
-
-      // Always submit to Netlify for no-validation forms
-      await submitToNetlify();
+    // 4. Verify token (works for both validated & non-validated forms)
+    const verifyResp = await fetch("/.netlify/functions/verifyFinalToken", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token })
+    });
+    const verifyData = await verifyResp.json();
+    if (!verifyData.valid) {
+      status.textContent = "❌ Invalid or expired token.";
+      return;
     }
+
+    // 5. Submit to Netlify
+    const finalResp = await fetch("/.netlify/functions/finalSubmit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token })
+    });
+
+    if (!finalResp.ok) throw new Error("finalSubmit " + finalResp.status);
+    const finalData = await finalResp.json();
+
+    // 6. Show submission status
+    status.textContent = finalData.success
+      ? "✅ Your form has been successfully submitted!"
+      : "❌ Submission failed. Please try again.";
   } catch (err) {
-    console.error('[DEBUG]', err);
-    status.textContent = 'Error verifying or submitting form.';
+    console.error("[DEBUG]", err);
+    status.textContent = "❌ Error verifying or submitting form.";
   }
 })();
 </script>

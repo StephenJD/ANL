@@ -1,12 +1,8 @@
-// Client-Side: /static/js/formatFormData.js
+// static/js/formatFormData.js
+export function formatFormData(form) {
+  const includeUnselected =
+  window.PAGE_FRONTMATTER?.params?.include_unselected_options || false;
 
-/**
- * Convert a form into a readable string.
- * @param {HTMLFormElement} form
- * @param {boolean} includeUnselected - If true, includes unchecked checkboxes/radios and empty fields
- * @returns {string} Formatted string
- */
-export function formatFormEmail(form, includeUnselected = false) {
   const output = [];
 
   form.querySelectorAll("fieldset").forEach((fs) => {
@@ -27,12 +23,21 @@ export function formatFormEmail(form, includeUnselected = false) {
         labelText = input.closest("label").textContent.trim();
       else labelText = input.name || "";
 
-      // Skip empty/unselected fields unless includeUnselected=true
+      // Skip empty values if include_unselected_options=false
       if (!includeUnselected) {
-        if ((input.type === "checkbox" || input.type === "radio") && !input.checked)
-          return;
-        if (!["checkbox", "radio"].includes(input.type) && !input.value.trim())
-          return;
+        if (
+          (input.type === "checkbox" || input.type === "radio") &&
+          !input.checked
+        ) {
+          return; // skip unselected
+        }
+        if (
+          input.type !== "checkbox" &&
+          input.type !== "radio" &&
+          !input.value.trim()
+        ) {
+          return; // skip empty text fields
+        }
       }
 
       let line = labelText;
@@ -45,11 +50,9 @@ export function formatFormEmail(form, includeUnselected = false) {
       fieldsetLines.push(line);
     });
 
-    if (fieldsetLines.length) output.push(...fieldsetLines, ""); // spacing
+    if (fieldsetLines.length) output.push(...fieldsetLines);
   });
 
-  // Remove trailing empty lines
-  while (output.length && !output[output.length - 1].trim()) output.pop();
-
-  return output.join("\n");
+  // Join lines and remove any empty <br> or stray whitespace
+  return output.filter((l) => l && l.trim() !== "").join("<br>");
 }
