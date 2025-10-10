@@ -151,7 +151,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   if (requireRequestLink && token) {
     try {
-      const resp = await fetch("/.netlify/functions/verifyToken", {
+      const resp = await fetch("/.netlify/functions/verifyToken_ClientWrapper", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token, email: urlEmail, formPath: window.location.pathname })
