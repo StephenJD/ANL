@@ -9,12 +9,12 @@ Client-side:
  a) Only the form-request-box should be enabled.
  b) Clicking Send button stores a validation token and sends the link with the token to the email-address using netlify/functions/sendFormAccessLink.js
 2. If requireRequestLink then only enable the form if the query token is valided by verifyToken.
-3. Serialize and format the form (/static/js/formatFormData.js). 
+3. On form "Submit" Serialize and format the form (/static/js/formatFormData.js). 
 4. Send the formatted form to /netlify/functions/storeFinalForm.js 
 5. storeFinalForm.js generates the secure token, stores the form along with the token, and returns the token to the client. 
 6.
   a) If validate-submit then email form to client with link to send_submission_page.html, no immediate redirection. 
-  b) If not validate-submit [if optional email given, email form to client] then redirect to send_submission_page.html. 
+  b) If not validate-submit [if requireRequestLink or optional email given, email form to client] then redirect to send_submission_page.html. 
 
 Server-side:
 1. If a link-token is requested, use form-name & email address as the "source" for generating a token.
@@ -24,8 +24,8 @@ Server-side:
 5. Returns { token } to the client. 
 6. On send_submission_page.html, Retrieve form using query-token (will fail if client attempts with wrong token) 
 7. Send to Netlify.
-
 */
+
 // --- Helper: formatFormEmail (client-side only) ---
 function formatFormEmail(form, includeUnselected = false) {
   const output = [];
@@ -67,7 +67,6 @@ function formatFormEmail(form, includeUnselected = false) {
     if (fieldsetLines.length) output.push(...fieldsetLines, ""); // spacing
   });
 
-  // Trim trailing blank lines
   while (output.length && !output[output.length - 1].trim()) output.pop();
 
   return output.join("\n");
@@ -83,12 +82,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   const messageBox = requestBox?.querySelector(".token-message");
   const btn = requestBox?.querySelector(".request-token-btn");
   const emailInput = requestBox?.querySelector(".request-email");
-
   console.log("[DEBUG] requestBox found:", !!requestBox);
   if (requestBox) requestBox.style.display = "block";
 
-  // Parse validation mode
   let validationMode = ["none"];
+  
   try {
     const params = JSON.parse(window.PAGE_FRONTMATTER?.params || "{}");
     let val = params.validation || "none";
@@ -110,8 +108,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   console.log("[DEBUG] validationMode:", validationMode);
   console.log("[DEBUG] requireRequestLink:", requireRequestLink, "requireFinalSubmit:", requireFinalSubmit);
 
-  // Disable form by default if requestLink required
   if (requireRequestLink) {
+    if (requestBox) requestBox.style.display = "block";
     form.querySelectorAll('input, textarea, select, button[type="submit"]').forEach(el => {
       if (!el.closest(".form-request-box")) el.disabled = true;
     });
@@ -120,48 +118,17 @@ document.addEventListener("DOMContentLoaded", async () => {
     emailInput?.removeAttribute("required");
   }
 
-  const urlQuery = new URLSearchParams(window.location.search);
-  const token = urlQuery.get("token");
-  const email = urlQuery.get("email");
-
-  // --- Step 1: verify request-link token ---
-  if (requireRequestLink && token && email) {
-    console.log("[DEBUG] verifyToken: starting");
-    try {
-      const resp = await fetch("/.netlify/functions/verifyToken_ClientWrapper", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, email, formPath: window.location.pathname })
-      });
-      const data = await resp.json();
-
-      console.log("[DEBUG] verifyToken response:", data);
-
-      if (data.valid) {
-        // Enable form and hide request box
-        form.querySelectorAll('input, textarea, select, button[type="submit"]').forEach(el => el.disabled = false);
-        if (requestBox) requestBox.style.display = "none";
-      } else if (messageBox) {
-        messageBox.textContent = "This link is invalid or has expired.";
-      }
-    } catch (err) {
-      console.error("[DEBUG] verifyToken error:", err);
-      if (messageBox) messageBox.textContent = "Verification failed.";
-    }
-  }
-
-  // Handle "request link" button
   if (requireRequestLink && btn) {
     btn.addEventListener("click", async () => {
-      const emailVal = emailInput?.value.trim();
-      if (!emailVal) return alert("Enter your email first");
+      const email = emailInput?.value.trim();
+      if (!email) return alert("Enter your email first");
 
       try {
         const resp = await fetch("/.netlify/functions/sendFormAccessLink", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            email: emailVal,
+            email,
             formPath: window.location.pathname,
             formName: form.name || document.title,
             site_root: window.location.origin
@@ -177,34 +144,55 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
-  // --- Step 2: verify final-submit token ---
-  if (requireFinalSubmit && token) {
+  // --- Token verification ---
+  const urlQuery = new URLSearchParams(window.location.search);
+  const token = urlQuery.get("token");
+  const urlEmail = urlQuery.get("email") || null;
+
+  if (requireRequestLink && token) {
     try {
-      const resp = await fetch("/.netlify/functions/verifyFinalToken", {
+      const resp = await fetch("/.netlify/functions/verifyToken", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token })
+        body: JSON.stringify({ token, email: urlEmail, formPath: window.location.pathname })
       });
       const data = await resp.json();
 
       if (data.valid) {
-        window.location.href = `/send_submission_page.html?token=${encodeURIComponent(token)}`;
+        const verifiedEmail = (data.email && String(data.email).trim()) || urlEmail;
+        console.log("[DEBUG] Token verified for:", verifiedEmail);
+
+        form.querySelectorAll('input, textarea, select, button[type="submit"]').forEach(el => {
+          el.disabled = false;
+        });
+
+        const submittedBy = form.querySelector("#submitted_by");
+        if (submittedBy && verifiedEmail) {
+          submittedBy.value = decodeURIComponent(verifiedEmail);
+          submittedBy.setAttribute("readonly", "true");
+          submittedBy.setAttribute("aria-readonly", "true");
+        }
+
+        if (requestBox) requestBox.style.display = "none";
       } else if (messageBox) {
-        messageBox.textContent = "This submission link has expired or is invalid.";
+        messageBox.textContent = "This access link is invalid or expired.";
       }
     } catch (err) {
-      console.error("[DEBUG] verifyFinalToken error:", err);
+      console.error("[DEBUG] verifyToken error:", err);
+      if (messageBox) messageBox.textContent = "Verification failed.";
     }
   }
 
-  // Non-validated form submission
+  // --- Submit handler ---
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
-    console.log("[DEBUG] Non-validated form submit triggered");
+    console.log("[DEBUG] Form submit triggered");
 
     const formattedForm = formatFormEmail(form);
+    const submittedByInput = form.querySelector("#submitted_by");
+    const submittedByEmail = submittedByInput?.value.trim() || "";
+    const optionalEmail = (document.querySelector("#optional_email_field input[type='email']")?.value || "").trim() || "";
 
-    // Send to storeFinalForm
     let storedToken;
     try {
       const resp = await fetch("/.netlify/functions/storeFinalForm", {
@@ -221,8 +209,44 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
-    // Optional email
-    const emailToSend = optionalEmailInput?.value.trim() || null;
+    if (requireFinalSubmit) {
+      if (!submittedByEmail) {
+        alert("Missing 'submitted_by' email.");
+        return;
+      }
+      try {
+        await fetch("/.netlify/functions/sendFormattedForm", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: submittedByEmail,
+            formName: form.name || document.title,
+            formPath: window.location.pathname,
+            formattedForm,
+            site_root: window.location.origin,
+            token: storedToken,
+            includeSubmissionLink: true
+          }),
+        });
+        console.log("[DEBUG] Final-submit link emailed to", submittedByEmail);
+      } catch (err) {
+        console.error("[DEBUG] Error sending final-submit email:", err);
+      }
+      alert("Form saved. Check your email for the final submission link.");
+      return;
+    }
+
+    let emailToSend = null;
+    if (requireRequestLink) {
+      if (!submittedByEmail) {
+        alert("Missing 'submitted_by' email.");
+        return;
+      }
+      emailToSend = submittedByEmail;
+    } else {
+      if (optionalEmail) emailToSend = optionalEmail;
+    }
+
     if (emailToSend) {
       try {
         await fetch("/.netlify/functions/sendFormattedForm", {
@@ -234,18 +258,17 @@ document.addEventListener("DOMContentLoaded", async () => {
             formPath: window.location.pathname,
             formattedForm,
             site_root: window.location.origin,
-            token: storedToken
-          })
+            token: storedToken,
+            includeSubmissionLink: false
+          }),
         });
-        console.log("[DEBUG] Optional email sent to", emailToSend);
+        console.log("[DEBUG] Form emailed to", emailToSend);
       } catch (err) {
-        console.error("[DEBUG] Error sending optional email:", err);
+        console.error("[DEBUG] Error sending email:", err);
       }
     }
 
-    // Redirect
     const params = new URLSearchParams({ token: storedToken, validationMode: validationMode.join(",") });
     window.location.href = `/send_submission_page.html?${params.toString()}`;
   });
 });
-
