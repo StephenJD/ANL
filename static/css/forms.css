@@ -53,7 +53,7 @@ label {
   margin-top: 0.5em;
 }
 
-/* Horizontal gap between label text and inline input */
+/* Short inline input */
 label > input.short-input,
 label > input.name,
 label > input[type="tel"],
@@ -85,8 +85,6 @@ fieldset.all-required legend::after {
   color: red;
 }
 
-
-
 /* === Input Elements === */
 input, select, textarea {
   height: auto;
@@ -115,7 +113,9 @@ textarea {
 }
 
 /* === Submit button === */
-form.verified-form button[type="submit"] {
+.form-request-box .request-token-btn,
+button[type="submit"]
+ {
   display: block;
   width: 50%;
   margin: 2em auto 1em auto;
@@ -130,7 +130,8 @@ form.verified-form button[type="submit"] {
   transition: background-color 0.2s ease;
 }
 
-form.verified-form button[type="submit"]:hover {
+.form-request-box .request-token-btn:hover,
+button[type="submit"]:hover {
   background-color: #005fa3;
 }
 

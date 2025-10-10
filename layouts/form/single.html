@@ -13,9 +13,9 @@
 
   <div class="form-container">
     <h1>{{ .Title }}</h1>
+    {{ partial "form_verified.html" . }}      <!-- top Request-link box -->
   
     <form name="{{ .Title | urlize }}" autocomplete="off" class="verified-form" data-netlify="true" netlify>
-      {{ partial "form_verified.html" . }}      <!-- top Request-link box -->
       {{ .Content }}                            <!-- fieldsets only -->
       {{ partial "form_submit_button.html" . }} <!-- optional email + submit -->
     </form>
@@ -39,7 +39,16 @@
             inputElem.classList.remove("inline-fit");
           }
         });
-
+	  
+        let radioGroupCounter = 0;
+        form.querySelectorAll('fieldset').forEach(fs => {
+          const radios = fs.querySelectorAll('input[type="radio"]');
+          if (radios.length) {
+            radioGroupCounter++;
+            radios.forEach(r => r.name = `r${radioGroupCounter}`);
+          }
+        });
+	  
         // Ensure date fields have autocomplete off
         form.querySelectorAll('input[type="date"]').forEach(input => {
           input.setAttribute('autocomplete', 'off');

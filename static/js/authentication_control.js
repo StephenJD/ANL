@@ -4,21 +4,26 @@
 // - Optionally emails the form via /.netlify/functions/sendFormattedForm
 // - Works for validation: "none", "requestLink", and "submit"
 /*
-Client-side: 
-1. Serialize and format the form (/static/js/formatFormData.js). 
-2. Send the formatted form to /netlify/functions/storeFinalForm.js 
-3. storeFinalForm.js generates the secure token, stores the form along with the token, and returns the token to the client. 
-4.
+Client-side:
+1. If requireRequestLink then the entire form should be visible but disabled.
+ a) Only the form-request-box should be enabled.
+ b) Clicking Send button stores a validation token and sends the link with the token to the email-address using netlify/functions/sendFormAccessLink.js
+2. If requireRequestLink then only enable the form if the query token is valided by verifyToken.
+3. Serialize and format the form (/static/js/formatFormData.js). 
+4. Send the formatted form to /netlify/functions/storeFinalForm.js 
+5. storeFinalForm.js generates the secure token, stores the form along with the token, and returns the token to the client. 
+6.
   a) If validate-submit then email form to client with link to send_submission_page.html, no immediate redirection. 
   b) If not validate-submit [if optional email given, email form to client] then redirect to send_submission_page.html. 
 
-Server-side: 
-1. storeFinalForm.js receives { formattedForm }. 
-2. Calls generateSecureToken(formattedForm). 
-3. Stores { token, formattedForm } using tokenStore. 
-4. Returns { token } to the client. 
-5. On send_submission_page.html, Retrieve form using query-token (will fail if client attempts with wrong token) 
-6. Send to Netlify.
+Server-side:
+1. If a link-token is requested, use form-name & email address as the "source" for generating a token.
+2. storeFinalForm.js receives { formattedForm }. 
+3. Calls generateSecureToken(formattedForm). 
+4. Stores { token, formattedForm } using tokenStore. 
+5. Returns { token } to the client. 
+6. On send_submission_page.html, Retrieve form using query-token (will fail if client attempts with wrong token) 
+7. Send to Netlify.
 
 */
 // --- Helper: formatFormEmail (client-side only) ---
@@ -78,11 +83,24 @@ document.addEventListener("DOMContentLoaded", async () => {
   const messageBox = requestBox?.querySelector(".token-message");
   const btn = requestBox?.querySelector(".request-token-btn");
   const emailInput = requestBox?.querySelector(".request-email");
+  console.log("[DEBUG] requestBox found:", !!requestBox);
+  if (requestBox) requestBox.style.display = "block";
 
-  // Determine validation mode from front matter
-  let validationMode = window.PAGE_FRONTMATTER?.params?.validation || "none";
-  if (typeof validationMode === "string") {
-    validationMode = validationMode.split("#")[0].trim().split(/[\s,;]+/).filter(Boolean);
+  let validationMode = ["none"];
+  
+  try {
+    const params = JSON.parse(window.PAGE_FRONTMATTER?.params || "{}");
+    let val = params.validation || "none";
+    if (typeof val === "string") {
+      val = val
+        .split("#")[0]                  // remove comments
+        .trim()
+        .split(/[\s,;|]+/)              // split on space, comma, semicolon, or pipe
+        .filter(Boolean);
+      validationMode = val.length ? val : ["none"];
+    }
+  } catch (e) {
+    console.warn("[DEBUG] Failed to parse PAGE_FRONTMATTER.params:", e);
   }
 
   const requireRequestLink = validationMode.includes("requestLink");
@@ -93,11 +111,19 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // Disable form if requestLink required
   if (requireRequestLink) {
-    form.querySelectorAll('input, textarea, select, button[type="submit"]').forEach(el => el.disabled = true);
+    // Show the request box
+    if (requestBox) {
+      requestBox.style.display = "block";
+    }
+  
+    form.querySelectorAll('input, textarea, select, button[type="submit"]').forEach(el => {
+      if (!el.closest(".form-request-box")) el.disabled = true;
+    });
   } else if (requestBox) {
     requestBox.style.display = "none";
     emailInput?.removeAttribute("required");
   }
+
 
   // Handle "request link" button
   if (requireRequestLink && btn) {
@@ -130,29 +156,25 @@ document.addEventListener("DOMContentLoaded", async () => {
   const urlQuery = new URLSearchParams(window.location.search);
   const token = urlQuery.get("token");
 
-  if (requireFinalSubmit) {
-    if (!token) {
-      if (messageBox) messageBox.textContent = "Submission requires a valid token.";
-      return;
-    }
-
-    try {
-      const resp = await fetch("/.netlify/functions/verifyFinalToken", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token })
-      });
-      const data = await resp.json();
-
-      if (data.valid) {
-        window.location.href = `/send_submission_page.html?token=${encodeURIComponent(token)}`;
-      } else {
-        if (messageBox) messageBox.textContent = "This submission link has expired or is invalid.";
-      }
-    } catch (err) {
-      console.error("[DEBUG] verifyFinalToken error:", err);
-    }
-  } else {
+ if (requireFinalSubmit && token) {
+   try {
+     const resp = await fetch("/.netlify/functions/verifyFinalToken", {
+       method: "POST",
+       headers: { "Content-Type": "application/json" },
+       body: JSON.stringify({ token })
+     });
+     const data = await resp.json();
+ 
+     if (data.valid) {
+       window.location.href = `/send_submission_page.html?token=${encodeURIComponent(token)}`;
+     } else if (messageBox) {
+       messageBox.textContent = "This submission link has expired or is invalid.";
+     }
+   } catch (err) {
+     console.error("[DEBUG] verifyFinalToken error:", err);
+   }
+ }
+ else {
     // Non-validated form submission
     form.addEventListener("submit", async (e) => {
       e.preventDefault();

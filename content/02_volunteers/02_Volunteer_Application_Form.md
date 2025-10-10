@@ -40,12 +40,12 @@ Form Rules
 
 <fieldset>
    <legend>Departments</legend>
-   <label><input required type="checkbox">Administrator</label>
-   <label><input required type="checkbox">Adult-Only ministry</label>
-   <label><input required type="checkbox">Childrens ministry</label>
-   <label><input required type="checkbox">TnT</label>
-   <label><input required type="checkbox">Prayer Room</label>
-   <label><input required type="checkbox">Prophetic/Deliverance Ministry</label>
+   <label><input type="checkbox">Administrator</label>
+   <label><input type="checkbox">Adult-Only ministry</label>
+   <label><input type="checkbox">Childrens ministry</label>
+   <label><input type="checkbox">TnT</label>
+   <label><input type="checkbox">Prayer Room</label>
+   <label><input type="checkbox">Prophetic/Deliverance Ministry</label>
 </fieldset>
    
 <fieldset>   

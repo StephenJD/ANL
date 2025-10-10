@@ -69,7 +69,10 @@ export function formatFormEmail(form, includeUnselected = false) {
 	
     });
 
-    if (fieldsetLines.length) output.push(...fieldsetLines, ""); // add spacing
+    if (fieldsetLines.length) {
+     output.push(fieldsetLines.join("\n"));
+     output.push("<br><br>");
+    }
   });
 
   const finalHTML = output.join("\n");
