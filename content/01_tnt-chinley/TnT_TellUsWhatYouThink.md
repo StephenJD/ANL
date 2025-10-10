@@ -42,7 +42,7 @@ Form Rules
    <legend>Location feedback</legend>
    <label><input type="checkbox">The location is convenient</label>
    <label><input type="checkbox">The place is welcoming</label>
-   <label><input type="text">I think another TnT should be started in...</label>
+   <label>I think another TnT should be started in...<input type="text" class="short-input"></label>
    <label>Other comments about the location:<textarea rows="2"></textarea></label>
 </fieldset>
 
@@ -54,8 +54,8 @@ Form Rules
 </fieldset>
 
 <fieldset>
-   <legend>Snacks and drinks feedback</legend>
-   <label>Other comments about the snacks/drinks:<textarea rows="2"></textarea></label>
+   <legend>Comments about snacks and drinks</legend>
+   <textarea rows="2"></textarea>
 </fieldset>
 
 <fieldset>

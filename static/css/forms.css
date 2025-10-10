@@ -169,12 +169,12 @@ fieldset label:has(input[type="checkbox"]) {
   gap: 1em;
   font-weight: normal;
   margin-bottom: 0.25em;
+  display: flex; 
 }
 
 /* Radios inline */
 fieldset label:has(input[type="radio"]) {
   display: inline-flex;
-  gap: 1em;
   margin-right: 2em;
   width: auto;
 }

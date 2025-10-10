@@ -14,7 +14,7 @@ validation: submit
 Form Rules
 1. Default: No attributes except type (email, tel, date, text) — except...
 2. Add ONE class: name, address, or short-input where relevant.
-3. Use class address for name & address field.
+3. Use class address for combined name & address field.
 4. Inexact dates use short-input (not type="date").
 5. id="submitted_by" for the submitter’s email field.
 6. Use <fieldset> and <legend> to group fields, instead of headings.

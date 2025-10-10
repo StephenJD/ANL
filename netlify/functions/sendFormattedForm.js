@@ -5,6 +5,8 @@
 const { retrieveFinalForm } = require("./tokenStore");
 const nodemailer = require("nodemailer");
 
+const SKIP_ANL_EMAIL = true;
+    
 exports.handler = async function(event) {
   if (event.httpMethod !== "POST") {
     return { statusCode: 405, body: "Method Not Allowed" };
@@ -17,13 +19,12 @@ exports.handler = async function(event) {
       return { statusCode: 400, body: JSON.stringify({ success: false, error: "Missing token" }) };
     }
 
-    // Retrieve the stored HTML-formatted form
     const storedForm = await retrieveFinalForm(token);
     if (!storedForm) {
       return { statusCode: 400, body: JSON.stringify({ success: false, error: "Invalid or expired token" }) };
     }
 
-     // Replace "@#" marker depending on validation status
+    // Replace "@#" marker depending on validation status
     let htmlContent = storedForm.replace(/@#/g, includeSubmissionLink ? "(validated)" : "(not validated)");
 
     // Add submission link only if requested (validated submission)
@@ -33,8 +34,13 @@ exports.handler = async function(event) {
     }
 
     // Determine recipient(s)
-    const recipients = email ? [email] : [process.env.ADMIN_EMAIL || process.env.SMTP_USER];
-
+    const recipients = [];
+    if (email) recipients.push(email);
+    if (!SKIP_ANL_EMAIL) {
+      recipients.push(process.env.ADMIN_EMAIL || process.env.SMTP_USER);
+    }
+    console.log(`[DEBUG] SKIP_ANL_EMAIL=${SKIP_ANL_EMAIL}, Recipients:`, recipients);
+    
     // Setup email transport
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
@@ -46,7 +52,7 @@ exports.handler = async function(event) {
       }
     });
 
-    // Send email to each recipient
+    // Send email(s)
     for (const recipient of recipients) {
       await transporter.sendMail({
         from: `"Ascend Next Level" <${process.env.SMTP_USER}>`,
@@ -57,9 +63,21 @@ exports.handler = async function(event) {
       console.log(`[DEBUG] Email sent to ${recipient}`);
     }
 
-    return { statusCode: 200, body: JSON.stringify({ success: true }) };
+    return {
+      statusCode: 200,
+      body: JSON.stringify({
+        success: true,
+        note: SKIP_ANL_EMAIL
+          ? "(Note: ANL email delivery is currently disabled for testing.)"
+          : null
+      })
+    };
+
   } catch (err) {
     console.error("sendFormattedForm error:", err);
-    return { statusCode: 500, body: JSON.stringify({ success: false, error: "Server error" }) };
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ success: false, error: "Server error" })
+    };
   }
 };

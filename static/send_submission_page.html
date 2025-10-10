@@ -11,74 +11,62 @@
   <h1 id="status" class="form-status">Submitting...</h1>
 
   <script>
-  (async () => {
-    const status = document.getElementById("status");
-    const params = new URLSearchParams(window.location.search);
-    const token = params.get("token");
-    const validationMode = (params.get("validationMode") || "none")
-      .split(/[\s,;]+/).filter(Boolean);
-    const requireFinalSubmit = validationMode.includes("submit");
+(async () => {
+  const status = document.getElementById("status");
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get("token");
+  const validationMode = (params.get("validationMode") || "none")
+    .split(/[\s,;]+/).filter(Boolean);
+  const requireFinalSubmit = validationMode.includes("submit");
 
-    console.log("[DEBUG] token:", token);
-    console.log("[DEBUG] validationMode:", validationMode);
-    console.log("[DEBUG] requireFinalSubmit:", requireFinalSubmit);
+  if (!token) {
+    status.textContent = "❌ Missing token.";
+    status.className = "error-message";
+    return;
+  }
 
-    if (!token) {
-      status.textContent = "❌ Missing token.";
+  try {
+    const verifyResp = await fetch("/.netlify/functions/verifyFinalToken", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token })
+    });
+    const verifyData = await verifyResp.json();
+    if (!verifyData.valid) {
+      status.textContent = "❌ Invalid or expired token.";
       status.className = "error-message";
       return;
     }
 
-    try {
-      const verifyResp = await fetch("/.netlify/functions/verifyFinalToken", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token })
-      });
-      const verifyData = await verifyResp.json();
-      if (!verifyData.valid) {
-        status.textContent = "❌ Invalid or expired token.";
-        status.className = "error-message";
-        return;
-      }
+    const clientEmail = params.get("clientEmail") || null;
+    const includeSubmissionLink = false;
+    const bodyPayload = { token, includeSubmissionLink };
+    if (clientEmail) bodyPayload.email = clientEmail;
 
-      const clientEmail = params.get("clientEmail") || null;
-      const includeSubmissionLink = false;
-      const bodyPayload = { token, includeSubmissionLink };
-      if (clientEmail) bodyPayload.email = clientEmail;
+    const sendResp = await fetch("/.netlify/functions/sendFormattedForm", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(bodyPayload)
+    });
 
-      // 🧪 Temporarily disable ANL email
-      const SKIP_ANL_EMAIL = true;
-      if (SKIP_ANL_EMAIL && !clientEmail) {
-        console.log("[DEBUG] Skipping ANL email (testing mode)");
-        status.textContent = "⚠️ ANL email temporarily disabled for testing.";
-        status.className = "warning-message";
-        return;
-      }
+    if (!sendResp.ok) throw new Error("sendFormattedForm " + sendResp.status);
+    const sendData = await sendResp.json();
 
-      const sendResp = await fetch("/.netlify/functions/sendFormattedForm", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(bodyPayload)
-      });
-
-      if (!sendResp.ok) throw new Error("sendFormattedForm " + sendResp.status);
-      const sendData = await sendResp.json();
-      console.log("[DEBUG] sendFormattedForm response:", sendData);
-
-      if (sendData.success) {
-        status.textContent = "✅ Your form has been successfully submitted!";
-        status.className = "success-message";
-      } else {
-        status.textContent = "❌ Submission failed. Please try again.";
-        status.className = "error-message";
-      }
-    } catch (err) {
-      console.error("[DEBUG]", err);
-      status.textContent = "❌ Error verifying or submitting form.";
+    if (sendData.success) {
+      status.textContent = "✅ Your form has been successfully submitted!";
+      if (sendData.note) status.textContent += " " + sendData.note;
+      status.className = "success-message";
+    } else {
+      status.textContent = "❌ Submission failed. Please try again.";
+      if (sendData.note) status.textContent += " " + sendData.note;
       status.className = "error-message";
     }
-  })();
-  </script>
+  } catch (err) {
+    console.error("[DEBUG]", err);
+    status.textContent = "❌ Error verifying or submitting form.";
+    status.className = "error-message";
+  }
+})();
+</script>
 </body>
 </html>
