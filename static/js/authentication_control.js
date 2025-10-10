@@ -83,19 +83,20 @@ document.addEventListener("DOMContentLoaded", async () => {
   const messageBox = requestBox?.querySelector(".token-message");
   const btn = requestBox?.querySelector(".request-token-btn");
   const emailInput = requestBox?.querySelector(".request-email");
+
   console.log("[DEBUG] requestBox found:", !!requestBox);
   if (requestBox) requestBox.style.display = "block";
 
+  // Parse validation mode
   let validationMode = ["none"];
-  
   try {
     const params = JSON.parse(window.PAGE_FRONTMATTER?.params || "{}");
     let val = params.validation || "none";
     if (typeof val === "string") {
       val = val
-        .split("#")[0]                  // remove comments
+        .split("#")[0]
         .trim()
-        .split(/[\s,;|]+/)              // split on space, comma, semicolon, or pipe
+        .split(/[\s,;|]+/)
         .filter(Boolean);
       validationMode = val.length ? val : ["none"];
     }
@@ -109,13 +110,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   console.log("[DEBUG] validationMode:", validationMode);
   console.log("[DEBUG] requireRequestLink:", requireRequestLink, "requireFinalSubmit:", requireFinalSubmit);
 
-  // Disable form if requestLink required
+  // Disable form by default if requestLink required
   if (requireRequestLink) {
-    // Show the request box
-    if (requestBox) {
-      requestBox.style.display = "block";
-    }
-  
     form.querySelectorAll('input, textarea, select, button[type="submit"]').forEach(el => {
       if (!el.closest(".form-request-box")) el.disabled = true;
     });
@@ -124,19 +120,48 @@ document.addEventListener("DOMContentLoaded", async () => {
     emailInput?.removeAttribute("required");
   }
 
+  const urlQuery = new URLSearchParams(window.location.search);
+  const token = urlQuery.get("token");
+  const email = urlQuery.get("email");
+
+  // --- Step 1: verify request-link token ---
+  if (requireRequestLink && token && email) {
+    console.log("[DEBUG] verifyToken: starting");
+    try {
+      const resp = await fetch("/.netlify/functions/verifyToken_ClientWrapper", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, email, formPath: window.location.pathname })
+      });
+      const data = await resp.json();
+
+      console.log("[DEBUG] verifyToken response:", data);
+
+      if (data.valid) {
+        // Enable form and hide request box
+        form.querySelectorAll('input, textarea, select, button[type="submit"]').forEach(el => el.disabled = false);
+        if (requestBox) requestBox.style.display = "none";
+      } else if (messageBox) {
+        messageBox.textContent = "This link is invalid or has expired.";
+      }
+    } catch (err) {
+      console.error("[DEBUG] verifyToken error:", err);
+      if (messageBox) messageBox.textContent = "Verification failed.";
+    }
+  }
 
   // Handle "request link" button
   if (requireRequestLink && btn) {
     btn.addEventListener("click", async () => {
-      const email = emailInput?.value.trim();
-      if (!email) return alert("Enter your email first");
+      const emailVal = emailInput?.value.trim();
+      if (!emailVal) return alert("Enter your email first");
 
       try {
         const resp = await fetch("/.netlify/functions/sendFormAccessLink", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            email,
+            email: emailVal,
             formPath: window.location.pathname,
             formName: form.name || document.title,
             site_root: window.location.origin
@@ -152,79 +177,75 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
-  // Check for token (submit-validated forms)
-  const urlQuery = new URLSearchParams(window.location.search);
-  const token = urlQuery.get("token");
+  // --- Step 2: verify final-submit token ---
+  if (requireFinalSubmit && token) {
+    try {
+      const resp = await fetch("/.netlify/functions/verifyFinalToken", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token })
+      });
+      const data = await resp.json();
 
- if (requireFinalSubmit && token) {
-   try {
-     const resp = await fetch("/.netlify/functions/verifyFinalToken", {
-       method: "POST",
-       headers: { "Content-Type": "application/json" },
-       body: JSON.stringify({ token })
-     });
-     const data = await resp.json();
- 
-     if (data.valid) {
-       window.location.href = `/send_submission_page.html?token=${encodeURIComponent(token)}`;
-     } else if (messageBox) {
-       messageBox.textContent = "This submission link has expired or is invalid.";
-     }
-   } catch (err) {
-     console.error("[DEBUG] verifyFinalToken error:", err);
-   }
- }
- else {
-    // Non-validated form submission
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      console.log("[DEBUG] Non-validated form submit triggered");
+      if (data.valid) {
+        window.location.href = `/send_submission_page.html?token=${encodeURIComponent(token)}`;
+      } else if (messageBox) {
+        messageBox.textContent = "This submission link has expired or is invalid.";
+      }
+    } catch (err) {
+      console.error("[DEBUG] verifyFinalToken error:", err);
+    }
+  }
 
-      // 1️ Format form locally
-      const formattedForm = formatFormEmail(form);
+  // Non-validated form submission
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    console.log("[DEBUG] Non-validated form submit triggered");
 
-      // 2️ Send formatted form to server to generate/store token
-      let token;
+    const formattedForm = formatFormEmail(form);
+
+    // Send to storeFinalForm
+    let storedToken;
+    try {
+      const resp = await fetch("/.netlify/functions/storeFinalForm", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ formattedForm })
+      });
+      const data = await resp.json();
+      if (!data.success) throw new Error(data.error || "Unknown error");
+      storedToken = data.token;
+      console.log("[DEBUG] Stored form and received token:", storedToken);
+    } catch (err) {
+      console.error("[DEBUG] storeFinalForm error:", err);
+      return;
+    }
+
+    // Optional email
+    const emailToSend = optionalEmailInput?.value.trim() || null;
+    if (emailToSend) {
       try {
-        const resp = await fetch("/.netlify/functions/storeFinalForm", {
+        await fetch("/.netlify/functions/sendFormattedForm", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ formattedForm })
+          body: JSON.stringify({
+            email: emailToSend,
+            formName: form.name || document.title,
+            formPath: window.location.pathname,
+            formattedForm,
+            site_root: window.location.origin,
+            token: storedToken
+          })
         });
-        const data = await resp.json();
-        if (!data.success) throw new Error(data.error || "Unknown error");
-        token = data.token;
-        console.log("[DEBUG] Stored form and received token:", token);
+        console.log("[DEBUG] Optional email sent to", emailToSend);
       } catch (err) {
-        console.error("[DEBUG] storeFinalForm error:", err);
-        return;
+        console.error("[DEBUG] Error sending optional email:", err);
       }
+    }
 
-      // 3️ Optionally send email
-      const emailToSend = optionalEmailInput?.value.trim() || null;
-      if (emailToSend) {
-        try {
-          await fetch("/.netlify/functions/sendFormattedForm", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              email: emailToSend,
-              formName: form.name || document.title,
-              formPath: window.location.pathname,
-              formattedForm,
-              site_root: window.location.origin,
-              token
-            }),
-          });
-          console.log("[DEBUG] Optional email sent to", emailToSend);
-        } catch (err) {
-          console.error("[DEBUG] Error sending optional email:", err);
-        }
-      }
-
-      // 4️ Redirect to confirmation page
-      const params = new URLSearchParams({ token, validationMode: validationMode.join(",") });
-      window.location.href = `/send_submission_page.html?${params.toString()}`;
-    });
-  }
+    // Redirect
+    const params = new URLSearchParams({ token: storedToken, validationMode: validationMode.join(",") });
+    window.location.href = `/send_submission_page.html?${params.toString()}`;
+  });
 });
+

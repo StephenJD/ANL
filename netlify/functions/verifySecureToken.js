@@ -1,4 +1,4 @@
-// netlify/functions/verifySecureToken.js
+// Server-side: netlify/functions/verifySecureToken.js
 
 const { generateSecureToken } = require("./generateSecureToken");
 

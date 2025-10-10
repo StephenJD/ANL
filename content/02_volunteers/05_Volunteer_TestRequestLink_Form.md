@@ -1,5 +1,5 @@
 ---
-title: "Volunteer Test Submit Form"
+title: "Volunteer Test requestLink Form"
 summary: "To be completed by all staff and volunteers of ANL"
 last_reviewed: 2025-09-28
 review_period: 1y
@@ -7,7 +7,7 @@ reviewed_by: Cheryl Cross
 type: form
 restrict_users: false
 #include_unselected_options: false # options: "true", "false" (default)
-validation: submit # options: "requestLink" &| "submit", "none" (default)
+validation: requestLink # options: "requestLink" &| "submit", "none" (default)
 ---
 
 <!--
