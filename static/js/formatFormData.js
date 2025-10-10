@@ -1,3 +1,4 @@
+// Client-side: \static\js\formatFormData.js
 /**
  * Convert a form into an HTML string for email.
  * Always logs debug info to console.
@@ -5,6 +6,7 @@
  * @param {boolean} includeUnselected
  * @returns {string} HTML-formatted string
  */
+ 
 export function formatFormEmail(form, includeUnselected = false) {
   if (!form) {
     console.warn("[DEBUG] formatFormEmail: No form provided!");
@@ -12,7 +14,7 @@ export function formatFormEmail(form, includeUnselected = false) {
   }
 
   const output = [];
-  console.log("[DEBUG] Starting formatFormEmail for form:", form);
+  //console.log("[DEBUG] Starting formatFormEmail for form:", form);
 
   form.querySelectorAll("fieldset").forEach((fs, fsIndex) => {
     const fieldsetLines = [];
@@ -21,7 +23,7 @@ export function formatFormEmail(form, includeUnselected = false) {
     const legend = fs.querySelector("legend")?.innerText.trim();
     if (legend) {
       fieldsetLines.push(`<strong>${legend}</strong>`);
-      console.log(`[DEBUG] Fieldset #${fsIndex} legend:`, legend);
+      //console.log(`[DEBUG] Fieldset #${fsIndex} legend:`, legend);
     }
 
     // Process inputs and textareas
@@ -32,7 +34,6 @@ export function formatFormEmail(form, includeUnselected = false) {
       const label = fs.querySelector(`label[for="${input.id}"]`);
       if (label) labelText = label.textContent.trim();
       else if (input.closest("label")) labelText = input.closest("label").textContent.trim();
-      else labelText = input.name || "(unnamed field)";
 
       // Skip unselected/empty if not including unselected
       if (!includeUnselected) {
@@ -41,16 +42,31 @@ export function formatFormEmail(form, includeUnselected = false) {
       }
 
       // Handle each input type
-      let line = labelText;
-      if (["checkbox", "radio"].includes(input.type)) {
-        line = input.checked ? line : `<s>${line}</s>`;
-      } else {
+      let line = "";
+
+      // Special case: optional_email_field
+      if (fs.id === "optional_email_field") {
         const val = (input.value || "").trim();
-        line += val ? `: ${val}` : "";
+        line = val ? `Copy requested by: ${val}` : "";
+      } else {
+        line = labelText;
+        if (["checkbox", "radio"].includes(input.type)) {
+          line = input.checked ? line : `<s>${line}</s>`;
+        } else {
+          const val = (input.value || "").trim();
+          line += val ? `: ${val}` : "";
+        }
       }
 
-      fieldsetLines.push(`<p>${line}</p>`);
-      console.log(`[DEBUG] Fieldset #${fsIndex}, input #${idx}:`, line);
+	// --- Insert "@#" immediately after the submitted_by field ---
+      if (input.id === "submitted_by") {
+        line += " @#";
+        //console.log("[DEBUG] Inserted @# after submitted_by field");
+      }
+
+      if (line) fieldsetLines.push(`<p>${line}</p>`);
+      //console.log(`[DEBUG] Fieldset #${fsIndex}, input #${idx}:`, line);
+	
     });
 
     if (fieldsetLines.length) output.push(...fieldsetLines, ""); // add spacing

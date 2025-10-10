@@ -23,7 +23,8 @@ exports.handler = async function(event) {
       return { statusCode: 400, body: JSON.stringify({ success: false, error: "Invalid or expired token" }) };
     }
 
-    let htmlContent = storedForm;
+     // Replace "@#" marker depending on validation status
+    let htmlContent = storedForm.replace(/@#/g, includeSubmissionLink ? "(validated)" : "(not validated)");
 
     // Add submission link only if requested (validated submission)
     if (includeSubmissionLink) {
