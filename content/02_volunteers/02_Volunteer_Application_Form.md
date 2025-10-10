@@ -7,7 +7,7 @@ reviewed_by: Cheryl Cross
 type: form
 restrict_users: false
 #include_unselected_options: false # options: "true", "false" (default)
-validation: requestLink # options: "requestLink" &| "submit", "none" (default)
+validation: requestLink submit # options: "requestLink" &| "submit", "none" (default)
 ---
 
 <!--
@@ -24,7 +24,7 @@ Form Rules
 -->
 
 <fieldset>
-   <legend>About You</legend>
+   <legend>Contact Details</legend>
    <label>Full name:<input required class="name" type="text"></label>
    <label>Address:<textarea required class="address" rows="2"></textarea></label>
    <label>Phone number:<input required type="tel"></label>
@@ -32,15 +32,28 @@ Form Rules
 </fieldset>
 
 <fieldset>
-   <legend>About the Role</legend>
-   <label>Department:<input required class="short-input" type="text"></label>
-   <label>Role applied for:<input required class="short-input" type="text"></label>
-   <fieldset>
-      <legend>Is the role subject to a DBS check?</legend>
-      <label><input required type="radio"> Children only</label>
-      <label><input type="radio"> Adults only</label>
-      <label><input type="radio"> Children and adults</label>
-   </fieldset>
+   <legend>I am applying to be a</legend>
+   <label><input required type="radio">Director</label>
+   <label><input type="radio">Employee</label>
+   <label><input type="radio">Volunteer</label>
+</fieldset>
+
+<fieldset>
+   <legend>Departments</legend>
+   <label><input required type="checkbox">Administrator</label>
+   <label><input required type="checkbox">Adult-Only ministry</label>
+   <label><input required type="checkbox">Childrens ministry</label>
+   <label><input required type="checkbox">TnT</label>
+   <label><input required type="checkbox">Prayer Room</label>
+   <label><input required type="checkbox">Prophetic/Deliverance Ministry</label>
+</fieldset>
+   
+<fieldset>   
+   <legend>DBS Requirement</legend>
+   <label><input required type="radio">None</label>
+   <label><input type="radio">Children only</label>
+   <label><input type="radio">Adults only</label>
+   <label><input type="radio">Children and adults</label>
 </fieldset>
 
 <fieldset>

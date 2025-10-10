@@ -17,6 +17,14 @@ form.verified-form,
   box-sizing: border-box;
 }
 
+/* Center content for submission page */
+.submission-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+}
+
 /* === Headings === */
 form.verified-form h1,
 .form-container > h1 {

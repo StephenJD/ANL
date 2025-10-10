@@ -23,21 +23,26 @@ Form Rules
 9. Add "None" default text in all required text fields that ask for additional information.
 -->
 
-<h2>TnT is provided as a safe place for secondary school children to chill and chat.</h2>
+<h2>TnT is provided as a safe place for secondary school pupils to chill and chat.</h2>
+
+<fieldset>
+   <legend>Where you have attended TnT</legend>
+   <label><input type="checkbox">Chinley</label>
+   <label><input type="checkbox">Whaley Bridge</label>
+</fieldset>
 
 <fieldset>
    <legend>Your opinion on the idea</legend>
-   <label><input type="radio"> I think that is a good idea</label>
-   <label><input type="radio"> I don't think it is needed in Chinley</label>
+   <label><input type="radio">I think that is a good idea</label>
+   <label><input type="radio">I don't think it is needed</label>
    <label>Other comments about the idea:<textarea rows="2"></textarea></label>
 </fieldset>
 
 <fieldset>
    <legend>Location feedback</legend>
-   <label><input type="checkbox"> The location is convenient</label>
-   <label><input type="checkbox"> The room is too small</label>
-   <label><input type="checkbox"> The room is not very inviting</label>
-   <label><input type="checkbox"> Prefer to meet at the Community Centre</label>
+   <label><input type="checkbox">The location is convenient</label>
+   <label><input type="checkbox">The place is welcoming</label>
+   <label><input type="text">I think another TnT should be started in...</label>
    <label>Other comments about the location:<textarea rows="2"></textarea></label>
 </fieldset>
 
@@ -50,26 +55,31 @@ Form Rules
 
 <fieldset>
    <legend>Snacks and drinks feedback</legend>
-   <label><input type="checkbox"> I would like takeaway drinks</label>
-   <label><input type="checkbox"> I like toast</label>
-   <label><input type="checkbox"> I would like crumpets</label>
-   <label><input type="checkbox"> I would like waffles</label>
    <label>Other comments about the snacks/drinks:<textarea rows="2"></textarea></label>
+</fieldset>
+
+<fieldset>
+   <legend>What is good about TnT</legend>
+   <label><input type="checkbox">I look forward to it each week</label>
+   <label><input type="checkbox">I love being able to chill with my friends</label>
+   <label><input type="checkbox">I like meeting other people at TnT</label>
+   <label><input type="checkbox">I feel safe, accepted and loved at TnT</label>
+   <label><input type="checkbox">I enjoy chatting with the helpers at TnT</label>
+   <label>Other comments about your experience at TnT<textarea rows="2"></textarea></label>
 </fieldset>
 
 <fieldset>
    <legend>Activity preferences</legend>
    <label><input type="checkbox"> I like card games</label>
+   <label><input type="checkbox"> I would like energetic fun games</label>
+   <label><input type="checkbox"> I would like time for serious conversation</label>
    <label><input type="checkbox"> I would like board games</label>
    <label><input type="checkbox"> I would like music</label>
-   <label><input type="checkbox"> I would like space to do homework</label>
-   <label><input type="checkbox"> I would like to play on my phone</label>
-   <label><input type="checkbox"> I like to chat with my friends</label>
-   <label><input type="checkbox"> I like to chat with a friendly adult</label>
+   <label><input type="checkbox"> I would like to do homework at TnT</label>
    <label>Other comments about activities:<textarea rows="4"></textarea></label>
 </fieldset>
 
 <fieldset>
    <legend>Your details</legend>
-   <label>First Name<input class="name" type="text" required></label>
+   <label>First Name<input required class="name" type="text" ></label>
 </fieldset>

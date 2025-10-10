@@ -5,7 +5,7 @@ last_reviewed: 2025-09-20
 review_period: 1m
 reviewed_by: Cheryl Cross
 type: form
-include_unselected_options: true
+include_unselected_options: false
 restrict_users: false
 validation: submit
 ---
