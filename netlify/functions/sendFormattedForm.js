@@ -34,12 +34,12 @@ exports.handler = async function(event) {
     }
 
     // Determine recipient(s)
-    const recipients = [];
-    if (email) recipients.push(email);
+    const recipients = new Set();
+    if (email) recipients.add(email);
     if (!SKIP_ANL_EMAIL) {
-      recipients.push(process.env.ADMIN_EMAIL || process.env.SMTP_USER);
+      recipients.add(process.env.ADMIN_EMAIL || process.env.SMTP_USER);
     }
-    console.log(`[DEBUG] SKIP_ANL_EMAIL=${SKIP_ANL_EMAIL}, Recipients:`, recipients);
+    console.log("[DEBUG] Final recipients:", [...recipients]);
     
     // Setup email transport
     const transporter = nodemailer.createTransport({

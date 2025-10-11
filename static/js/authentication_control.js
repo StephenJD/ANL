@@ -104,7 +104,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   const requireRequestLink = validationMode.includes("requestLink");
   const requireFinalSubmit = validationMode.includes("submit");
-
+  const formTitle = window.PAGE_FRONTMATTER?.title || document.title || form.name;
+  
   console.log("[DEBUG] validationMode:", validationMode);
   console.log("[DEBUG] requireRequestLink:", requireRequestLink, "requireFinalSubmit:", requireFinalSubmit);
 
@@ -130,7 +131,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           body: JSON.stringify({
             email,
             formPath: window.location.pathname,
-            formName: form.name || document.title,
+            formName: formTitle,
             site_root: window.location.origin
           })
         });
