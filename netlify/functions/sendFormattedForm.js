@@ -1,22 +1,21 @@
 // Server-Side: /netlify/functions/sendFormattedForm.js
-// - Sends stored HTML form to ANL or optional client
+// - Sends stored HTML form to a single recipient
 // - Optionally appends submission link for validated submissions
+// - Optionally attaches form as a file
 
 const { retrieveFinalForm } = require("./tokenStore");
 const nodemailer = require("nodemailer");
 
-const SKIP_ANL_EMAIL = false;
-    
 exports.handler = async function(event) {
   if (event.httpMethod !== "POST") {
     return { statusCode: 405, body: "Method Not Allowed" };
   }
 
   try {
-    const { email, token, includeSubmissionLink = false } = JSON.parse(event.body);
+    const { email, token, includeSubmissionLink = false, asAttachment = false } = JSON.parse(event.body);
 
-    if (!token) {
-      return { statusCode: 400, body: JSON.stringify({ success: false, error: "Missing token" }) };
+    if (!token || !email) {
+      return { statusCode: 400, body: JSON.stringify({ success: false, error: "Missing token or email" }) };
     }
 
     const storedForm = await retrieveFinalForm(token);
@@ -27,20 +26,12 @@ exports.handler = async function(event) {
     // Replace "@#" marker depending on validation status
     let htmlContent = storedForm.replace(/@#/g, includeSubmissionLink ? "(validated)" : "(not validated)");
 
-    // Add submission link only if requested (validated submission)
+    // Add submission link only if requested
     if (includeSubmissionLink) {
       const submitUrl = `${process.env.SITE_ROOT || "https://example.com"}/send_submission_page.html?token=${encodeURIComponent(token)}`;
       htmlContent += `<p><a href="${submitUrl}" style="display:inline-block;padding:10px 20px;background:#007bff;color:#fff;text-decoration:none;border-radius:4px;">Click to Submit</a></p>`;
     }
 
-    // Determine recipient(s)
-    const recipients = new Set();
-    if (email) recipients.add(email);
-    if (!SKIP_ANL_EMAIL) {
-      recipients.add(process.env.ADMIN_EMAIL || process.env.SMTP_USER);
-    }
-    console.log("[DEBUG] Final recipients:", [...recipients]);
-    
     // Setup email transport
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
@@ -52,32 +43,34 @@ exports.handler = async function(event) {
       }
     });
 
-    // Send email(s)
-    for (const recipient of recipients) {
-      await transporter.sendMail({
-        from: `"Ascend Next Level" <${process.env.SMTP_USER}>`,
-        to: recipient,
-        subject: includeSubmissionLink ? "Final Form Submission" : "Your Form Copy",
-        html: htmlContent
-      });
-      console.log(`[DEBUG] Email sent to ${recipient}`);
+    const mailOptions = {
+      from: `"Ascend Next Level" <${process.env.SMTP_USER}>`,
+      to: email,
+      subject: includeSubmissionLink ? "Final Form Submission" : "Your Form Copy",
+      html: htmlContent
+    };
+
+    if (asAttachment) {
+      mailOptions.attachments = [
+        {
+          filename: "form.html",
+          content: htmlContent,
+          contentType: "text/html"
+        }
+      ];
     }
+
+    await transporter.sendMail(mailOptions);
+
+    console.log(`[DEBUG] Email sent to ${email}, asAttachment=${asAttachment}`);
 
     return {
       statusCode: 200,
-      body: JSON.stringify({
-        success: true,
-        note: SKIP_ANL_EMAIL
-          ? "(Note: ANL email delivery is currently disabled for testing.)"
-          : null
-      })
+      body: JSON.stringify({ success: true })
     };
 
   } catch (err) {
     console.error("sendFormattedForm error:", err);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ success: false, error: "Server error" })
-    };
+    return { statusCode: 500, body: JSON.stringify({ success: false, error: "Server error" }) };
   }
 };

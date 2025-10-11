@@ -1,16 +1,4 @@
-<!-- Client-Side: \static\send_submission_page.html -->
-
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Final Form Submission</title>
-  <link rel="stylesheet" href="/css/forms.css">
-</head>
-<body class="form-request-box submission-wrapper">
-  <h1 id="status" class="form-status">Submitting...</h1>
-
-  <script>
+<script>
 (async () => {
   const status = document.getElementById("status");
   const params = new URLSearchParams(window.location.search);
@@ -26,6 +14,7 @@
   }
 
   try {
+    // Verify the final token
     const verifyResp = await fetch("/.netlify/functions/verifyFinalToken", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -38,10 +27,8 @@
       return;
     }
 
-    const clientEmail = params.get("clientEmail") || null;
-    const includeSubmissionLink = false;
-    const bodyPayload = { token, includeSubmissionLink };
-    if (clientEmail) bodyPayload.email = clientEmail;
+    // After verification, send the form to ANL with attachment
+    const bodyPayload = { token, email: process.env.ADMIN_EMAIL, includeSubmissionLink: false, asAttachment: true };
 
     const sendResp = await fetch("/.netlify/functions/sendFormattedForm", {
       method: "POST",
@@ -61,6 +48,7 @@
       if (sendData.note) status.textContent += " " + sendData.note;
       status.className = "error-message";
     }
+
   } catch (err) {
     console.error("[DEBUG]", err);
     status.textContent = "❌ Error verifying or submitting form.";
@@ -68,5 +56,3 @@
   }
 })();
 </script>
-</body>
-</html>
