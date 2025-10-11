@@ -5,7 +5,7 @@
 const { retrieveFinalForm } = require("./tokenStore");
 const nodemailer = require("nodemailer");
 
-const SKIP_ANL_EMAIL = true;
+const SKIP_ANL_EMAIL = false;
     
 exports.handler = async function(event) {
   if (event.httpMethod !== "POST") {

@@ -13,8 +13,9 @@ export function formatFormEmail(form, includeUnselected = false) {
     return "";
   }
 
-  const output = [];
   //console.log("[DEBUG] Starting formatFormEmail for form:", form);
+  const formTitle = window.PAGE_FRONTMATTER?.title?.replace(/^"|"$/g, "") || document.title;
+  const output = [`<h1>${formTitle}</h1>`, ""];
 
   form.querySelectorAll("fieldset").forEach((fs, fsIndex) => {
     const fieldsetLines = [];
@@ -71,7 +72,7 @@ export function formatFormEmail(form, includeUnselected = false) {
 
     if (fieldsetLines.length) {
      output.push(fieldsetLines.join("\n"));
-     output.push("<br><br>");
+     output.push("<br>");
     }
   });
 

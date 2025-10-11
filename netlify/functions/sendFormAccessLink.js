@@ -1,4 +1,4 @@
-// netlify/functions/sendFormAccessLink.js
+// Server-Side: netlify/functions/sendFormAccessLink.js
 const nodemailer = require("nodemailer");
 const { generateSecureToken } = require("./generateSecureToken"); // CommonJS require
 
@@ -35,7 +35,16 @@ exports.handler = async (event) => {
   try {
     const token = generateSecureToken(email + formPath);
 
+    const formTitle = (formName || "").replace(/^"|"$/g, ""); // remove quotes if coming from frontmatter
     const link = `${site_root}${formPath.split("?")[0]}?token=${token}&email=${encodeURIComponent(email)}`;
+
+    // --- skip actual email send locally ---
+    if (process.env.NETLIFY_DEV || process.env.LOCAL_TEST) {
+      return {
+        statusCode: 200,
+        body: JSON.stringify({ success: true, link, formTitle }),
+      };
+    }
 
     let transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
@@ -62,7 +71,7 @@ Form link: ${link}`,
     <p>Delete this email if you did not just request a Form-Link from <strong>Ascend Next Level</strong>.</p>
     <p>The link can only be used <strong>today</strong>, from this email address and only for this form.</p>
     <p>If you are not ready to complete and submit the form, you can request another link when you are ready.</p>
-    <p><a href="${link}" style="display:inline-block;padding:10px 15px;background-color:#2a6df4;color:#fff;text-decoration:none;border-radius:5px;">${formName}</a></p>
+    <p><a href="${link}" style="display:inline-block;padding:10px 15px;background-color:#2a6df4;color:#fff;text-decoration:none;border-radius:5px;">${formTitle}</a></p>
   `
 });
 
