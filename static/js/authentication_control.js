@@ -26,53 +26,6 @@ Server-side:
 7. Send to Netlify.
 */
 
-// --- Helper: formatFormEmail (client-side only) ---
-function formatFormEmail(form, includeUnselected = false) {
-  const output = [];
-
-  form.querySelectorAll("fieldset").forEach((fs) => {
-    const fieldsetLines = [];
-
-    // Include legend
-    const legend = fs.querySelector("legend")?.innerText.trim();
-    if (legend) fieldsetLines.push(`<strong>${legend}</strong>`);
-
-    // Process inputs and textareas
-    fs.querySelectorAll("input, textarea").forEach((input) => {
-      let labelText = "";
-      const label = fs.querySelector(`label[for="${input.id}"]`);
-      if (label) labelText = label.textContent.trim();
-      else if (input.closest("label"))
-        labelText = input.closest("label").textContent.trim();
-      else labelText = input.name || "";
-
-      // Skip empty or unselected fields unless includeUnselected=true
-      if (!includeUnselected) {
-        if ((input.type === "checkbox" || input.type === "radio") && !input.checked)
-          return;
-        if (!["checkbox", "radio"].includes(input.type) && !input.value.trim())
-          return;
-      }
-
-      let line = labelText;
-      if (input.type === "checkbox" || input.type === "radio") {
-        line = input.checked ? line : `<s>${line}</s>`;
-      } else {
-        line += `: ${input.value || ""}`;
-      }
-
-      fieldsetLines.push(line);
-    });
-
-    if (fieldsetLines.length) output.push(...fieldsetLines, ""); // spacing
-  });
-
-  while (output.length && !output[output.length - 1].trim()) output.pop();
-
-  return output.join("\n");
-}
-
-// --- Main Logic ---
 document.addEventListener("DOMContentLoaded", async () => {
   const form = document.querySelector("form.verified-form");
   if (!form) return console.log("[DEBUG] No verified form found");
@@ -86,16 +39,12 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (requestBox) requestBox.style.display = "block";
 
   let validationMode = ["none"];
-  
+
   try {
     const params = JSON.parse(window.PAGE_FRONTMATTER?.params || "{}");
     let val = params.validation || "none";
     if (typeof val === "string") {
-      val = val
-        .split("#")[0]
-        .trim()
-        .split(/[\s,;|]+/)
-        .filter(Boolean);
+      val = val.split("#")[0].trim().split(/[\s,;|]+/).filter(Boolean);
       validationMode = val.length ? val : ["none"];
     }
   } catch (e) {
@@ -105,7 +54,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const requireRequestLink = validationMode.includes("requestLink");
   const requireFinalSubmit = validationMode.includes("submit");
   const formTitle = window.PAGE_FRONTMATTER?.title || document.title || form.name;
-  
+
   console.log("[DEBUG] validationMode:", validationMode);
   console.log("[DEBUG] requireRequestLink:", requireRequestLink, "requireFinalSubmit:", requireFinalSubmit);
 
@@ -125,6 +74,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (!email) return alert("Enter your email first");
 
       try {
+	let formPath = window.location.pathname;
+        if (formPath.endsWith("/")) formPath = formPath.slice(0, -1); // normalize
         const resp = await fetch("/.netlify/functions/sendFormAccessLink", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -145,31 +96,28 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
-  // --- Token verification ---
-  const urlQuery = new URLSearchParams(window.location.search);
-  const token = urlQuery.get("token");
-  const urlEmail = urlQuery.get("email") || null;
+  const token = new URLSearchParams(window.location.search).get("token");
+
 
   if (requireRequestLink && token) {
     try {
       const resp = await fetch("/.netlify/functions/verifyToken_ClientWrapper", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, email: urlEmail, formPath: window.location.pathname })
+        body: JSON.stringify({ token, formPath: window.location.pathname })
       });
       const data = await resp.json();
 
       if (data.valid) {
-        const verifiedEmail = (data.email && String(data.email).trim()) || urlEmail;
-        console.log("[DEBUG] Token verified for:", verifiedEmail);
+        console.log("[DEBUG] Token verified", data);
 
         form.querySelectorAll('input, textarea, select, button[type="submit"]').forEach(el => {
           el.disabled = false;
         });
 
         const submittedBy = form.querySelector("#submitted_by");
-        if (submittedBy && verifiedEmail) {
-          submittedBy.value = decodeURIComponent(verifiedEmail);
+        if (submittedBy && data.email) {
+          submittedBy.value = decodeURIComponent(data.email);
           submittedBy.setAttribute("readonly", "true");
           submittedBy.setAttribute("aria-readonly", "true");
         }
@@ -184,7 +132,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-  // --- Submit handler ---
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     console.log("[DEBUG] Form submit triggered");
@@ -194,17 +141,29 @@ document.addEventListener("DOMContentLoaded", async () => {
     const submittedByEmail = submittedByInput?.value.trim() || "";
     const optionalEmail = (document.querySelector("#optional_email_field input[type='email']")?.value || "").trim() || "";
 
+    let formPath = window.location.pathname;
+    if (formPath.endsWith("/")) formPath = formPath.slice(0, -1);
+    const emailField = document.querySelector('input[name="E-mail address:"]');
+    const email = emailField ? emailField.value.trim() : null;
+
     let storedToken;
     try {
       const resp = await fetch("/.netlify/functions/storeFinalForm", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ formattedForm })
+        body: JSON.stringify({
+          formattedForm,
+          formPath,
+          email
+        }),
       });
       const data = await resp.json();
       if (!data.success) throw new Error(data.error || "Unknown error");
       storedToken = data.token;
       console.log("[DEBUG] Stored form and received token:", storedToken);
+
+      const submitLink = `${window.location.origin}/send_submission_page.html?token=${encodeURIComponent(storedToken)}`;
+      console.log("[DEBUG] Final-submit link:", submitLink);
     } catch (err) {
       console.error("[DEBUG] storeFinalForm error:", err);
       return;
@@ -222,7 +181,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           body: JSON.stringify({
             email: submittedByEmail,
             formName: form.name || document.title,
-            formPath: window.location.pathname,
+            formPath,
             formattedForm,
             site_root: window.location.origin,
             token: storedToken,
@@ -256,7 +215,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           body: JSON.stringify({
             email: emailToSend,
             formName: form.name || document.title,
-            formPath: window.location.pathname,
+            formPath,
             formattedForm,
             site_root: window.location.origin,
             token: storedToken,
@@ -269,7 +228,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
     }
 
-    const params = new URLSearchParams({ token: storedToken, validationMode: validationMode.join(",") });
+    const params = new URLSearchParams({ token: storedToken });
     window.location.href = `/send_submission_page.html?${params.toString()}`;
   });
 });

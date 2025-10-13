@@ -4,29 +4,18 @@ const { generateSecureToken } = require("./generateSecureToken");
 
 exports.handler = async function (event) {
   try {
-    const { formattedForm } = JSON.parse(event.body);
-    if (!formattedForm) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ success: false, error: "Missing formattedForm" }),
-      };
+    const { formattedForm, formPath, email } = JSON.parse(event.body);
+    if (!formattedForm || !formPath) {
+      return { statusCode: 400, body: JSON.stringify({ success: false, error: "Missing formattedForm or formPath" }) };
     }
 
-    // Generate token securely on the server
     const token = generateSecureToken(formattedForm);
+    await storeFinalForm(token, formattedForm, formPath, email);
 
-    // Store form and token securely
-    await storeFinalForm(token, formattedForm);
-
-    return {
-      statusCode: 200,
-      body: JSON.stringify({ success: true, token }),
-    };
+    return { statusCode: 200, body: JSON.stringify({ success: true, token }) };
   } catch (err) {
     console.error("storeFinalForm error:", err);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ success: false, error: "Internal server error" }),
-    };
+    return { statusCode: 500, body: JSON.stringify({ success: false, error: "Internal server error" }) };
   }
 };
+

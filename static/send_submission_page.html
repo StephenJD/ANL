@@ -1,58 +1,72 @@
-<script>
-(async () => {
-  const status = document.getElementById("status");
-  const params = new URLSearchParams(window.location.search);
-  const token = params.get("token");
-  const validationMode = (params.get("validationMode") || "none")
-    .split(/[\s,;]+/).filter(Boolean);
-  const requireFinalSubmit = validationMode.includes("submit");
+<!-- Client-Side: /static/send_submission_page.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Final Form Submission</title>
+  <link rel="stylesheet" href="/css/forms.css">
+</head>
+<body class="submission-wrapper">
+  <h1 id="status" class="form-status">Submitting...</h1>
 
-  if (!token) {
-    status.textContent = "❌ Missing token.";
-    status.className = "error-message";
-    return;
-  }
+  <script>
+  (async () => {
+    const status = document.getElementById("status");
+    const token = new URLSearchParams(window.location.search).get("token");
 
-  try {
-    // Verify the final token
-    const verifyResp = await fetch("/.netlify/functions/verifyFinalToken", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token })
-    });
-    const verifyData = await verifyResp.json();
-    if (!verifyData.valid) {
-      status.textContent = "❌ Invalid or expired token.";
+    console.log("[DEBUG] send_submission_page.html loaded");
+    console.log("[DEBUG] URL:", window.location.href);
+    console.log("[DEBUG] Extracted token:", token ? token.slice(0, 12) + "..." : "(none)");
+
+    if (!token) {
+      status.textContent = "❌ Missing token in URL.";
       status.className = "error-message";
+      console.error("[ERROR] No token provided in query string");
       return;
     }
 
-    // After verification, send the form to ANL with attachment
-    const bodyPayload = { token, email: process.env.ADMIN_EMAIL, includeSubmissionLink: false, asAttachment: true };
+    try {
+      console.log("[DEBUG] Sending POST to /.netlify/functions/finalSubmit with token");
+      const payload = { token };
+      console.log("[DEBUG] Request body:", payload);
 
-    const sendResp = await fetch("/.netlify/functions/sendFormattedForm", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(bodyPayload)
-    });
+      const resp = await fetch("/.netlify/functions/finalSubmit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
 
-    if (!sendResp.ok) throw new Error("sendFormattedForm " + sendResp.status);
-    const sendData = await sendResp.json();
+      console.log("[DEBUG] Response status:", resp.status, resp.statusText);
+      const rawText = await resp.text();
+      console.log("[DEBUG] Raw response text:", rawText);
 
-    if (sendData.success) {
-      status.textContent = "✅ Your form has been successfully submitted!";
-      if (sendData.note) status.textContent += " " + sendData.note;
-      status.className = "success-message";
-    } else {
-      status.textContent = "❌ Submission failed. Please try again.";
-      if (sendData.note) status.textContent += " " + sendData.note;
+      let data;
+      try {
+        data = JSON.parse(rawText);
+      } catch (parseErr) {
+        console.error("[ERROR] Failed to parse JSON:", parseErr, "Raw:", rawText);
+        status.textContent = "❌ Invalid JSON response from server.";
+        status.className = "error-message";
+        return;
+      }
+
+      if (data.success) {
+        status.textContent = "✅ Form successfully submitted!";
+        if (data.note) status.textContent += " " + data.note;
+        status.className = "success-message";
+        console.log("[DEBUG] finalSubmit success response:", data);
+      } else {
+        const errMsg = data.error || "unknown error";
+        status.textContent = "❌ Submission failed: " + errMsg;
+        status.className = "error-message";
+        console.error("[ERROR] finalSubmit returned failure:", { status: resp.status, errMsg, data });
+      }
+    } catch (err) {
+      console.error("[ERROR] Network or fetch failure:", err);
+      status.textContent = "❌ Network error submitting form.";
       status.className = "error-message";
     }
-
-  } catch (err) {
-    console.error("[DEBUG]", err);
-    status.textContent = "❌ Error verifying or submitting form.";
-    status.className = "error-message";
-  }
-})();
-</script>
+  })();
+  </script>
+</body>
+</html>
