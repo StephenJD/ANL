@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "dependencies": {
     "js-yaml": "^4.1.0",
+    "jsdom": "^27.0.0",
     "node-fetch": "^3.3.2",
     "nodemailer": "^6.9.5"
   }

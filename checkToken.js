@@ -1,5 +1,6 @@
 // checkToken.js
-const { readStore } = require("./netlify/functions/tokenStore");
+// node .\checkToken.js <optional token>
+const { readStore } = require("./netlify/functions/secureStore");
 
 (async () => {
   const tokenArg = process.argv[2];

@@ -1,47 +1,57 @@
-// netlify/functions/getFormFrontMatter.js
-const fs = require("fs");
+// Server-Side: /.netlify/functions/getFormFrontMatter.js
+// - Returns front-matter metadata for a form
+// - Reads from form_metadata.json
+
+const fs = require("fs").promises;
 const path = require("path");
-const yaml = require("js-yaml");
 
 async function getFormFrontMatter({ formPath }) {
   if (!formPath) throw new Error("Missing formPath");
 
-  const filePath = path.join(process.cwd(), "public", formPath.replace(/^\//, ""), "index.html");
-  console.log("[DEBUG] getFormFrontMatter resolved filePath:", filePath);
+  const formDir = path.join(process.cwd(), "public", formPath);
+  const metadataFile = path.join(formDir, "form_metadata.json");
 
-  if (!fs.existsSync(filePath)) throw new Error(`Form path does not exist: ${filePath}`);
-  const html = fs.readFileSync(filePath, "utf8");
+  const raw = await fs.readFile(metadataFile, "utf-8");
+  const metadata = JSON.parse(raw);
 
-  // --- Try YAML first ---
-  const yamlMatch = html.match(/^\s*---([\s\S]*?)---/);
-  if (yamlMatch) {
-    try {
-      const frontmatter = yaml.load(yamlMatch[1]);
-      console.log("[DEBUG] Loaded YAML frontmatter keys:", Object.keys(frontmatter));
-      return frontmatter;
-    } catch (err) {
-      console.error("[ERROR] Failed to parse YAML frontmatter:", err.message);
-      throw new Error("Invalid YAML frontmatter");
-    }
+  let validationRaw = metadata.validation;
+  let validation;
+
+  if (Array.isArray(validationRaw)) {
+    validation = validationRaw.map(String).filter(Boolean);
+  } else if (typeof validationRaw === "string") {
+    validation = validationRaw.split(/[\s,;|]+/).map(s => s.trim()).filter(Boolean);
+  } else {
+    validation = ["none"];
   }
+  console.debug("[DEBUG] Raw metadata loaded:", metadata);
+  console.debug("[DEBUG] validation field type:", Array.isArray(metadata.validation) ? "array" : typeof metadata.validation);
+  console.debug("[DEBUG] Parsed validation result:", validation);
+  console.debug("[DEBUG] title:", metadata.title);
+  console.debug("[DEBUG] path:", metadata.path);
 
-  // --- Fallback: look for window.PAGE_FRONTMATTER ---
-  const jsMatch = html.match(/window\.PAGE_FRONTMATTER\s*=\s*({[\s\S]*?});/);
-  if (jsMatch) {
-    try {
-      const obj = eval("(" + jsMatch[1] + ")");
-      const params = obj.params ? JSON.parse(obj.params) : {};
-      const merged = { ...params, title: JSON.parse(obj.title || "null"), path: JSON.parse(obj.path || "null") };
-      console.log("[DEBUG] Parsed window.PAGE_FRONTMATTER keys:", Object.keys(merged));
-      return merged;
-    } catch (err) {
-      console.error("[ERROR] Failed to parse PAGE_FRONTMATTER:", err.message);
-      throw new Error("Invalid PAGE_FRONTMATTER");
-    }
-  }
+  return {
+    validation,
+    title: metadata.title,
+    path: metadata.path
+  };
 
-  console.warn("[WARN] No frontmatter or PAGE_FRONTMATTER found in file:", filePath);
-  return {};
 }
 
-module.exports = getFormFrontMatter;
+// Netlify export
+async function handler(event) {
+  if (event.httpMethod !== "POST") {
+    return { statusCode: 405, body: "Method Not Allowed" };
+  }
+
+  try {
+    const { formPath } = JSON.parse(event.body || "{}");
+    const result = await getFormFrontMatter({ formPath });
+    return { statusCode: 200, body: JSON.stringify({ success: true, ...result }) };
+  } catch (err) {
+    console.error("[ERROR] getFormFrontMatter exception:", err);
+    return { statusCode: 500, body: JSON.stringify({ success: false, error: err.message || "Server error" }) };
+  }
+}
+
+exports.handler = handler;

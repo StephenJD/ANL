@@ -1,0 +1,14 @@
+{{/* layouts/_default/form_metadata.json */}}
+{
+  "path": "{{ .RelPermalink }}",
+  "title": {{ .Title | jsonify }},
+  "validation": {{ .Params.validation | default "none" | jsonify }},
+  "restrict_users": {{ .Params.restrict_users | default false | jsonify }},
+  "include_unselected_options": {{ .Params.include_unselected_options | default false | jsonify }},
+  "summary": {{ .Params.summary | default "" | jsonify }},
+  "last_reviewed": {{ .Params.last_reviewed | default "" | jsonify }},
+  "review_period": {{ .Params.review_period | default "" | jsonify }},
+  "reviewed_by": {{ .Params.reviewed_by | default "" | jsonify }},
+  "type": {{ .Params.type | default "form" | jsonify }}
+}
+

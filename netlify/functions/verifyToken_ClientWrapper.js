@@ -1,61 +1,44 @@
-// netlify/functions/verifyToken_ClientWrapper.js
-const { retrieveFinalForm } = require("./tokenStore");
-const { generateSecureToken } = require("./generateSecureToken"); // used for comparison if needed
+// Server-Side: /netlify/functions/verifyToken_ClientWrapper.js
+const { getSecureItem } = require("./secureStore");
 
-exports.handler = async function(event) {
-  console.log("[DEBUG] verifyToken_ClientWrapper invoked, method:", event.httpMethod);
-
-  if (event.httpMethod !== "POST") {
-    return { statusCode: 405, body: JSON.stringify({ valid: false, error: "Method Not Allowed" }) };
-  }
-
-  let token = null;
-  let formPath = null;
+exports.handler = async function (event) {
   try {
-    const body = JSON.parse(event.body || "{}");
-    token = body.token;
-    formPath = body.formPath;
-  } catch (err) {
-    console.error("[ERROR] Invalid JSON body:", err);
-    return { statusCode: 400, body: JSON.stringify({ valid: false, error: "Invalid JSON" }) };
-  }
+    const { token } = JSON.parse(event.body || "{}");
+    console.log("[DEBUG] verifyToken_ClientWrapper called with:", { token });
 
-  console.log("[DEBUG] Incoming verifyToken request:", { tokenSnippet: token ? token.slice(0,12)+"..." : null, formPath });
-
-  if (!token || !formPath) {
-    console.warn("[WARN] Missing token or formPath in request", { tokenExists: !!token, formPath });
-    return { statusCode: 400, body: JSON.stringify({ valid: false, error: "Missing token or formPath" }) };
-  }
-
-  // Normalize formPath (remove trailing slash)
-  formPath = String(formPath).replace(/\/+$/, "");
-  try {
-    // retrieveFinalForm returns the stored record (we modified tokenStore to return full record)
-    const stored = await retrieveFinalForm(token);
-    console.log("[DEBUG] retrieveFinalForm result:", !!stored);
-
-    // If nothing stored for token -> invalid
-    if (!stored) {
-      return { statusCode: 200, body: JSON.stringify({ valid: false }) };
+    if (!token) {
+      console.warn("[DEBUG] Missing token");
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ valid: false, error: "Missing token" }),
+      };
     }
 
-    // If stored has a formPath we saved at store time, compare normalized paths
-    const storedPath = (stored.formPath || "").replace(/\/+$/, "");
-    const pathsMatch = storedPath ? (storedPath === formPath) : true;
+    const record = await getSecureItem(token);
 
-    // Optionally, if you generate link tokens differently (e.g. using email+formPath),
-    // you could also recompute the expected token here and compare. For now we
-    // accept token if it exists and formPath matches (defence-in-depth).
-    const valid = !!stored && pathsMatch;
+    if (!record) {
+      console.warn("[DEBUG] Invalid or expired token:", token);
+      return {
+        statusCode: 403,
+        body: JSON.stringify({ valid: false, error: "Invalid or expired token" }),
+      };
+    }
 
-    const payload = { valid };
-    if (stored.email) payload.email = stored.email;
+    console.log("[DEBUG] Token verified successfully:", { token, record, email: record.email });
 
-    console.log("[DEBUG] Token verification result:", { tokenSnippet: token.slice(0,12)+"...", formPath, storedPath, valid });
-
-    return { statusCode: 200, body: JSON.stringify(payload) };
+    return {
+      statusCode: 200,
+      body: JSON.stringify({
+        valid: true,
+        email: record.email || null,
+        token,
+      }),
+    };
   } catch (err) {
-    console.error("[ERROR] verifyToken handler failed:", err);
-    return { statusCode: 500, body: JSON.stringify({ valid: false, error: "Server error" }) };
+    console.error("[DEBUG] verifyToken_ClientWrapper exception:", err);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ valid: false, error: "Internal server error", details: err.message }),
+    };
   }
 };

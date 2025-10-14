@@ -3,7 +3,7 @@ const crypto = require("crypto");
 
 function generateSecureToken(request_origin) {
   const secret = process.env.TOKEN_SECRET || "supersecret";
-  const today = new Date().toISOString().split("T")[0];
+  const today = Date.now();
   return crypto
     .createHmac("sha256", secret)
     .update(request_origin + "|" + today)
@@ -11,5 +11,6 @@ function generateSecureToken(request_origin) {
 }
 
 module.exports = { generateSecureToken };
+
 
 

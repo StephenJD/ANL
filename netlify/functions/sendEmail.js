@@ -5,12 +5,12 @@
 
 const nodemailer = require("nodemailer");
 
-module.exports = async function sendEmail({
-  to,
-  subject,
-  html,
-  attachBodyAsFile = false
-}) {
+async function sendEmail({
+    to,
+    subject,
+    html,
+    attachBodyAsFile = false
+  }) {
   if (!to || !subject || !html) {
     console.error("[ERROR] Missing required email parameters", { to, subject, htmlLength: html ? html.length : 0 });
     throw new Error(`Missing required email parameters: ${JSON.stringify({
@@ -32,7 +32,7 @@ module.exports = async function sendEmail({
       subject,
       attachBodyAsFile,
       htmlLength: html.length,
-      snippet: html.slice(0, 200)
+      body: html
     });
     return { success: true, debug: true };
   }
@@ -66,4 +66,6 @@ module.exports = async function sendEmail({
     });
     throw err;
   }
-};
+}
+  
+module.exports = { sendEmail };

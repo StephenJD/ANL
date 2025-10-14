@@ -1,13 +1,5 @@
 {{/* layouts/forms/single.html */}}
 {{ define "main" }}
-  <!-- Expose front matter for JS -->
-  <script>
-    window.PAGE_FRONTMATTER = {
-      params: {{ .Params | jsonify }},
-      title: {{ .Title | jsonify }},
-      path: {{ .RelPermalink | jsonify }}
-    };
-  </script>
   <!-- Load form-specific stylesheet -->
   <link rel="stylesheet" href="{{ "css/forms.css" | relURL }}">
 
@@ -75,8 +67,6 @@
       window.addEventListener("resize", updateInlineFit);
     </script>
     
-    <script src="{{ "js/authentication_control.js" | relURL }}" defer></script>
-    <script type="module" src="/js/formatFormData.js"></script>
-
+    <script src="{{ "js/form_access_controller.js" | relURL }}" defer></script>
   </div>
 {{ end }}

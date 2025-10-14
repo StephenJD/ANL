@@ -1,100 +1,63 @@
 // Server-Side: netlify/functions/sendFormAccessLink.js
-const nodemailer = require("nodemailer");
+const { setSecureItem } = require("./secureStore");
 const { generateSecureToken } = require("./generateSecureToken");
-const { storeFinalForm } = require("./tokenStore");
+const { sendEmail } = require("./sendEmail");
 
-exports.handler = async (event) => {
-  console.log("[DEBUG] sendFormAccessLink invoked, method:", event.httpMethod);
-
+exports.handler = async function(event) {
   if (event.httpMethod !== "POST") {
     return { statusCode: 405, body: "Method Not Allowed" };
   }
 
-  let email = null;
-  let formPath = null;
-  let formName = null;
-  let site_root = null;
-
   try {
-    const data = JSON.parse(event.body);
-    email = data.email;
-    formPath = data.formPath;
-    formName = data.formName;
-    site_root = data.site_root;
+    const { email, formPath, formName, site_root } = JSON.parse(event.body || "{}");
+    console.log("[DEBUG] sendFormAccessLink called with:", { email, formPath, formName, site_root });
 
-    console.log("[DEBUG] Parsed request body:", { email, formPath, formName, site_root });
-  } catch (err) {
-    console.error("[ERROR] Invalid JSON in request body:", err);
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ success: false, error: "Invalid JSON" }),
-    };
-  }
-
-  if (!email || !formPath || !site_root) {
-    console.warn("[WARN] Missing required parameters:", { email, formPath, site_root });
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ success: false, error: "Missing email, formPath or site_root" }),
-    };
-  }
-
-  try {
-    const token = generateSecureToken(email + formPath);
-    console.log("[DEBUG] Generated token:", token);
-    console.log("[DEBUG] Stored access-link token in tokenStore:", token);
-
-    const formTitle = (formName || "").replace(/^"|"$/g, "");
-    const normalizedFormPath = formPath.replace(/\/+$/, "");
-    console.log("[DEBUG] Normalized formPath for token generation:", normalizedFormPath);
-    const link = `${site_root}${normalizedFormPath}?token=${token}`;
-    console.log("[DEBUG] Generated secure link:", link);
-    
-    await storeFinalForm(token, "", normalizedFormPath, email);
-
-    if (process.env.NETLIFY_DEV || process.env.LOCAL_TEST) {
-      console.log("[DEBUG] Local/dev mode, skipping email send");
-      return {
-        statusCode: 200,
-        body: JSON.stringify({ success: true, link, formTitle }),
-      };
+    if (!email || !formPath || !formName) {
+      console.error("[ERROR] Missing required parameters");
+      return { statusCode: 400, body: JSON.stringify({ success: false, error: "Missing email, formPath, or formName" }) };
     }
 
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: 587,
-      secure: false,
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
-    });
+    // Generate token and store it
+    const token = generateSecureToken(email + "|" + formPath);
+    
+    const valueObject = {
+      email,         // client email
+      formPath,
+      formName
+    };
 
-    console.log("[DEBUG] Sending email via SMTP to:", email);
+    console.log("[DEBUG] Storing request-link token:", token, valueObject);
+    
+    const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+    await setSecureItem(token, valueObject, ONE_DAY_MS);
+    console.log("[DEBUG] Token stored successfully:", token);
 
-    await transporter.sendMail({
-      from: `"Ascend Next Level" <${process.env.SMTP_USER}>`,
-      to: email,
-      subject: "Your secure form link",
-      text: `Delete this email if you did not just request a Form-Link from Ascend Next Level.
+    // Construct access link
+    const accessLink = `${site_root || "http://localhost:8888"}${formPath}?token=${encodeURIComponent(token)}`;
+    console.log("[DEBUG] Access link constructed:", accessLink);
 
-The link can only be used today, from this email address and only for this form.
+    // Send email
+    const emailSubject = `Access Link for ${formName}`;
+    const emailHtml = `<p>Click the link below to access your form:</p>
+                       <p><a href="${accessLink}">${accessLink}</a></p>`;
 
-If you are not ready to complete and submit the form, you can request another link when you are ready.
+    try {
+      await sendEmail({
+        to: email,
+        subject: emailSubject,
+        html: emailHtml,
+        attachBodyAsFile: false
+      });
+      console.log("[DEBUG] Access link email sent to:", email);
+    } catch (emailErr) {
+      console.error("[ERROR] Failed to send access link email:", emailErr);
+      // Continue: the token was already stored
+    }
 
-Form link: ${link}`,
-      html: `
-        <p>Delete this email if you did not just request a Form-Link from <strong>Ascend Next Level</strong>.</p>
-        <p>The link can only be used <strong>today</strong>, from this email address and only for this form.</p>
-        <p>If you are not ready to complete and submit the form, you can request another link when you are ready.</p>
-        <p><a href="${link}" style="display:inline-block;padding:10px 15px;background-color:#2a6df4;color:#fff;text-decoration:none;border-radius:5px;">${formTitle}</a></p>
-      `,
-    });
+    return { statusCode: 200, body: JSON.stringify({ success: true, token }) };
 
-    console.log("[DEBUG] Email sent successfully to:", email);
-    return { statusCode: 200, body: JSON.stringify({ success: true }) };
   } catch (err) {
-    console.error("[ERROR] Failed to send email:", err);
-    return { statusCode: 500, body: JSON.stringify({ success: false, error: "Error sending email" }) };
+    console.error("[ERROR] sendFormAccessLink failed:", { message: err.message, stack: err.stack });
+    return { statusCode: 500, body: JSON.stringify({ success: false, error: err.message || "Server error" }) };
   }
 };
