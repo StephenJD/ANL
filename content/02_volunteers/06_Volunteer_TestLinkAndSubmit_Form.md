@@ -8,7 +8,6 @@ type: form
 restrict_users: false
 #include_unselected_options: false # options: "true", "false" (default)
 validation: [requestLink, submit] # options: "requestLink" &| "submit", "none" (default)
-outputs: ["HTML","form_metadata"]
 ---
 
 <!--

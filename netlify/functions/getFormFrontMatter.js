@@ -19,13 +19,11 @@ async function getFormFrontMatter({ formPath }) {
     console.error("[DEBUG] Cannot list directory:", path.dirname(metadataFile), e.message);
   }
 
-  let raw;
-  try {
-    raw = await fs.readFile(metadataFile, "utf-8");
-  } catch (err) {
-    console.error(`[ERROR] Cannot read form_metadata.json at ${metadataFile}:`, err.message);
-    throw new Error(`Form metadata not found for path: ${formPath}`);
-  }
+  const siteURL = process.env.URL || process.env.DEPLOY_URL || "http://localhost:8888";
+  const res = await fetch(`${siteURL}${formPath}form_metadata.json`);
+  if (!res.ok) throw new Error(`Fetch failed: ${res.status} ${res.statusText}`);
+  raw = await res.text();
+
 
   let metadata;
   try {
