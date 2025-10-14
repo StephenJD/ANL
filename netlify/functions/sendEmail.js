@@ -4,7 +4,6 @@
 // - Local/dev mode skips actual sending
 
 const nodemailer = require("nodemailer");
-console.log("[DEBUG] NETLIFY env:", process.env.NETLIFY, "NODE_ENV:", process.env.NODE_ENV);
 
 async function sendEmail({
     to,
@@ -28,7 +27,7 @@ async function sendEmail({
   const attachments = attachBodyAsFile ? [{ filename: "email.txt", content: html }] : [];
   console.log("[DEBUG] Attachments set:", attachments.length);
   
-  const isLocal = process.env.NETLIFY !== "true";
+  const isLocal = process.env.FUNCTIONS_EMULATOR === "true";
 
   if (isLocal) {
     console.log("[DEBUG] Local mode - email not sent", {
