@@ -4,6 +4,7 @@
 // - Local/dev mode skips actual sending
 
 const nodemailer = require("nodemailer");
+console.log("[DEBUG] NETLIFY env:", process.env.NETLIFY, "NODE_ENV:", process.env.NODE_ENV);
 
 async function sendEmail({
     to,
