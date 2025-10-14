@@ -27,7 +27,7 @@ async function sendEmail({
   const attachments = attachBodyAsFile ? [{ filename: "email.txt", content: html }] : [];
   console.log("[DEBUG] Attachments set:", attachments.length);
   
-  const isLocal = !process.env.NETLIFY && process.env.NODE_ENV !== "production";
+  const isLocal = process.env.NETLIFY !== "true" && process.env.NODE_ENV !== "production";
 
   if (isLocal) {
     console.log("[DEBUG] Local mode - email not sent", {
