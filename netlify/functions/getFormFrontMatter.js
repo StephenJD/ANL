@@ -7,8 +7,17 @@ const path = require("path");
 async function getFormFrontMatter({ formPath }) {
   if (!formPath) throw new Error("Missing formPath");
 
-  const metadataFile = path.join(process.cwd(), "public", formPath, "form_metadata.json");
-
+  const metadataFile = path.join(__dirname, "../../public", formPath, "form_metadata.json");
+  console.log("[DEBUG] CWD:", process.cwd());
+  console.log("[DEBUG] __dirname:", __dirname);
+  console.log("[DEBUG] Looking for metadataFile:", metadataFile);
+  
+  try {
+    const files = await fs.readdir(path.dirname(metadataFile));
+    console.log("[DEBUG] Directory contents:", files);
+  } catch (e) {
+    console.error("[DEBUG] Cannot list directory:", path.dirname(metadataFile), e.message);
+  }
 
   let raw;
   try {
