@@ -10,7 +10,11 @@ async function sendEmail({
     subject,
     html,
     attachBodyAsFile = false
-  }) {
+  }) 
+  {
+  console.log("[DEBUG] sendEmail invoked");
+  console.log("[DEBUG] Params:", { to, subject, htmlLength: html?.length, attachBodyAsFile });  
+	  
   if (!to || !subject || !html) {
     console.error("[ERROR] Missing required email parameters", { to, subject, htmlLength: html ? html.length : 0 });
     throw new Error(`Missing required email parameters: ${JSON.stringify({
@@ -20,10 +24,9 @@ async function sendEmail({
     })}`);
   }
 
-  const attachments = attachBodyAsFile
-    ? [{ filename: "email.txt", content: html }]
-    : [];
-
+  const attachments = attachBodyAsFile ? [{ filename: "email.txt", content: html }] : [];
+  console.log("[DEBUG] Attachments set:", attachments.length);
+  
   const isLocal = !process.env.NETLIFY && process.env.NODE_ENV !== "production";
 
   if (isLocal) {
@@ -37,11 +40,14 @@ async function sendEmail({
     return { success: true, debug: true };
   }
 
+  console.log("[DEBUG] Creating Nodemailer transporter with host:", process.env.SMTP_HOST);
   const transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST,
     port: 587,
     secure: false,
-    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
+    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+    logger: true,
+    debug: true
   });
 
   try {
@@ -52,6 +58,7 @@ async function sendEmail({
       html,
       attachments
     });
+    console.log("[DEBUG] Email successfully sent");
     return { success: true };
   } catch (err) {
     console.error("[ERROR] sendEmail failed", {
