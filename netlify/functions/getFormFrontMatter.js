@@ -1,6 +1,5 @@
-// Server-Side: /.netlify/functions/getFormFrontMatter.js
-// - Returns front-matter metadata for a form
-// - Reads from form_metadata.json
+// /.netlify/functions/getFormFrontMatter.js
+// - Returns front-matter metadata for any Hugo-generated form JSON
 
 const fs = require("fs").promises;
 const path = require("path");
@@ -8,37 +7,54 @@ const path = require("path");
 async function getFormFrontMatter({ formPath }) {
   if (!formPath) throw new Error("Missing formPath");
 
-  const formDir = path.join(process.cwd(), "public", formPath);
-  const metadataFile = path.join(formDir, "form_metadata.json");
+  const metadataFile = path.join(process.cwd(), "public", formPath, "form_metadata.json");
 
-  const raw = await fs.readFile(metadataFile, "utf-8");
-  const metadata = JSON.parse(raw);
 
-  let validationRaw = metadata.validation;
+  let raw;
+  try {
+    raw = await fs.readFile(metadataFile, "utf-8");
+  } catch (err) {
+    console.error(`[ERROR] Cannot read form_metadata.json at ${metadataFile}:`, err.message);
+    throw new Error(`Form metadata not found for path: ${formPath}`);
+  }
+
+  let metadata;
+  try {
+    metadata = JSON.parse(raw);
+  } catch (err) {
+    console.error(`[ERROR] Invalid JSON in ${metadataFile}:`, err.message);
+    throw new Error(`Invalid JSON in form metadata for path: ${formPath}`);
+  }
+
   let validation;
-
-  if (Array.isArray(validationRaw)) {
-    validation = validationRaw.map(String).filter(Boolean);
-  } else if (typeof validationRaw === "string") {
-    validation = validationRaw.split(/[\s,;|]+/).map(s => s.trim()).filter(Boolean);
+  if (Array.isArray(metadata.validation)) {
+    validation = metadata.validation.map(String).filter(Boolean);
+  } else if (typeof metadata.validation === "string") {
+    validation = metadata.validation
+      .split(/[\s,;|]+/)
+      .map(s => s.trim())
+      .filter(Boolean);
   } else {
     validation = ["none"];
   }
-  console.debug("[DEBUG] Raw metadata loaded:", metadata);
-  console.debug("[DEBUG] validation field type:", Array.isArray(metadata.validation) ? "array" : typeof metadata.validation);
-  console.debug("[DEBUG] Parsed validation result:", validation);
-  console.debug("[DEBUG] title:", metadata.title);
-  console.debug("[DEBUG] path:", metadata.path);
+
+  console.debug("[DEBUG] Loaded metadata:", metadata);
+  console.debug("[DEBUG] Parsed validation:", validation);
 
   return {
     validation,
     title: metadata.title,
-    path: metadata.path
+    path: metadata.path,
+    restrict_users: metadata.restrict_users || false,
+    include_unselected_options: metadata.include_unselected_options || false,
+    summary: metadata.summary || "",
+    last_reviewed: metadata.last_reviewed || "",
+    review_period: metadata.review_period || "",
+    reviewed_by: metadata.reviewed_by || "",
+    type: metadata.type || "form"
   };
-
 }
 
-// Netlify export
 async function handler(event) {
   if (event.httpMethod !== "POST") {
     return { statusCode: 405, body: "Method Not Allowed" };
@@ -49,8 +65,11 @@ async function handler(event) {
     const result = await getFormFrontMatter({ formPath });
     return { statusCode: 200, body: JSON.stringify({ success: true, ...result }) };
   } catch (err) {
-    console.error("[ERROR] getFormFrontMatter exception:", err);
-    return { statusCode: 500, body: JSON.stringify({ success: false, error: err.message || "Server error" }) };
+    console.error("[ERROR] getFormFrontMatter exception:", err.message);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ success: false, error: err.message || "Server error" })
+    };
   }
 }
 
