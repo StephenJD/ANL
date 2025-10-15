@@ -24,10 +24,10 @@ async function sendEmail({
     })}`);
   }
 
-  const attachments = attachBodyAsFile ? [{ filename: "email.txt", content: html }] : [];
+  const attachments = attachBodyAsFile ? [{ filename: "form.txt", content: html }] : [];
   console.log("[DEBUG] Attachments set:", attachments.length);
   
-  const isLocal = process.env.FUNCTIONS_EMULATOR === "true";
+  const isLocal = !process.env.SMTP_HOST
 
   if (isLocal) {
     console.log("[DEBUG] Local mode - email not sent", {

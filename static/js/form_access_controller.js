@@ -1,11 +1,9 @@
 // Client-Side: /static/js/form_access_controller.js
-// - Sends raw form data to server (/.netlify/functions/submitFormController) to generate/store token securely
-// - Works for validation: "none", "requestLink", and "submit"
-
+// Loaded by layouts/forms/single.html
 /*
 Client-side: 
-Front-matter has validation modes none, requireRequestLink, requireFinalSubmit or requireRequestLink + requireFinalSubmit
-non-validated forms may be anonymous and have an optionalEmail. All other forms have submittedBy. 
+Front-matter has validation options [none, requestLink, Submit]
+non-validated forms may be anonymous and have an optionalEmail field. All other forms have submittedBy. 
 
 1. Obtain validation mode from server:getFormFrontMatter.js:
    - requireRequestLink
@@ -16,8 +14,8 @@ non-validated forms may be anonymous and have an optionalEmail. All other forms 
    b) Clicking the request button sends { email, formPath, formName } to server:sendFormAccessLink.js.
       - Server handles token generation, storage, and emailing the access link.
 
-3. If a query Link-token exists and requireRequestLink is true:
-   - Verify Link-token by POSTing { token, formPath } to server:verifyToken_ClientWrapper.js.
+3. If a url_token exists and requireRequestLink is true:
+   - Verify url_token by POSTing { url_token, formPath } to server:getRequestLink_fromToken.js.
    - If valid, enable the form inputs. Do NOT trust submittedBy from the client; server will derive it from the token.
 
 4. On form submit:
@@ -28,25 +26,27 @@ non-validated forms may be anonymous and have an optionalEmail. All other forms 
 
 Server-side:
 1. If a link-token is requested, generate a secure token using the email and form-name, store it, and email the link to the user (sendFormAccessLink.js).
-2. On form-submission submitFormController.js receives raw form data, optionalEmail, and token if present.
-3. Server derives submittedBy from the token when requireRequestLink is true; otherwise, uses client-provided submittedBy.
+2. On form-submission submitFormController.js receives raw form data, optionalEmail, and url_token.
+3. Server derives submittedBy from the url_token when requireRequestLink is true; otherwise, uses client-provided submittedBy.
 4. Server formats the form (formatFormEmail), generates a secure token, and stores { token, formattedForm, metadata } in secureStore.
 5. Emails the form to the client using sendClientEmail.js if optionalEmail or requireFinalSubmit.
 6. If requireFinalSubmit is true, that email contains a link to send_submission_page.html with the token. No client redirection occurs.
-7. If requireFinalSubmit is false the client returns the token which redirects client to send_submission_page.html with that token.
-8. send_submission_page.html retrieves the stored form using the query token; invalid or missing tokens fail.
+7. If requireFinalSubmit is false submitFormController returns the token which redirects client to send_submission_page.html with that url_token.
+8. send_submission_page.html retrieves the stored form using the url_token; invalid or missing tokens fail.
 9. Server handles final submission to Netlify.
 */
 
+
 document.addEventListener("DOMContentLoaded", async () => {
   const form = document.querySelector("form.verified-form");
-  if (!form) return console.log("[DEBUG] No verified form found");
 
   const requestBox = document.querySelector(".form-request-box");
-  const messageBox = requestBox?.querySelector(".token-message");
-  const request_link_btn = requestBox?.querySelector(".request-token-btn");
-  const emailInput = requestBox?.querySelector(".request-email");
-
+  const messageBox = requestBox?.querySelector(".form-link-message");
+  const request_link_btn = requestBox?.querySelector(".request-form-link-btn");
+  const emailInput = requestBox?.querySelector(".request-form-link-email");
+  const url_token = new URLSearchParams(window.location.search).get("token");
+  //console.log("[DEBUG] url_token from URL:", url_token);
+  
   let requireRequestLink = false;
   let requireFinalSubmit = false;
 
@@ -55,28 +55,26 @@ document.addEventListener("DOMContentLoaded", async () => {
     const formPath = window.location.pathname;
     console.debug("[DEBUG] Fetching frontmatter for:", formPath);
     
-    const resp = await fetch("/.netlify/functions/getFormFrontMatter", {
+    const frontMatterObj = await fetch("/.netlify/functions/getFormFrontMatter", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ formPath })
     });
 
-    console.debug("[DEBUG] getFormFrontMatter response status:", resp.status);
-    
-    let data;
+    let frontMatter;
     try {
-      data = await resp.json();
+      frontMatter = await frontMatterObj.json();
     } catch (jsonErr) {
-      const text = await resp.text();
+      const text = await frontMatterObj.text();
       console.error("[DEBUG] JSON parse failed. Raw response text:", text);
       throw jsonErr;
     }
-    console.debug("[DEBUG] getFormFrontMatter response data:", data);
+    console.debug("[DEBUG] getFormFrontMatter got :", frontMatter);
     
-    const validation = Array.isArray(data.validation)
-      ? data.validation
-      : Array.isArray(data.validation)
-      ? data.validation
+    const validation = Array.isArray(frontMatter.validation)
+      ? frontMatter.validation
+      : Array.isArray(frontMatter.validation)
+      ? frontMatter.validation
       : ["none"];
 
     console.debug("[DEBUG] Parsed validation:", validation);
@@ -88,55 +86,62 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   // --- 2. Setup form based on requireRequestLink ---
-  if (requireRequestLink) {
-    if (requestBox) requestBox.style.display = "block";
-    form.querySelectorAll('input, textarea, select, button[type="submit"]').forEach(el => {
-      if (!el.closest(".form-request-box")) el.disabled = true;
-    });
-  } else if (requestBox) {
-    requestBox.style.display = "none";
+  if (requestBox && request_link_btn) {
+    if (requireRequestLink) { // always start with disabled-form, even if token present, as it may be invalid
+      requestBox.style.display = "block";
+      form.querySelectorAll('input, textarea, select, button[type="submit"]').forEach(el => {
+        if (!el.closest(".form-request-box")) el.disabled = true;
+      });
+
+      request_link_btn.addEventListener("click", async () => {
+        const email = emailInput?.value.trim();
+        if (!email) return alert("Enter your email");
+
+        try {
+          const resp = await fetch("/.netlify/functions/sendFormAccessLink", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              email,
+              formPath: window.location.pathname,
+              formName: document.title || form.name,
+              site_root: window.location.origin
+            })
+          });
+          const result = await resp.json();
+          alert(result.success ? "Check your email for the link." : "Error sending link: " + (result.error || "unknown"));
+        } catch (err) {
+          console.error("[DEBUG] sendFormAccessLink error:", err);
+          alert("Request failed");
+        }
+      });
+    } else {
+      requestBox.style.display = "none";
+    }
   }
 
-  // --- 3. Request link button ---
-  if (requireRequestLink && request_link_btn) {
-    request_link_btn.addEventListener("click", async () => {
-      const email = emailInput?.value.trim();
-      if (!email) return alert("Enter your email");
+  // --- 3. Verify RequestLink url_token  ---
+  //console.debug("[DEBUG] url_token?:", requireRequestLink, url_token);
+  
+  if (requireRequestLink && url_token) {
+    //console.debug("[DEBUG] has url_token:", url_token);
 
-      try {
-        const resp = await fetch("/.netlify/functions/sendFormAccessLink", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            email,
-            formPath: window.location.pathname,
-            formName: form.name || document.title,
-            site_root: window.location.origin
-          })
-        });
-        const result = await resp.json();
-        alert(result.success ? "Check your email for the link." : "Error sending link: " + (result.error || "unknown"));
-      } catch (err) {
-        console.error("[DEBUG] sendFormAccessLink error:", err);
-        alert("Request failed");
-      }
-    });
-  }
-
-  // --- 4. Verify RequestLink token from URL ---
-  const token = new URLSearchParams(window.location.search).get("token");
-  if (requireRequestLink && token) {
     try {
-      const resp = await fetch("/.netlify/functions/verifyToken_ClientWrapper", {
+      const resp = await fetch("/.netlify/functions/getRequestLink_fromToken", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({token})
+        body: JSON.stringify({ token: url_token })
       });
       const data = await resp.json();
-      if (data.valid) {
+	const valid =
+      data.valid &&
+      data.email &&
+      data.formPath === window.location.pathname;
+
+      if (valid) {
         form.querySelectorAll('input, textarea, select, button[type="submit"]').forEach(el => el.disabled = false);
         const submittedBy = form.querySelector("#submitted_by");
-        if (submittedBy && data.email) {
+        if (submittedBy) {
           submittedBy.value = decodeURIComponent(data.email);
           submittedBy.setAttribute("readonly", "true");
           submittedBy.setAttribute("aria-readonly", "true");
@@ -151,9 +156,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-  // --- 5. Form submission ---
+  // --- 4. Form submission ---
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
+    console.debug("[DEBUG] form_access_controller submit...");
 
     const formElement = document.querySelector("form.verified-form");
     const clonedForm = formElement.cloneNode(true);
@@ -167,17 +173,23 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
     });
     
-    const formData = clonedForm.outerHTML;
-    const optionalEmail = document.querySelector("#optional_email_field input[type='email']")?.value.trim() || "";
     const formPath = window.location.pathname;
+    const formData = clonedForm.outerHTML;
+    const submittedBy = form.querySelector("#submitted_by")?.value.trim() || "";
+    const optionalEmail = form.querySelector("#optionalEmail input[type='email']")?.value.trim() || "";
 
-    let payload = { formData, formPath, optionalEmail };
-    if (requireRequestLink) {
-      payload.token = token; // server will derive submittedBy
-    } else {
-      const submittedBy = form.querySelector("#submitted_by")?.value.trim() || "";
+    let payload = { formData, formPath };
+    
+    if (!requireRequestLink && submittedBy) {
       payload.submittedBy = submittedBy;
+    } else if (optionalEmail) {
+      payload.optionalEmail = optionalEmail;
     }
+    if (url_token) {
+     payload.token = url_token;
+    }
+    console.debug("[DEBUG] form_access_controller:", payload);
+
     try {
       const resp = await fetch("/.netlify/functions/submitFormController", {
         method: "POST",
@@ -185,7 +197,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         body: JSON.stringify(payload)
       });
 	const text = await resp.text();
-      console.log("[DEBUG] Raw submitFormController response:", text);
+
       let data;
       try {
         data = JSON.parse(text);
@@ -194,11 +206,13 @@ document.addEventListener("DOMContentLoaded", async () => {
         throw new Error("Server returned invalid JSON");
       }
 
-      // Redirect client to the submission page with token (only for non-final-submit cases)
-      if (!requireFinalSubmit) {
+      // Redirect client to the submission page with url_token (only for non-final-submit cases)
+      if (data.token) {
         window.location.href = `/send_submission_page.html?token=${encodeURIComponent(data.token)}`;
-      } else {
+      } else if (requireFinalSubmit) {
         alert("Check your email for the submission link to finalize your form.");
+      } else {
+        alert("Form saved, but no token was returned.");
       }
     } catch (err) {
       console.error("[DEBUG] submitFormController error:", err);

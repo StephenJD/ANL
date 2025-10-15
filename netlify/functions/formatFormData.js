@@ -2,15 +2,30 @@
 // Server-side: parses <form> HTML, preserves fieldsets, legends, inputs
 const { JSDOM } = require("jsdom");
 
-function formatFormEmail({ formData, includeUnselected = false }) {
+function formatFormData({ formData, effectiveSubmittedBy, includeUnselected = false }) {
   if (!formData || typeof formData !== "string") {
-    console.warn("[DEBUG] formatFormEmail: No formData provided!", { formData });
+    console.warn("[DEBUG] formatFormData: No formData provided!", { formData });
     return "";
   }
 
   const dom = new JSDOM(formData);
   const form = dom.window.document.querySelector("form");
   if (!form) return "";
+   
+  console.log("[DEBUG] formatFormData: effectiveSubmittedBy ", effectiveSubmittedBy);
+
+  // Replace submitted_by value if provided
+  const submittedInput = form.querySelector("#submitted_by");
+  if (submittedInput) {
+    submittedInput.value = effectiveSubmittedBy
+      ? `${effectiveSubmittedBy}{@V}`
+      : "{@}";
+  }
+  
+  const optionalEmailInput = form.querySelector("#optionalEmail input[type='email']");
+  if (optionalEmailInput && optionalEmailInput.value.trim()) {
+    optionalEmailInput.value = `Copy requested by ${optionalEmailInput.value.trim()}`;
+  }
 
   const output = [];
 
@@ -52,4 +67,4 @@ function formatFormEmail({ formData, includeUnselected = false }) {
   return output.filter(l => l && l.trim() !== "").join("<br>");
 }
 
-module.exports = { formatFormEmail };
+module.exports = { formatFormData };

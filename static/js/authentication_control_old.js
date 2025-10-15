@@ -17,7 +17,7 @@ non-validated forms may be anonymous and have an optionalEmail. All other forms 
       - Server handles token generation, storage, and emailing the access link.
 
 3. If a query Link-token exists and requireRequestLink is true:
-   - Verify Link-token by POSTing { token, formPath } to server:verifyToken_ClientWrapper.js.
+   - Verify Link-token by POSTing { token, formPath } to server:getRequestLink_fromToken.js.
    - If valid, enable the form inputs. Do NOT trust submittedBy from the client; server will derive it from the token.
 
 4. On form submit:
@@ -43,9 +43,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (!form) return console.log("[DEBUG] No verified form found");
 
   const requestBox = document.querySelector(".form-request-box");
-  const messageBox = requestBox?.querySelector(".token-message");
-  const request_link_btn = requestBox?.querySelector(".request-token-btn");
-  const emailInput = requestBox?.querySelector(".request-email");
+  const messageBox = requestBox?.querySelector(".form-link-message");
+  const request_link_btn = requestBox?.querySelector(".request-form-link-btn");
+  const emailInput = requestBox?.querySelector(".request-form-link-email");
 
   let requireRequestLink = false;
   let requireFinalSubmit = false;
@@ -105,7 +105,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const token = new URLSearchParams(window.location.search).get("token");
   if (requireRequestLink && token) {
     try {
-      const resp = await fetch("/.netlify/functions/verifyToken_ClientWrapper", {
+      const resp = await fetch("/.netlify/functions/getRequestLink_fromToken", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token, formPath: window.location.pathname })
@@ -134,7 +134,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     e.preventDefault();
 
     const formData = Object.fromEntries(new FormData(form).entries());
-    const optionalEmail = document.querySelector("#optional_email_field input[type='email']")?.value.trim() || "";
+    const optionalEmail = document.querySelector("#optionalEmail input[type='email']")?.value.trim() || "";
     const formPath = window.location.pathname;
 
     let payload = { formData, formPath, optionalEmail };

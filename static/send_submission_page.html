@@ -16,7 +16,7 @@
 
     console.log("[DEBUG] send_submission_page.html loaded");
     console.log("[DEBUG] URL:", window.location.href);
-    console.log("[DEBUG] Extracted token:", token ? token.slice(0, 12) + "..." : "(none)");
+    console.log("[DEBUG] Extracted token:", token ? token : "(none)");
 
     if (!token) {
       status.textContent = "❌ Missing token in URL.";

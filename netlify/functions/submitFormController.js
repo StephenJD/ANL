@@ -4,7 +4,7 @@
 
 const { setSecureItem, getSecureItem } = require("./secureStore");
 const { generateSecureToken } = require("./generateSecureToken");
-const { formatFormEmail } = require("./formatFormData");
+const { formatFormData } = require("./formatFormData");
 const { sendEmail } = require("./sendEmail");
 const getFormFrontMatter = require("./getFormFrontMatter").handler;
 
@@ -14,7 +14,8 @@ exports.handler = async function(event) {
   }
 
   try {
-    const { formData, formPath, optionalEmail, token } = JSON.parse(event.body || "{}");
+    const { formData, formPath, optionalEmail, submittedBy, token } = JSON.parse(event.body || "{}");
+
     if (!formData || !formPath) {
       return { statusCode: 400, body: JSON.stringify({ success: false, error: "Missing formData or formPath" }) };
     }
@@ -31,26 +32,39 @@ exports.handler = async function(event) {
     const {include_unselected_options} = parsed;
     
     // Determine effective submitter
-    let effectiveSubmittedBy = null;
-    if (token) {
-      const existing = await getSecureItem(token);
+    console.debug("[DEBUG] submitFormController: Token:", token ?? "null/undefined");
 
+    let effectiveSubmittedBy = null;
+    let existing = null;
+    if (token) {
+      existing = await getSecureItem(token);
       if (!existing) {
         return { statusCode: 403, body: JSON.stringify({ success: false, error: "Invalid or expired token" }) };
       }
       effectiveSubmittedBy = existing.email || null;
+    } else if (submittedBy) {
+      effectiveSubmittedBy = submittedBy;
     } else if (optionalEmail) {
       effectiveSubmittedBy = optionalEmail;
     }
-    
+    console.debug("[DEBUG] submitFormController: from Token:", existing?.email, "from post:", submittedBy, optionalEmail);
+    console.debug("[DEBUG] submitFormController: effectiveSubmittedBy:", effectiveSubmittedBy);
+
     // Format HTML
-    const formattedHTML = formatFormEmail({ formData, include_unselected_options });
+    let formattedHTML = formatFormData({
+      formData,
+      ...(existing?.email && { effectiveSubmittedBy: existing.email }),
+      includeUnselected: include_unselected_options
+    });
+    if (requireFinalSubmit) {
+	 formattedHTML = formattedHTML.replace(/{@}/g, "{@V}"); 
+    }
     
     // Generate token using the full value to store
     const valueToStore = {
       formData: formattedHTML,
       formPath,
-      email: effectiveSubmittedBy,
+      email: effectiveSubmittedBy
     };
     const secureToken = generateSecureToken(valueToStore);
     const ONE_HOUR_MS = 60 * 60 * 1000;
@@ -58,8 +72,9 @@ exports.handler = async function(event) {
     await setSecureItem(secureToken, valueToStore, ONE_HOUR_MS);
 
     // Send email to client if we have an address
+    console.log("[DEBUG] submitFormController: send to ", effectiveSubmittedBy);
     if (effectiveSubmittedBy) {
-      let finalHtml = formattedHTML;
+      let finalHtml = formattedHTML.replace(/{@}/g, "").replace(/{@V}/g, "");
       if (requireFinalSubmit) {
         const siteRoot =
           process.env.SITE_ROOT ||
@@ -80,9 +95,12 @@ exports.handler = async function(event) {
 
       console.log("[DEBUG] Client email sent to:", effectiveSubmittedBy);
     }
-
-    return { statusCode: 200, body: JSON.stringify({ success: true, token: secureToken }) };
-
+    // secureToken required by no-submit-validation form to redirect to send_submission_page.html
+    const responseBody = { success: true };
+    if (!requireFinalSubmit) responseBody.token = secureToken;
+    
+    return { statusCode: 200, body: JSON.stringify(responseBody) };
+    
   } catch (err) {
     console.error("[ERROR] submitFormController exception:", err);
     return { statusCode: 500, body: JSON.stringify({ success: false, error: err.message || "Server error" }) };

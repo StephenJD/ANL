@@ -5,11 +5,11 @@
 
   <div class="form-container">
     <h1>{{ .Title }}</h1>
-    {{ partial "form_verified.html" . }}      <!-- top Request-link box -->
+    {{ partial "form_request.html" . }}
   
     <form name="{{ .Title | urlize }}" autocomplete="off" class="verified-form" data-netlify="true" netlify>
-      {{ .Content }}                            <!-- fieldsets only -->
-      {{ partial "form_submit_button.html" . }} <!-- optional email + submit -->
+      {{ .Content }}   <!-- fieldsets only -->
+      {{ partial "form_submit_button.html" . }}
     </form>
     
     <script>   
@@ -59,7 +59,20 @@
         });
       }
 
+      function enableOptionalEmail() {
+        const form = document.querySelector("form.verified-form");
+        if (!form) return;
+      
+        const optionalEmail = form.querySelector("#optionalEmail");
+        const hasSubmittedBy = form.querySelector("#submitted_by") !== null;
+      
+        if (!hasSubmittedBy && optionalEmail) {
+          optionalEmail.style.display = "block";
+        }	
+	}
+	
       document.addEventListener("DOMContentLoaded", () => {
+	  enableOptionalEmail();
         updateInlineFit();
         markAllRequiredFieldsets();
       });

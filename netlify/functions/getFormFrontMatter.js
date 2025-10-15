@@ -8,15 +8,11 @@ async function getFormFrontMatter({ formPath }) {
   if (!formPath) throw new Error("Missing formPath");
 
   const metadataFile = path.join(__dirname, "../../public", formPath, "form_metadata.json");
-  console.log("[DEBUG] CWD:", process.cwd());
-  console.log("[DEBUG] __dirname:", __dirname);
-  console.log("[DEBUG] Looking for metadataFile:", metadataFile);
   
   try {
     const files = await fs.readdir(path.dirname(metadataFile));
-    console.log("[DEBUG] Directory contents:", files);
   } catch (e) {
-    console.error("[DEBUG] Cannot list directory:", path.dirname(metadataFile), e.message);
+    console.error("[DEBUG] getFormFrontMatter Cannot list directory:", path.dirname(metadataFile), e.message);
   }
 
   const siteURL = process.env.URL || process.env.DEPLOY_URL || "http://localhost:8888";
@@ -45,8 +41,7 @@ async function getFormFrontMatter({ formPath }) {
     validation = ["none"];
   }
 
-  console.debug("[DEBUG] Loaded metadata:", metadata);
-  console.debug("[DEBUG] Parsed validation:", validation);
+  console.debug("[DEBUG] getFormFrontMatter Parsed validation:", validation);
 
   return {
     validation,
