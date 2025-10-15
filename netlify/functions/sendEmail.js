@@ -30,7 +30,7 @@ async function sendEmail({
   if (attachBodyAsFile) {
     // generate PDF from HTML body
     const pdfBytes = await makePDF(html);
-    attachments.push({ filename: "form.pdf", content: pdfBytes });
+    attachments.push({ filename: `${subject}.pdf`, content: pdfBytes });
   }
 
   console.log("[DEBUG] Attachments set:", attachments.length);

@@ -161,25 +161,27 @@ document.addEventListener("DOMContentLoaded", async () => {
     e.preventDefault();
     console.debug("[DEBUG] form_access_controller submit...");
 
-    const formElement = document.querySelector("form.verified-form");
-    const clonedForm = formElement.cloneNode(true);
-    
+const formElement = document.querySelector("form.verified-form");
+const clonedForm = formElement.cloneNode(true);
+
     clonedForm.querySelectorAll("input, textarea, select").forEach(input => {
       if (input.type === "checkbox" || input.type === "radio") {
         if (input.checked) input.setAttribute("checked", "");
-        else input.removeAttribute("checked"); // keeps the input, just unmarked
+        else input.removeAttribute("checked");
+      } else if (input.tagName.toLowerCase() === "textarea") {
+        input.textContent = input.value; // ensure textarea contents are preserved
       } else {
         input.setAttribute("value", input.value);
       }
     });
     
-    document.title
+    const cleanTitle = frontMatter?.title?.trim() || form.name || "Untitled Form";
     const formPath = window.location.pathname;
     const formData = `<h1>${document.title}</h1>` + clonedForm.outerHTML;
     const submittedBy = form.querySelector("#submitted_by")?.value.trim() || "";
     const optionalEmail = form.querySelector("#optionalEmail input[type='email']")?.value.trim() || "";
 
-    let payload = { formName: document.title || form.name , formData, formPath };
+    let payload = { formName: cleanTitle , formData, formPath };
     
     if (!requireRequestLink && submittedBy) {
       payload.submittedBy = submittedBy;

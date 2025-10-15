@@ -49,7 +49,7 @@ function formatFormData({ formData, effectiveSubmittedBy, includeUnselected = fa
       // Find label text
       const label = fs.querySelector(`label[for="${input.id}"]`);
       if (label) labelText = label.textContent.trim();
-      else if (input.closest("label")) labelText = input.closest("label").textContent.trim();
+      else if (input.closest("label")) labelText = input.closest("label").textContent.trim().replace(/:$/, "");
       else labelText = input.name || "";
 
       let valueIncluded = true;
