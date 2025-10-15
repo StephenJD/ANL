@@ -11,16 +11,10 @@ async function getFormFrontMatter({ formPath }) {
 
   const metadataFile = path.join(__dirname, "../../public", formPath, "form_metadata.json");
   
-  try {
-    const files = await fs.readdir(path.dirname(metadataFile));
-  } catch (e) {
-    console.error("[DEBUG] getFormFrontMatter Cannot list directory:", path.dirname(metadataFile), e.message);
-  }
-
   const siteURL = process.env.URL || process.env.DEPLOY_URL || "http://localhost:8888";
   const res = await fetch(`${siteURL}${formPath}form_metadata.json`);
   if (!res.ok) throw new Error(`Fetch failed: ${res.status} ${res.statusText}`);
-  raw = await res.text();
+  const raw = await res.text();
 
 
   let metadata;

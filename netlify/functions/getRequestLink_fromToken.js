@@ -1,4 +1,6 @@
 // Server-Side: /netlify/functions/getRequestLink_fromToken.js
+// called by client: form_access_controller
+
 const { getSecureItem } = require("./secureStore");
 
 exports.handler = async function (event) {

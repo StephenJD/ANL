@@ -23,7 +23,6 @@ exports.handler = async function(event) {
 
     // --- Derive validation modes from front-matter (trusted source) ---
     const parsed = await getFormFrontMatter({ formPath });
-    const parsed = JSON.parse(meta.body || "{}");
     const validation = Array.isArray(parsed.validation) ? parsed.validation : ["none"];
     const requireFinalSubmit = validation.includes("submit");
     const requireRequestLink = validation.includes("requestLink");
