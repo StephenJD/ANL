@@ -28,9 +28,17 @@ function formatFormData({ formData, effectiveSubmittedBy, includeUnselected = fa
   }
 
   const output = [];
-  const titleEl = dom.window.document.querySelector("body > h1:first-of-type");
+  // Grab the first <h1> or <h2> that precedes the form
+  let titleEl = null;
+  const allTitles = dom.window.document.querySelectorAll("h1, h2");
+  for (const el of allTitles) {
+    if (el.compareDocumentPosition(form) & Node.DOCUMENT_POSITION_FOLLOWING) {
+      titleEl = el;
+      break;
+    }
+  }
   if (titleEl) output.push(`<h1>${titleEl.textContent.trim()}</h1>`);
-
+  
   form.querySelectorAll("fieldset").forEach((fs) => {
     const legend = fs.querySelector("legend")?.textContent.trim();
     if (legend) output.push(`<strong>${legend}</strong>`);

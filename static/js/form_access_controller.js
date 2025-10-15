@@ -179,7 +179,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const submittedBy = form.querySelector("#submitted_by")?.value.trim() || "";
     const optionalEmail = form.querySelector("#optionalEmail input[type='email']")?.value.trim() || "";
 
-    let payload = { formName, formData, formPath };
+    let payload = { formName: document.title || form.name , formData, formPath };
     
     if (!requireRequestLink && submittedBy) {
       payload.submittedBy = submittedBy;
