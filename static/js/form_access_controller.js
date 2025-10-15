@@ -49,7 +49,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   
   let requireRequestLink = false;
   let requireFinalSubmit = false;
-
+  let frontMatter;
   // --- 1. Fetch frontmatter to determine validation mode ---
   try {
     const formPath = window.location.pathname;
@@ -61,7 +61,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       body: JSON.stringify({ formPath })
     });
 
-    let frontMatter;
     try {
       frontMatter = await frontMatterObj.json();
     } catch (jsonErr) {
