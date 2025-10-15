@@ -24,8 +24,13 @@ function formatFormData({ formData, effectiveSubmittedBy, includeUnselected = fa
   
   const optionalEmailInput = form.querySelector("#optionalEmail input[type='email']");
   if (optionalEmailInput && optionalEmailInput.value.trim()) {
+    const label = optionalEmailInput.closest("label");
+    if (label && label.textContent.trim().endsWith(":")) {
+      label.textContent = label.textContent.trim().slice(0, -1);
+    }
     optionalEmailInput.value = `Copy requested by ${optionalEmailInput.value.trim()}`;
   }
+
 
   const output = [];
   // Grab the first <h1> or <h2> that precedes the form
@@ -49,7 +54,7 @@ function formatFormData({ formData, effectiveSubmittedBy, includeUnselected = fa
       // Find label text
       const label = fs.querySelector(`label[for="${input.id}"]`);
       if (label) labelText = label.textContent.trim();
-      else if (input.closest("label")) labelText = input.closest("label").textContent.trim().replace(/:$/, "");
+      else if (input.closest("label")) labelText = input.closest("label").textContent.trim();
       else labelText = input.name || "";
 
       let valueIncluded = true;
