@@ -1,9 +1,10 @@
-// netlify/functions/sendEmail.js
+// Server-only: netlify/functions/sendEmail.js
 // - Single responsibility: send email
-// - Can attach the body as a .txt file optionally
+// - Can attach the body as a .pdf file optionally
 // - Local/dev mode skips actual sending
 
 const nodemailer = require("nodemailer");
+const { makePDF } = require("./makePDF"); // server-only PDF utility
 
 async function sendEmail({
     to,
@@ -11,7 +12,7 @@ async function sendEmail({
     html,
     attachBodyAsFile = false
   }) 
-  {
+{
   console.log("[DEBUG] sendEmail invoked");
   console.log("[DEBUG] Params:", { to, subject, htmlLength: html?.length, attachBodyAsFile });  
 	  
@@ -24,10 +25,17 @@ async function sendEmail({
     })}`);
   }
 
-  const attachments = attachBodyAsFile ? [{ filename: "form.txt", content: html }] : [];
+  let attachments = [];
+
+  if (attachBodyAsFile) {
+    // generate PDF from HTML body
+    const pdfBytes = await makePDF(html);
+    attachments.push({ filename: "form.pdf", content: pdfBytes });
+  }
+
   console.log("[DEBUG] Attachments set:", attachments.length);
   
-  const isLocal = !process.env.SMTP_HOST
+  const isLocal = !process.env.SMTP_HOST;
 
   if (isLocal) {
     console.log("[DEBUG] Local mode - email not sent", {

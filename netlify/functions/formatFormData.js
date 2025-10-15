@@ -28,6 +28,8 @@ function formatFormData({ formData, effectiveSubmittedBy, includeUnselected = fa
   }
 
   const output = [];
+  const titleEl = dom.window.document.querySelector("body > h1:first-of-type");
+  if (titleEl) output.push(`<h1>${titleEl.textContent.trim()}</h1>`);
 
   form.querySelectorAll("fieldset").forEach((fs) => {
     const legend = fs.querySelector("legend")?.textContent.trim();

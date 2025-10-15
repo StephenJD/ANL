@@ -1,5 +1,7 @@
 // /.netlify/functions/getFormFrontMatter.js
 // - Returns front-matter metadata for any Hugo-generated form JSON
+// Called by server: submitFormController
+//           client: form_access_controller
 
 const fs = require("fs").promises;
 const path = require("path");

@@ -1,4 +1,6 @@
 // Server-Side: netlify/functions/sendFormAccessLink.js
+// called by client: form_access_controller
+
 const { setSecureItem } = require("./secureStore");
 const { generateSecureToken } = require("./generateSecureToken");
 const { sendEmail } = require("./sendEmail");

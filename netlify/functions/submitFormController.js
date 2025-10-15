@@ -1,6 +1,7 @@
 // Server-Side: /netlify/functions/submitFormController.js
 // - Handles all form submission logic, including token, optionalEmail, and client email
 // - Stores securely, returns token to client, sends client email if applicable
+// Called by client: form_access_controller
 
 const { setSecureItem, getSecureItem } = require("./secureStore");
 const { generateSecureToken } = require("./generateSecureToken");
@@ -14,17 +15,14 @@ exports.handler = async function(event) {
   }
 
   try {
-    const { formData, formPath, optionalEmail, submittedBy, token } = JSON.parse(event.body || "{}");
+    const { formName, formData, formPath, optionalEmail, submittedBy, token } = JSON.parse(event.body || "{}");
 
     if (!formData || !formPath) {
       return { statusCode: 400, body: JSON.stringify({ success: false, error: "Missing formData or formPath" }) };
     }
 
     // --- Derive validation modes from front-matter (trusted source) ---
-    const meta = await getFormFrontMatter({
-      httpMethod: "POST",
-      body: JSON.stringify({ formPath }),
-    });
+    const parsed = await getFormFrontMatter({ formPath });
     const parsed = JSON.parse(meta.body || "{}");
     const validation = Array.isArray(parsed.validation) ? parsed.validation : ["none"];
     const requireFinalSubmit = validation.includes("submit");
@@ -62,6 +60,7 @@ exports.handler = async function(event) {
     
     // Generate token using the full value to store
     const valueToStore = {
+	formName,
       formData: formattedHTML,
       formPath,
       email: effectiveSubmittedBy

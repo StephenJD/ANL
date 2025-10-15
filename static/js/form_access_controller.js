@@ -173,12 +173,13 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
     });
     
+    document.title
     const formPath = window.location.pathname;
-    const formData = clonedForm.outerHTML;
+    const formData = `<h1>${document.title}</h1>` + clonedForm.outerHTML;
     const submittedBy = form.querySelector("#submitted_by")?.value.trim() || "";
     const optionalEmail = form.querySelector("#optionalEmail input[type='email']")?.value.trim() || "";
 
-    let payload = { formData, formPath };
+    let payload = { formName, formData, formPath };
     
     if (!requireRequestLink && submittedBy) {
       payload.submittedBy = submittedBy;

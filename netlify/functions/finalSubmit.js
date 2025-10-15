@@ -2,9 +2,9 @@
 // - Retrieves stored form via token from secureStore
 // - Inserts "Email-verified" and "Copy requested by"
 // - Emails to form-recipient (website owner).
+// Called by Client: send_submission_page
 
 const { getSecureItem, setSecureItem } = require("./secureStore");
-//const getFormFrontMatter = require("./getFormFrontMatter").handler;
 const { sendEmail } = require("./sendEmail");
 
 exports.handler = async function (event) {
@@ -29,7 +29,7 @@ exports.handler = async function (event) {
       return { statusCode: 400, body: JSON.stringify({ success: false, error: "Invalid or expired token" }) };
     }
 
-    const { formData, formPath, email } = storedFormData;
+    const { formName, formData, formPath, email } = storedFormData;
     let formattedHTML = formData.replace(/{@V}/g, " (verified)").replace(/{@}/g, " (un-verified)");
     
     // --- 2. Send submission to admin ---
@@ -38,7 +38,7 @@ exports.handler = async function (event) {
     console.log("[DEBUG] Sending submission to admin:", adminEmail);
     await sendEmail({
       to: adminEmail,
-      subject: "New Form Submission",
+      subject: `Form Submission: ${formName}`,
       html: formattedHTML,
       attachBodyAsFile: true
     });
