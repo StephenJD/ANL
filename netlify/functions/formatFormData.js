@@ -32,7 +32,7 @@ function formatFormData({ formData, effectiveSubmittedBy, includeUnselected = fa
   let titleEl = null;
   const allTitles = dom.window.document.querySelectorAll("h1, h2");
   for (const el of allTitles) {
-    if (el.compareDocumentPosition(form) & Node.DOCUMENT_POSITION_FOLLOWING) {
+    if (el.compareDocumentPosition(form) & dom.window.Node.DOCUMENT_POSITION_FOLLOWING) {
       titleEl = el;
       break;
     }
