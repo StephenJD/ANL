@@ -10,7 +10,7 @@ restrict_users: false
 validation: [submit] # options: requestLink, submit, none (default)
 ---
 
-{{< comment >}}
+{{< comment
 Form Rules
 1. Default: No attributes except type (email, tel, date, text) — except...
 2. Add ONE class: name, address, or short-input where relevant.
@@ -21,7 +21,7 @@ Form Rules
 7. NO MORE THAN 3 SPACE INDENT
 8. Attribute order: <required> <id> <class> <type> .
 9. Add "None" default text in all required text fields that ask for additional information.
-{{< /comment >}}
+>}}
 
 <p>This form should be completed by the child’s parent or other adult with delegated parental responsibility. Parental Consent Forms will be renewed annually at the start of the school year so that the data held is up to date. Please complete the consent form below to enable your child to attend the group.</p>
 
