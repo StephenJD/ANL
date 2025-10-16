@@ -42,7 +42,8 @@ function formatFormData({ formData, effectiveSubmittedBy, includeUnselected = fa
       break;
     }
   }
-  if (titleEl) output.push(`<h1>${titleEl.textContent.trim()}</h1>`);
+  if (titleEl) output.push(`<${titleEl.tagName.toLowerCase()}>${titleEl.textContent.trim()}</${titleEl.tagName.toLowerCase()}>`);
+
   
   form.querySelectorAll("fieldset").forEach((fs) => {
     const legend = fs.querySelector("legend")?.textContent.trim();
