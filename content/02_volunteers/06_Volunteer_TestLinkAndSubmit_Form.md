@@ -7,10 +7,10 @@ reviewed_by: Cheryl Cross
 type: form
 restrict_users: false
 #include_unselected_options: false # options: "true", "false" (default)
-validation: [requestLink, submit] # options: "requestLink" &| "submit", "none" (default)
+validation: [requestLink, submit] # options: requestLink, submit, none (default)
 ---
 
-<!--
+{{% comment %}}
 Form Rules
 1. Default: No attributes except type (email, tel, date, text) — except...
 2. Add ONE class: name, address, or short-input where relevant.
@@ -21,7 +21,7 @@ Form Rules
 7. NO MORE THAN 3 SPACE INDENT
 8. Attribute order: <required> <id> <class> <type> .
 9. Add "None" default text in all required text fields that ask for additional information.
--->
+{{% /comment %}}
 
 <fieldset>
    <legend>Contact Details</legend>

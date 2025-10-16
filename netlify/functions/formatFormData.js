@@ -62,6 +62,9 @@ function formatFormData({ formData, effectiveSubmittedBy, includeUnselected = fa
       }
       else labelText = input.name || "";
 
+      if (labelText && input.tagName.toLowerCase() === "textarea" && !labelText.endsWith(":")) {
+        labelText += ":";
+      }
       console.log("[DEBUG] format: labelText raw:", JSON.stringify(labelText));
       console.log("[DEBUG] format: input.value raw:", JSON.stringify(input.value)); 
       //console.log("[DEBUG] format: textarea check:", input, input.value, input.textContent);

@@ -7,21 +7,21 @@ reviewed_by: Cheryl Cross
 type: form
 include_unselected_options: false
 restrict_users: false
-validation: submit
+validation: [submit] # options: requestLink, submit, none (default)
 ---
 
-<!--
+{{% comment %}}
 Form Rules
 1. Default: No attributes except type (email, tel, date, text) — except...
 2. Add ONE class: name, address, or short-input where relevant.
-3. Use class address for combined name & address field.
+3. Use class address for name & address field.
 4. Inexact dates use short-input (not type="date").
 5. id="submitted_by" for the submitter’s email field.
 6. Use <fieldset> and <legend> to group fields, instead of headings.
 7. NO MORE THAN 3 SPACE INDENT
-8. Attribute order: <required> <id> <class> <type>.
+8. Attribute order: <required> <id> <class> <type> .
 9. Add "None" default text in all required text fields that ask for additional information.
--->
+{{% /comment %}}
 
 <p>This form should be completed by the child’s parent or other adult with delegated parental responsibility. Parental Consent Forms will be renewed annually at the start of the school year so that the data held is up to date. Please complete the consent form below to enable your child to attend the group.</p>
 

@@ -7,10 +7,10 @@ reviewed_by: Cheryl Cross
 type: form
 include_unselected_options: true
 restrict_users: false
-validation: submit
+validation: [submit] # options: requestLink, submit, none (default)
 ---
 
-<!--
+{{% comment %}}
 Form Rules
 1. Default: No attributes except type (email, tel, date, text) — except...
 2. Add ONE class: name, address, or short-input where relevant.
@@ -21,8 +21,9 @@ Form Rules
 7. NO MORE THAN 3 SPACE INDENT
 8. Attribute order: <required> <id> <class> <type> .
 9. Add "None" default text in all required text fields that ask for additional information.
--->
+{{% /comment %}}
 
+<h2>Request for reference for a voluntary worker with children or vulnerable adults</h2>
 <fieldset>
   <legend>Referee and Volunteer Details</legend>
   <label>Name and address of referee:<input type="text" class="address" required></label>
@@ -31,13 +32,8 @@ Form Rules
 
 <fieldset>
   <legend>Applicant Information</legend>
-  <p>Dear</p>
-  <p><strong>Request for reference for a voluntary worker with children or vulnerable adults</strong></p>
-  <p>Re:</p>
-  <p><strong>Post applicant applying for:</strong> Director, Prayer Room Leader or Helper for Adults, Prayer Room Leader or Helper for Young People</p>
-
   <p>
-    The above person has given your name as someone who may be contacted in relation to their application for the above role, 
+    An applicant has given your name as a reference in relation to their application for a role 
     which may involve working with children or vulnerable adults (i.e. adults experiencing, or at risk of, abuse or neglect).
   </p>
 
@@ -45,16 +41,6 @@ Form Rules
     Guidelines suggest that all voluntary organisations must take steps to safeguard the children or vulnerable adults entrusted to their care. 
     I would be grateful if you could comment on the following factors, in confidence, as they apply to the applicant:
   </p>
-
-  <ul>
-    <li>Previous experience of working with children or vulnerable adults</li>
-    <li>Their ability to provide kind and consistent care</li>
-    <li>Evidence of their willingness to respect the background and culture of children and vulnerable adults in their care</li>
-    <li>Their commitment to treat all children or vulnerable adults as individuals and with equal concern</li>
-    <li>Any evidence or concern that they would not be suitable to work with children or vulnerable adults</li>
-    <li>Their leadership qualities, skills and ability to work as part of a team in their role as director</li>
-    <li>Their Christian faith</li>
-  </ul>
 
   <p>Thank you for your assistance.</p>
   <p>Yours sincerely, <strong>Cheryl Cross</strong></p>

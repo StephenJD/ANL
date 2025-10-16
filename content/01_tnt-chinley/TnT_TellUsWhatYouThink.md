@@ -7,10 +7,10 @@ reviewed_by: Cheryl Cross
 type: form
 include_unselected_options: false
 restrict_users: false
-validation: none # options: "requestLink" &| "submit", "none" (default)
+validation: [none] # options: requestLink, submit, none (default)
 ---
 
-<!--
+{{% comment %}}
 Form Rules
 1. Default: No attributes except type (email, tel, date, text) — except...
 2. Add ONE class: name, address, or short-input where relevant.
@@ -21,7 +21,7 @@ Form Rules
 7. NO MORE THAN 3 SPACE INDENT
 8. Attribute order: <required> <id> <class> <type> .
 9. Add "None" default text in all required text fields that ask for additional information.
--->
+{{% /comment %}}
 
 <h2>TnT is provided as a safe place for secondary school pupils to chill and chat.</h2>
 
@@ -65,7 +65,7 @@ Form Rules
    <label><input type="checkbox">I like meeting other people at TnT</label>
    <label><input type="checkbox">I feel safe, accepted and loved at TnT</label>
    <label><input type="checkbox">I enjoy chatting with the helpers at TnT</label>
-   <label>Other comments about your experience at TnT<textarea rows="2"></textarea></label>
+   <label>Other comments about your experience at TnT:<textarea rows="2"></textarea></label>
 </fieldset>
 
 <fieldset>
@@ -76,7 +76,7 @@ Form Rules
    <label><input type="checkbox"> I would like board games</label>
    <label><input type="checkbox"> I would like music</label>
    <label><input type="checkbox"> I would like to do homework at TnT</label>
-   <label>Other comments about activities:<textarea rows="4"></textarea></label>
+   <label>Other comments about activities<textarea rows="4"></textarea></label>
 </fieldset>
 
 <fieldset>
