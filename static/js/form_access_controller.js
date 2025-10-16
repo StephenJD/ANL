@@ -49,7 +49,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   
   let requireRequestLink = false;
   let requireFinalSubmit = false;
-  let frontMatter;
+  let cleanTitle = null;
+  let frontMatter = null;
   // --- 1. Fetch frontmatter to determine validation mode ---
   try {
     const formPath = window.location.pathname;
@@ -69,7 +70,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       throw jsonErr;
     }
     console.debug("[DEBUG] getFormFrontMatter got :", frontMatter);
-    
+    cleanTitle = frontMatter?.title?.trim() || form.name || "Untitled Form";
+
     const validation = Array.isArray(frontMatter.validation)
       ? frontMatter.validation
       : Array.isArray(frontMatter.validation)
@@ -103,7 +105,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             body: JSON.stringify({
               email,
               formPath: window.location.pathname,
-              formName: document.title || form.name,
+              formName: cleanTitle,
               site_root: window.location.origin
             })
           });
@@ -160,23 +162,24 @@ document.addEventListener("DOMContentLoaded", async () => {
     e.preventDefault();
     console.debug("[DEBUG] form_access_controller submit...");
 
-const formElement = document.querySelector("form.verified-form");
-const clonedForm = formElement.cloneNode(true);
+    const formElement = document.querySelector("form.verified-form");
+    const clonedForm = formElement.cloneNode(true);
 
     clonedForm.querySelectorAll("input, textarea, select").forEach(input => {
       if (input.type === "checkbox" || input.type === "radio") {
         if (input.checked) input.setAttribute("checked", "");
         else input.removeAttribute("checked");
       } else if (input.tagName.toLowerCase() === "textarea") {
-        input.textContent = input.value; // ensure textarea contents are preserved
+        input.textContent = input.value;  // critical for JSDOM
+        console.log("[DEBUG] cloned textarea value:", JSON.stringify(input.value), input.textContent);
+        // do NOT set textContent; leave value as-is
       } else {
         input.setAttribute("value", input.value);
       }
     });
-    
-    const cleanTitle = frontMatter?.title?.trim() || form.name || "Untitled Form";
+
     const formPath = window.location.pathname;
-    const formData = `<h1>${document.title}</h1>` + clonedForm.outerHTML;
+    const formData = `<h2>${cleanTitle}</h2>` + clonedForm.outerHTML;
     const submittedBy = form.querySelector("#submitted_by")?.value.trim() || "";
     const optionalEmail = form.querySelector("#optionalEmail input[type='email']")?.value.trim() || "";
 

@@ -6,51 +6,60 @@ const { PDFDocument, StandardFonts, rgb } = require('pdf-lib');
 
 async function makePDF(htmlText) {
   const pdfDoc = await PDFDocument.create();
-  const page = pdfDoc.addPage();
+  let page = pdfDoc.addPage();
   const { width, height } = page.getSize();
 
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
   const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
+  // Normalize line breaks, mark structure, strip tags
   const lines = htmlText
     .replace(/<br\s*\/?>/gi, '\n')
-    .replace(/<\/?(h1)>/gi, '\n$1\n')          // mark <h1>
-    .replace(/<\/?(h2|strong)>/gi, '\n$1\n')   // mark <h2> & <strong>
-    .replace(/<[^>]+>/g, '')                   // strip remaining tags
+    .replace(/<h1[^>]*>(.*?)<\/h1>/gi, '\n##H1##$1\n')
+    .replace(/<h2[^>]*>(.*?)<\/h2>/gi, '\n##H2##$1\n')
+    .replace(/<strong[^>]*>(.*?)<\/strong>/gi, '\n##STRONG##$1\n')
+    .replace(/<[^>]+>/g, '')
     .split(/\n+/)
     .map(l => l.trim())
-    .filter(l => l.length);
+    .filter(Boolean);
 
   let y = height - 50;
-  const lineHeight = 16;
+  const normalLineHeight = 16;
 
   for (const line of lines) {
     let fontSize = 12;
     let drawFont = font;
+    let lineHeight = normalLineHeight;
 
-    if (line.toLowerCase() === 'h1') {
+    if (line.startsWith('##H1##')) {
       fontSize = 20;
       drawFont = fontBold;
-      continue; // skip marker line
-    }
-    if (line.toLowerCase() === 'h2' || line.toLowerCase() === 'strong') {
+      lineHeight = 28;
+    } else if (line.startsWith('##H2##') || line.startsWith('##STRONG##')) {
       fontSize = 14;
       drawFont = fontBold;
-      continue; // skip marker line
+      lineHeight = 20;
     }
 
-    page.drawText(line, { x: 50, y, size: fontSize, font: drawFont, color: rgb(0, 0, 0) });
+    const clean = line.replace(/^##(H1|H2|STRONG)##/, '');
+
+    page.drawText(clean, {
+      x: 50,
+      y,
+      size: fontSize,
+      font: drawFont,
+      color: rgb(0, 0, 0),
+      maxWidth: width - 100,
+    });
+
     y -= lineHeight;
     if (y < 50) {
-      // add new page
-      const newPage = pdfDoc.addPage();
-      y = newPage.getSize().height - 50;
-      page = newPage;
+      page = pdfDoc.addPage();
+      y = page.getSize().height - 50;
     }
   }
 
-  const pdfBytes = await pdfDoc.save();
-  return pdfBytes;
+  return pdfDoc.save();
 }
 
 module.exports = { makePDF };

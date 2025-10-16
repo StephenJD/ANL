@@ -46,7 +46,7 @@ function formatFormData({ formData, effectiveSubmittedBy, includeUnselected = fa
   
   form.querySelectorAll("fieldset").forEach((fs) => {
     const legend = fs.querySelector("legend")?.textContent.trim();
-    if (legend) output.push(`<strong>${legend}</strong>`);
+    if (legend) output.push(`<strong>${legend}</strong> `);
 
     fs.querySelectorAll("input, textarea, select").forEach((input) => {
       let labelText = "";
@@ -54,8 +54,16 @@ function formatFormData({ formData, effectiveSubmittedBy, includeUnselected = fa
       // Find label text
       const label = fs.querySelector(`label[for="${input.id}"]`);
       if (label) labelText = label.textContent.trim();
-      else if (input.closest("label")) labelText = input.closest("label").textContent.trim();
+      else if (input.closest("label")) {
+        const rawLabel = input.closest("label").cloneNode(true);
+        rawLabel.querySelectorAll("input, textarea, select").forEach(el => el.remove());
+        labelText = rawLabel.textContent.trim();
+      }
       else labelText = input.name || "";
+
+      console.log("[DEBUG] format: labelText raw:", JSON.stringify(labelText));
+      console.log("[DEBUG] format: input.value raw:", JSON.stringify(input.value)); 
+      //console.log("[DEBUG] format: textarea check:", input, input.value, input.textContent);
 
       let valueIncluded = true;
       let line = labelText;
@@ -72,7 +80,7 @@ function formatFormData({ formData, effectiveSubmittedBy, includeUnselected = fa
         else line = input.checked ? line : `<s>${line}</s>`;
       } else {
         if (!includeUnselected && !input.value.trim()) valueIncluded = false;
-        else line += `: ${input.value || ""}`;
+        else line += ` ${input.value || ""}`;
       }
 
       if (valueIncluded) output.push(line);
