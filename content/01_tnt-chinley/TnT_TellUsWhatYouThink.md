@@ -3,11 +3,12 @@ title: "TnT Feedback"
 summary: "Tell us what you think..."
 last_reviewed: 2025-09-28
 review_period: 1y
-reviewed_by: Cheryl Cross
+reviewed_by: Stephen Dolley
 type: form
 include_unselected_options: false
 restrict_users: false
 validation: [none] # options: requestLink, submit, none (default)
+qrCode: true
 ---
 
 {{< comment `

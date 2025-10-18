@@ -15,7 +15,7 @@ non-validated forms may be anonymous and have an optionalEmail field. All other 
       - Server handles token generation, storage, and emailing the access link.
 
 3. If a url_token exists and requireRequestLink is true:
-   - Verify url_token by POSTing { url_token, formPath } to server:getRequestLink_fromToken.js.
+   - Verify url_token by POSTing { url_token, formPath } to server:secureStore_ClientAccess.js
    - If valid, enable the form inputs. Do NOT trust submittedBy from the client; server will derive it from the token.
 
 4. On form submit:
@@ -128,7 +128,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     //console.debug("[DEBUG] has url_token:", url_token);
 
     try {
-      const resp = await fetch("/.netlify/functions/getRequestLink_fromToken", {
+      const resp = await fetch("/.netlify/functions/secureStore_ClientAccess", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token: url_token })

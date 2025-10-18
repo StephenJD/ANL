@@ -3,8 +3,7 @@ title: Safeguarding Policy
 active: true
 headless: true  # This file represents a page section.
 type: document
-geometry: margin=2cm
-geometry: a4paper
+geometry: [margin=2cm, a4paper]
 share: true
 summary: Keeping all those involved with us safe from harm
 weight: 30

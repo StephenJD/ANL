@@ -2,10 +2,12 @@
   "name": "hugo-netlify-functions",
   "version": "1.0.0",
   "dependencies": {
+    "gray-matter": "^4.0.3",
     "js-yaml": "^4.1.0",
     "jsdom": "^27.0.0",
     "node-fetch": "^3.3.2",
     "nodemailer": "^7.0.9",
-    "pdf-lib": "1.17.1"
+    "pdf-lib": "1.17.1",
+    "qrcode": "^1.5.4"
   }
 }

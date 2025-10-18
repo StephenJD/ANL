@@ -3,8 +3,7 @@
 active: true
 headless: true  # This file represents a page section.
 type: document
-geometry: margin=2cm
-geometry: a4paper
+geometry: [margin=2cm, a4paper]
 share: true
 summary: What we aim to achieve...
 weight: 10

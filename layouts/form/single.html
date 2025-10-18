@@ -1,56 +1,72 @@
 {{/* layouts/forms/single.html */}}
 {{ define "main" }}
-  <!-- Load form-specific stylesheet -->
   <link rel="stylesheet" href="{{ "css/forms.css" | relURL }}">
 
   <div class="form-container">
     <h1>{{ .Title }}</h1>
+    {{ partial "qr_code.html" . }}
     {{ partial "form_request.html" . }}
   
     <form name="{{ .Title | urlize }}" autocomplete="off" class="verified-form" data-netlify="true" netlify>
-      {{ .Content }}   <!-- fieldsets only -->
+      {{ .Content }}
       {{ partial "form_submit_button.html" . }}
     </form>
     
-    <script>   
-      // Inline-fit layout
-      function updateInlineFit() {
-        const form = document.querySelector("form.verified-form");
+    <script>
+      function inlineFitInputs(form) {
         if (!form) return;
         const formWidth = form.offsetWidth;
-        const allInputs = form.querySelectorAll("input, select");
-        allInputs.forEach(inputElem => {
-          const label = inputElem.previousElementSibling;
+        form.querySelectorAll("input, select").forEach(elem => {
+          const label = elem.previousElementSibling;
           if (!label || label.tagName !== "LABEL") return;
-          const inputWidth = inputElem.getBoundingClientRect().width;
-          if (inputWidth + 16 < formWidth) {
+          const elemWidth = elem.getBoundingClientRect().width;
+          if (elemWidth + 16 < formWidth) {
             label.classList.add("inline-fit");
-            inputElem.classList.add("inline-fit");
+            elem.classList.add("inline-fit");
           } else {
             label.classList.remove("inline-fit");
-            inputElem.classList.remove("inline-fit");
+            elem.classList.remove("inline-fit");
           }
         });
-	  
-        let radioGroupCounter = 0;
+      }
+
+      function inlineFitButtonRows(form) {
+        if (!form) return;
+        const buttons = Array.from(form.querySelectorAll("button"));
+        for (let i = 0; i < buttons.length - 1; i++) {
+          const current = buttons[i];
+          const next = buttons[i + 1];
+          if (current.offsetTop === next.offsetTop) {
+            current.classList.add("inline-fit");
+            next.classList.add("inline-fit");
+          } else {
+            current.classList.remove("inline-fit");
+            next.classList.remove("inline-fit");
+          }
+        }
+      }
+
+      function renameRadioGroups(form) {
+        if (!form) return;
+        let counter = 0;
         form.querySelectorAll('fieldset').forEach(fs => {
           const radios = fs.querySelectorAll('input[type="radio"]');
-          if (radios.length) {
-            radioGroupCounter++;
-            radios.forEach(r => r.name = `r${radioGroupCounter}`);
-          }
+          if (!radios.length) return;
+          counter++;
+          radios.forEach(r => r.name = `r${counter}`);
         });
-	  
-        // Ensure date fields have autocomplete off
-        form.querySelectorAll('input[type="date"]').forEach(input => {
-          input.setAttribute('autocomplete', 'off');
-        });
+      }
 
-        // Autofill date fields 
+      function disableAutocompleteDates(form) {
+        if (!form) return;
+        form.querySelectorAll('input[type="date"]').forEach(input => input.setAttribute('autocomplete', 'off'));
+      }
+
+      function autofillTodayDates(form) {
+        if (!form) return;
         form.querySelectorAll('input[type="date"].autofill-today').forEach(input => { input.valueAsDate = new Date(); });
       }
 
-      // Add star to legend if all inputs in fieldset are required
       function markAllRequiredFieldsets() {
         document.querySelectorAll("fieldset").forEach(fs => {
           const inputs = fs.querySelectorAll("input, textarea, select");
@@ -62,17 +78,22 @@
       function enableOptionalEmail() {
         const form = document.querySelector("form.verified-form");
         if (!form) return;
-      
         const optionalEmail = form.querySelector("#optionalEmail");
         const hasSubmittedBy = form.querySelector("#submitted_by") !== null;
-      
-        if (!hasSubmittedBy && optionalEmail) {
-          optionalEmail.style.display = "block";
-        }	
-	}
-	
+        if (!hasSubmittedBy && optionalEmail) optionalEmail.style.display = "block";
+      }
+
+      function updateInlineFit() {
+        const form = document.querySelector("form.verified-form");
+        inlineFitInputs(form);
+        inlineFitButtonRows(form);
+        renameRadioGroups(form);
+        disableAutocompleteDates(form);
+        autofillTodayDates(form);
+      }
+
       document.addEventListener("DOMContentLoaded", () => {
-	  enableOptionalEmail();
+        enableOptionalEmail();
         updateInlineFit();
         markAllRequiredFieldsets();
       });

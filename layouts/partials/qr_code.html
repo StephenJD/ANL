@@ -1,0 +1,8 @@
+<!-- layouts/partials/qr_code.html -->
+
+{{- if .Params.qrCode }}
+  {{- $path := replace (trim .RelPermalink "/") "/" "_" }}
+  <figure class="qr-code">
+    <img src="/qr/{{ $path }}.png" alt="QR code for {{ .Title }}" width="64" height="64" loading="lazy">
+  </figure>
+{{- end }}

@@ -96,6 +96,12 @@ input, select, textarea {
   vertical-align: middle;
 }
 
+#leaderList {
+  list-style-type: none;
+  padding-left: 0;
+  margin-left: 0;
+}
+
 /* === Focus highlight === */
 input:focus,
 select:focus,
@@ -114,10 +120,12 @@ textarea {
 
 /* === Submit button === */
 .form-request-box .request-form-link-btn,
-button[type="submit"]
+button[type="submit"],
+button.sendButton,
+button.editButton
  {
   display: block;
-  width: 50%;
+  width: 40%;
   margin: 2em auto 1em auto;
   padding: 0.75em;
   font-size: 1em;
@@ -130,8 +138,21 @@ button[type="submit"]
   transition: background-color 0.2s ease;
 }
 
+button.editButton {
+  @extend button[type="submit"]; /* conceptual DRY — inherits base styles */
+  display: inline-block;
+  width: auto;
+  margin: 0 0 0 0;
+  padding: 0 0.5em;
+  font-size: 0.9em;
+  font-weight: normal;
+}
+
 .form-request-box .request-form-link-btn:hover,
-button[type="submit"]:hover {
+button[type="submit"]:hover,
+button.sendButton:hover,
+button.editButton:hover
+{
   background-color: #005fa3;
 }
 

@@ -1,4 +1,4 @@
-// Server-Side: /.netlify/functions/finalSubmit.js
+// Server-Side: /netlify/functions/finalSubmit.js
 // - Retrieves stored form via token from secureStore
 // - Inserts "Email-verified" and "Copy requested by"
 // - Emails to form-recipient (website owner).
