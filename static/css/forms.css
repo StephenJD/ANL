@@ -65,7 +65,7 @@ label > input[type="date"] {
   margin-left: 1em; /* horizontal gap from label text */
 }
 
-/* Regular inputs (exclude radios) - only for fieldsets not all-required */
+/* === Star indicators for required fields === */
 fieldset:not(.all-required) label:has(input[required]):not(:has(input[type="radio"]))::before,
 fieldset:not(.all-required) label:has(textarea[required])::before,
 fieldset:not(.all-required) label:has(select[required])::before {
@@ -73,13 +73,7 @@ fieldset:not(.all-required) label:has(select[required])::before {
   color: red;
 }
 
-/* Star for fieldsets with required radios */
-fieldset:has(input[type="radio"][required]) > legend::after {
-  content: " *";
-  color: red;
-}
-
-/* All-required fieldsets: only legend star */
+fieldset:has(input[type="radio"][required]) > legend::after,
 fieldset.all-required legend::after {
   content: " *";
   color: red;
@@ -118,16 +112,13 @@ textarea {
   border-radius: 4px;
 }
 
-/* === Submit button === */
-.form-request-box .request-form-link-btn,
-button[type="submit"],
-button.sendButton,
-button.editButton
- {
+/* === Default buttons === */
+button[type="button"],
+button[type="submit"] {
   display: block;
-  width: 40%;
-  margin: 2em auto 1em auto;
-  padding: 0.75em;
+  width: auto;
+  margin: 2em 2em 1em 1em; /* top right bottom left */
+  padding: 0.75em 1em;
   font-size: 1em;
   font-weight: bold;
   color: #fff;
@@ -136,24 +127,26 @@ button.editButton
   border-radius: 6px;
   cursor: pointer;
   transition: background-color 0.2s ease;
+  vertical-align: middle;
 }
 
+/* Preserve smaller editButton style while aligning vertically */
 button.editButton {
-  @extend button[type="submit"]; /* conceptual DRY — inherits base styles */
   display: inline-block;
-  width: auto;
-  margin: 0 0 0 0;
+  margin: 0;
   padding: 0 0.5em;
   font-size: 0.9em;
   font-weight: normal;
 }
 
-.form-request-box .request-form-link-btn:hover,
-button[type="submit"]:hover,
-button.sendButton:hover,
-button.editButton:hover
-{
+button[type="button"]:hover ,
+button[type="submit"]:hover  {
   background-color: #005fa3;
+}
+/* === Inline-fit Buttons === */
+form.verified-form button.inline-fit {
+  display: inline-block;
+  box-sizing: border-box;
 }
 
 /* === Fieldsets: radios and checkboxes === */
@@ -166,14 +159,12 @@ fieldset {
   display: block;
 }
 
-/* Legend styling */
 legend {
   font-weight: bold;
   font-size: 1em;
   margin-bottom: 0.5em;
 }
 
-/* Shared radio/checkbox input styling */
 fieldset input[type="radio"],
 fieldset input[type="checkbox"] {
   margin: 0;
@@ -184,7 +175,6 @@ fieldset input[type="radio"] {
   width: auto;
 }
 
-/* Shared label styling for radios/checkboxes */
 fieldset label:has(input[type="radio"]),
 fieldset label:has(input[type="checkbox"]) {
   align-items: center;
@@ -194,17 +184,29 @@ fieldset label:has(input[type="checkbox"]) {
   display: flex; 
 }
 
-/* Radios inline */
 fieldset label:has(input[type="radio"]) {
   display: inline-flex;
   margin-right: 2em;
   width: auto;
 }
 
-/* Checkboxes stacked */
 fieldset label:has(input[type="checkbox"]) input[type="checkbox"] {
   display: inline-block;
   width: auto;
+}
+
+/* === Record list display === */
+#recordList label {
+  display: flex;
+  align-items: center;
+  gap: 0.5em; /* spacing between checkbox and text */
+  font-weight: normal;
+}
+
+#recordList input[type="checkbox"] {
+  width: auto;
+  margin: 0;
+  vertical-align: middle;
 }
 
 /* === Misc === */

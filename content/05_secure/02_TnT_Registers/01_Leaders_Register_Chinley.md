@@ -1,108 +1,120 @@
 ---
-title: "TnT Leader Register - Chinley"
-last_reviewed: 2025-10-17
+title: "TnT Leader Weekly Register - Chinley"
+last_reviewed: 2025-10-18
 review_period: 1y
 reviewed_by: Stephen Dolley
 type: form
 ---
 
-<h2>New Session</h2>
-<form id="sessionForm">
-  <label>Date:</label>
-  <input required type="date" class="autofill-today"/>
+<h2>Weekly Leader Register</h2>
 
-  <fieldset id="leaderChecklist">
-    <legend>Leaders Present:</legend>
-    <!-- Checkboxes populated by JS -->
-  </fieldset>
+<label>Date: <input required type="date" class="short-input" /></label>
 
-  <button type="submit">Add Session</button>
-</form>
+<div id="leaderCheckList"></div>
 
-<h2>Past Sessions</h2>
-<ul id="sessionList">
-  <!-- Sessions populated by JS -->
-</ul>
+<button type="button" class="sendButton" id="submitWeekBtn">Submit</button>
+
+<h2>Previous Weekly Records</h2>
+<ul id="weeklyRecordsList"></ul>
 
 <script>
-const LEADERS_TOKEN = "TnT_Leaders_Chinley";
-const SESSIONS_TOKEN = "TnT_Sessions_Chinley";
-const STORE_ENDPOINT = "/.netlify/functions/secureStore_ClientAccess";
+document.addEventListener("DOMContentLoaded", async () => {
+  const submitBtn = document.getElementById("submitWeekBtn");
+  const checkListContainer = document.getElementById("leaderCheckList");
+  const weeklyList = document.getElementById("weeklyRecordsList");
 
-// Utility to fetch a token value
-async function getToken(token) {
-  const res = await fetch(STORE_ENDPOINT, {
-    method: "POST",
-    body: JSON.stringify({ token }),
+  // === Fetch leaders ===
+  async function getLeaders() {
+    const res = await fetch("/.netlify/functions/secureStore_ClientAccess", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token: "TnT_Leaders_Chinley" }),
+    });
+    const data = await res.json();
+    return data.valid && Array.isArray(data.record) ? data.record : [];
+  }
+
+  // === Fetch weekly records ===
+  async function getWeeklyRecords() {
+    const res = await fetch("/.netlify/functions/secureStore_ClientAccess", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token: "TnT_WeeklyRegister_Chinley" }),
+    });
+    const data = await res.json();
+    return data.valid && data.record ? data.record : {};
+  }
+
+  // === Store weekly records ===
+  async function setWeeklyRecords(records) {
+    await fetch("/.netlify/functions/secureStore_ClientAccess", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token: "TnT_WeeklyRegister_Chinley", value: { record: records } }),
+    });
+  }
+
+  // === Populate leader check-list dynamically ===
+  async function renderCheckList() {
+    const leaders = await getLeaders();
+    checkListContainer.innerHTML = "";
+
+    leaders.forEach(leader => {
+      const labelText = leader.name || "Unnamed Leader";
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+
+      const label = document.createElement("label");
+      label.style.display = "block";
+      label.appendChild(checkbox);
+      label.appendChild(document.createTextNode(" " + labelText));
+
+      checkListContainer.appendChild(label);
+    });
+  }
+
+  // === Render weekly records list ===
+  async function renderWeeklyRecords() {
+    const data = await getWeeklyRecords();
+    const records = Object.entries(data.record || {}).sort((a,b) => new Date(b[0]) - new Date(a[0]));
+    weeklyList.innerHTML = "";
+
+    records.forEach(([date, leaders]) => {
+      const li = document.createElement("li");
+      li.innerHTML = `<strong>${date}</strong>: ${leaders.map(l => l.name || "Unnamed Leader").join(", ")}`;
+      weeklyList.appendChild(li);
+    });
+  }
+
+  // === Submit selected leaders ===
+  submitBtn.addEventListener("click", async () => {
+    const dateInput = document.querySelector('input[type="date"]');
+    const date = dateInput.value;
+    if (!date) return alert("Please select a date.");
+
+    const selectedLeaders = Array.from(checkListContainer.querySelectorAll("input[type='checkbox']:checked"))
+      .map(cb => cb.nextSibling.textContent.trim());
+
+    if (!selectedLeaders.length) return alert("Please select at least one leader.");
+
+    const allLeaders = await getLeaders();
+    const leaderObjects = allLeaders.filter(l => selectedLeaders.includes(l.name));
+
+    const weeklyRecords = await getWeeklyRecords();
+    weeklyRecords.record = weeklyRecords.record || {};
+    weeklyRecords.record[date] = leaderObjects;
+
+    await setWeeklyRecords(weeklyRecords);
+
+    // Reset form
+    dateInput.value = "";
+    checkListContainer.querySelectorAll("input[type='checkbox']").forEach(cb => cb.checked = false);
+
+    await renderWeeklyRecords();
   });
-  const data = await res.json();
-  return data.success ? data.record : null;
-}
 
-// Utility to set a token value
-async function setToken(token, value, ttl = null) {
-  const res = await fetch(STORE_ENDPOINT, {
-    method: "POST",
-    body: JSON.stringify({ token, value, ttl }),
-  });
-  return res.json();
-}
-
-// Populate leaders checklist
-async function loadLeaders() {
-  const leaders = await getToken(LEADERS_TOKEN) || [];
-  const container = document.getElementById("leaderChecklist");
-  container.innerHTML = "";
-  leaders.forEach((name, idx) => {
-    const id = `leader_${idx}`;
-    const label = document.createElement("label");
-    label.htmlFor = id;
-    label.textContent = name;
-
-    const checkbox = document.createElement("input");
-    checkbox.type = "checkbox";
-    checkbox.id = id;
-    checkbox.value = name;
-
-    label.prepend(checkbox);
-    container.appendChild(label);
-    container.appendChild(document.createElement("br"));
-  });
-}
-
-// Populate session list
-async function loadSessions() {
-  const sessions = await getToken(SESSIONS_TOKEN) || [];
-  const list = document.getElementById("sessionList");
-  list.innerHTML = "";
-  // Sort newest-first
-  sessions.sort((a, b) => new Date(b.date) - new Date(a.date));
-  sessions.forEach(session => {
-    const li = document.createElement("li");
-    li.textContent = `${session.date}: ${session.leaders.join(", ")}`;
-    list.appendChild(li);
-  });
-}
-
-// Handle form submission
-document.getElementById("sessionForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const date = document.getElementById("sessionDate").value;
-  if (!date) return;
-
-  const checkboxes = document.querySelectorAll("#leaderChecklist input[type=checkbox]");
-  const selectedLeaders = Array.from(checkboxes).filter(cb => cb.checked).map(cb => cb.value);
-
-  const sessions = await getToken(SESSIONS_TOKEN) || [];
-  sessions.push({ date, leaders: selectedLeaders });
-  await setToken(SESSIONS_TOKEN, sessions);
-
-  document.getElementById("sessionDate").value = "";
-  checkboxes.forEach(cb => cb.checked = false);
-  loadSessions();
+  // Initial render
+  await renderCheckList();
+  await renderWeeklyRecords();
 });
-
-// Initial load
-loadLeaders();
-loadSessions();
 </script>

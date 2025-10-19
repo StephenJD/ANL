@@ -13,93 +13,100 @@
     </form>
     
     <script>
-      function inlineFitInputs(form) {
-        if (!form) return;
-        const formWidth = form.offsetWidth;
-        form.querySelectorAll("input, select").forEach(elem => {
-          const label = elem.previousElementSibling;
-          if (!label || label.tagName !== "LABEL") return;
-          const elemWidth = elem.getBoundingClientRect().width;
-          if (elemWidth + 16 < formWidth) {
-            label.classList.add("inline-fit");
-            elem.classList.add("inline-fit");
-          } else {
-            label.classList.remove("inline-fit");
-            elem.classList.remove("inline-fit");
-          }
-        });
+  // === Inline-fit layout ===
+  function updateInlineFit() {
+    const form = document.querySelector("form.verified-form");
+    if (!form) return;
+
+    const marginBuffer = 8;
+
+function fitElements(elements) {
+    // Only apply inline-fit to visible elements
+    const visibleElements = elements.filter(el => el.offsetParent !== null);
+    const totalWidth = visibleElements.reduce((sum, el) => sum + el.getBoundingClientRect().width + marginBuffer, 0);
+    visibleElements.forEach(el => el.classList.toggle("inline-fit", totalWidth < form.offsetWidth));
+  }
+    // Inputs + labels
+    form.querySelectorAll("input, select").forEach(input => {
+      const label = input.previousElementSibling;
+      if (label && label.tagName === "LABEL") fitElements([label, input]);
+    });
+
+    // Consecutive buttons
+    const buttons = Array.from(form.querySelectorAll("button"));
+    for (let i = 0; i < buttons.length; i++) {
+      const row = [buttons[i]];
+      let next = buttons[i].nextElementSibling;
+      while (next && next.tagName === "BUTTON") {
+        row.push(next);
+        i++;
+        next = next.nextElementSibling;
       }
+      if (row.length > 1) fitElements(row);
+    }
+  }
 
-      function inlineFitButtonRows(form) {
-        if (!form) return;
-        const buttons = Array.from(form.querySelectorAll("button"));
-        for (let i = 0; i < buttons.length - 1; i++) {
-          const current = buttons[i];
-          const next = buttons[i + 1];
-          if (current.offsetTop === next.offsetTop) {
-            current.classList.add("inline-fit");
-            next.classList.add("inline-fit");
-          } else {
-            current.classList.remove("inline-fit");
-            next.classList.remove("inline-fit");
-          }
-        }
+  // === Mark fieldsets where all inputs are required ===
+  function markAllRequiredFieldsets() {
+    document.querySelectorAll("fieldset").forEach(fs => {
+      const inputs = fs.querySelectorAll("input, textarea, select");
+      const allRequired = Array.from(inputs).every(input => input.hasAttribute("required"));
+      if (allRequired) fs.classList.add("all-required");
+    });
+  }
+
+  // === Optional email display ===
+  function enableOptionalEmail() {
+    const form = document.querySelector("form.verified-form");
+    if (!form) return;
+  
+    const optionalEmail = form.querySelector("#optionalEmail");
+    const hasSubmittedBy = form.querySelector("#submitted_by") !== null;
+  
+    if (!hasSubmittedBy && optionalEmail) optionalEmail.style.display = "block";
+  }
+
+  // === Rename radio groups ===
+  function renameRadioGroups() {
+    const form = document.querySelector("form.verified-form");
+    if (!form) return;
+
+    let radioGroupCounter = 0;
+    form.querySelectorAll('fieldset').forEach(fs => {
+      const radios = fs.querySelectorAll('input[type="radio"]');
+      if (radios.length) {
+        radioGroupCounter++;
+        radios.forEach(r => r.name = `r${radioGroupCounter}`);
       }
+    });
+  }
 
-      function renameRadioGroups(form) {
-        if (!form) return;
-        let counter = 0;
-        form.querySelectorAll('fieldset').forEach(fs => {
-          const radios = fs.querySelectorAll('input[type="radio"]');
-          if (!radios.length) return;
-          counter++;
-          radios.forEach(r => r.name = `r${counter}`);
-        });
-      }
+  // === Date fields autocomplete off ===
+  function disableDateAutocomplete() {
+    const form = document.querySelector("form.verified-form");
+    if (!form) return;
+    form.querySelectorAll('input[type="date"]').forEach(input => input.setAttribute('autocomplete', 'off'));
+  }
 
-      function disableAutocompleteDates(form) {
-        if (!form) return;
-        form.querySelectorAll('input[type="date"]').forEach(input => input.setAttribute('autocomplete', 'off'));
-      }
+  // === Autofill today's date ===
+  function autofillToday() {
+    const form = document.querySelector("form.verified-form");
+    if (!form) return;
+    form.querySelectorAll('input[type="date"].autofill-today').forEach(input => { input.valueAsDate = new Date(); });
+  }
 
-      function autofillTodayDates(form) {
-        if (!form) return;
-        form.querySelectorAll('input[type="date"].autofill-today').forEach(input => { input.valueAsDate = new Date(); });
-      }
+  document.addEventListener("DOMContentLoaded", () => {
+    enableOptionalEmail();
+    updateInlineFit();
+    markAllRequiredFieldsets();
+    renameRadioGroups();
+    disableDateAutocomplete();
+    autofillToday();
+  });
 
-      function markAllRequiredFieldsets() {
-        document.querySelectorAll("fieldset").forEach(fs => {
-          const inputs = fs.querySelectorAll("input, textarea, select");
-          const allRequired = Array.from(inputs).every(input => input.hasAttribute("required"));
-          if (allRequired) fs.classList.add("all-required");
-        });
-      }
+  window.addEventListener("resize", updateInlineFit);
+</script>
 
-      function enableOptionalEmail() {
-        const form = document.querySelector("form.verified-form");
-        if (!form) return;
-        const optionalEmail = form.querySelector("#optionalEmail");
-        const hasSubmittedBy = form.querySelector("#submitted_by") !== null;
-        if (!hasSubmittedBy && optionalEmail) optionalEmail.style.display = "block";
-      }
-
-      function updateInlineFit() {
-        const form = document.querySelector("form.verified-form");
-        inlineFitInputs(form);
-        inlineFitButtonRows(form);
-        renameRadioGroups(form);
-        disableAutocompleteDates(form);
-        autofillTodayDates(form);
-      }
-
-      document.addEventListener("DOMContentLoaded", () => {
-        enableOptionalEmail();
-        updateInlineFit();
-        markAllRequiredFieldsets();
-      });
-
-      window.addEventListener("resize", updateInlineFit);
-    </script>
     
     <script src="{{ "js/form_access_controller.js" | relURL }}" defer></script>
   </div>

@@ -10,7 +10,15 @@ function generateSecureToken(request_origin) {
     .digest("hex");
 }
 
-module.exports = { generateSecureToken };
+function generateUserToken(userName, password) {
+  const secret = process.env.TOKEN_SECRET || "superusersecret";
+  return crypto
+    .createHmac("sha256", secret)
+    .update(userName + "|" + password)
+    .digest("hex");
+}
+
+module.exports = { generateSecureToken, generateUserToken };
 
 
 

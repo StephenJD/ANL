@@ -1,10 +1,8 @@
-// Server-Side: /netlify/functions/secureStore.js
+// /netlify/functions/multiSecureStore.js
 const fetch = (...args) =>
   import('node-fetch').then(({ default: fetch }) => fetch(...args));
 
-const BIN_ID = '68e43a3343b1c97be95cd728';
-const API_KEY = '$2a$10$Hl3M2PrOLZHxxqzxAgUzSOlGAKoGI2Zd/JtcIucdBCCxVV4aefriW';
-const TTL_MS = 10 * 60 * 1000; // 10 minutes
+const API_KEY = process.env.JSONBIN_API_KEY;
 
 async function apiRequest(method, url, body = null) {
   const options = {
@@ -24,7 +22,7 @@ async function apiRequest(method, url, body = null) {
   return res.json();
 }
 
-async function readStore() {
+async function readStore(BIN_ID) {
   try {
     const data = await apiRequest('GET', `https://api.jsonbin.io/v3/b/${BIN_ID}`);
     return data.record || {};
@@ -34,37 +32,40 @@ async function readStore() {
   }
 }
 
-async function writeStore(store) {
+async function writeStore(BIN_ID, store) {
   try {
-    await apiRequest('PUT', `https://api.jsonbin.io/v3/b/${BIN_ID}?versioning=false`, store);
+    const res = await apiRequest('PUT', `https://api.jsonbin.io/v3/b/${BIN_ID}?versioning=false`, store);
+console.log("Write store response:", res);
   } catch (err) {
     console.error('Error writing store:', err);
   }
 }
 
 // --- General secure storage ---
-async function setSecureItem(token, value, ttl = null) {
-  const store = await readStore();
+async function setSecureItem(BIN_ID, token, value, ttl = null) {
+console.log("SET SECURE ITEM:", { BIN_ID, token, value, ttl });
+  const store = await readStore(BIN_ID);
   const entry = { ...value };
   if (ttl !== null) entry.expires = Date.now() + ttl;
   store[token] = entry;
-  await writeStore(store);
+  await writeStore(BIN_ID, store);
 }
 
-async function getSecureItem(token) {
-  const store = await readStore();
+async function getSecureItem(BIN_ID, token) {
+console.log("GET SECURE ITEM:", { BIN_ID, token });
+  const store = await readStore(BIN_ID);
   const entry = store[token];
   if (!entry) return null;
   if (entry.expires && Date.now() > entry.expires) {
-    await cleanupExpired();
+    await cleanupExpired(BIN_ID);
     return null;
   }
   return entry;
 }
 
-async function cleanupExpired() {
+async function cleanupExpired(BIN_ID) {
   const now = Date.now();
-  const currentStore = await readStore();
+  const currentStore = await readStore(BIN_ID);
   let changed = false;
 
   Object.keys(currentStore).forEach((key) => {
@@ -75,14 +76,14 @@ async function cleanupExpired() {
   });
 
   if (changed) {
-    await writeStore(currentStore);
+    await writeStore(BIN_ID, currentStore);
   }
 
   return currentStore;
 }
 
-async function deleteRecords(tokens = []) {
-  const store = await cleanupExpired();
+async function deleteRecords(BIN_ID, tokens = []) {
+  const store = await cleanupExpired(BIN_ID);
   let changed = false;
   for (const token of tokens) {
     if (store[token]) {
@@ -90,7 +91,7 @@ async function deleteRecords(tokens = []) {
       changed = true;
     }
   }
-  if (changed) await writeStore(store);
+  if (changed) await writeStore(BIN_ID, store);
   return { success: true, deleted: tokens.length };
 }
 
