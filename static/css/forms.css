@@ -58,7 +58,8 @@ label > input.short-input,
 label > input.name,
 label > input[type="tel"],
 label > input[type="email"],
-label > input[type="date"] {
+label > input[type="date"],
+label > input[type="password"] {
   display: inline-block;
   width: auto;
   max-width: 400px;

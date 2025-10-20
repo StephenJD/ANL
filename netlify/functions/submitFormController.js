@@ -3,7 +3,7 @@
 // - Stores securely, returns token to client, sends client email if applicable
 // Called by client: form_access_controller
 
-const { setSecureItem, getSecureItem } = require("./secureStore");
+const { setSecureItem, getSecureItem } = require("./multiSecureStore");
 const { generateSecureToken } = require("./generateSecureToken");
 const { formatFormData } = require("./formatFormData");
 const { sendEmail } = require("./sendEmail");
@@ -34,7 +34,7 @@ exports.handler = async function(event) {
     let effectiveSubmittedBy = null;
     let existing = null;
     if (token) {
-      existing = await getSecureItem(token);
+      existing = await getSecureItem(process.env.ACCESS_TOKEN_BIN, token);
       if (!existing) {
         return { statusCode: 403, body: JSON.stringify({ success: false, error: "Invalid or expired token" }) };
       }
@@ -67,7 +67,7 @@ exports.handler = async function(event) {
     const secureToken = generateSecureToken(valueToStore);
     const ONE_HOUR_MS = 60 * 60 * 1000;
 
-    await setSecureItem(secureToken, valueToStore, ONE_HOUR_MS);
+    await setSecureItem(process.env.ACCESS_TOKEN_BIN, secureToken, valueToStore, ONE_HOUR_MS);
 
     // Send email to client if we have an address
     console.log("[DEBUG] submitFormController: send to ", effectiveSubmittedBy);

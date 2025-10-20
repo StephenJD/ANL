@@ -1,5 +1,6 @@
 ---
-title: "Super User Login"
+title: "Permitted Users"
+summary: "Super User Login"
 last_reviewed: 2025-10-17
 review_period: 1y
 reviewed_by: Stephen Dolley
@@ -9,12 +10,8 @@ type: form
 <!-- Superuser Login -->
 <fieldset id="loginFieldset" autocomplete="off">
   <legend>Superuser Login</legend>
-  <label>Username:
-    <input required type="text" id="adminUsername" name="adminUsername" autocomplete="username" />
-  </label>
-  <label>Password:
-    <input required type="password" id="adminPassword" name="adminPassword" autocomplete="new-password" />
-  </label>
+  <label>Super-UserEmail:<input required type="email" autocomplete="username" /></label>
+  <label>Password:<input required type="password" autocomplete="new-password" /></label>
   <button type="button" id="loginBtn">Login</button>
   <p id="loginStatus"></p>
 </fieldset>
@@ -42,16 +39,22 @@ type: form
 <script type="module">
 import { getFormRecord, populateForm, loadRecords } from '/js/adminForms.js';
 
-document.addEventListener("DOMContentLoaded", () => {
-  const form = document.querySelector("form.verified-form");
+let FORM_TITLE = "Permitted Users";
 
+document.addEventListener("DOMContentLoaded", async () => {
+  const form = document.querySelector("form.verified-form");
+  
   // Login
-  const loginStatus = document.getElementById("loginStatus");
-  const loginFieldset = document.getElementById("loginFieldset");
   const loginBtn = document.getElementById("loginBtn");
   loginBtn.addEventListener("click", async () => {
-    const username = document.getElementById("adminUsername").value.trim();
-    const password = document.getElementById("adminPassword").value;
+    const usernameInput = Array.from(loginFieldset.querySelectorAll("label"))
+      .find(l => l.textContent.includes("Super-UserEmail"))?.querySelector("input");
+    const passwordInput = Array.from(loginFieldset.querySelectorAll("label"))
+      .find(l => l.textContent.includes("Password"))?.querySelector("input");
+
+    const username = usernameInput?.value.trim() || "";
+    const password = passwordInput?.value || "";
+    
     if (!username || !password) {
       loginStatus.textContent = "Please enter username and password";
       return;
@@ -73,6 +76,8 @@ document.addEventListener("DOMContentLoaded", () => {
       window.ADMIN_SESSION_KEY = data.sessionKey;
       loginStatus.textContent = "Login successful. You can now manage admin users.";
       loginFieldset.style.display = "none";
+      usernameInput.removeAttribute('required');
+      passwordInput.removeAttribute('required');
 
       form.querySelectorAll(".admin-user").forEach(el => {
         el.style.display = (el.tagName === "BUTTON" || el.tagName === "H2" || el.tagName === "UL") ? "inline-block" : "block";
@@ -85,15 +90,19 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // API wrapper
-  async function adminApiCall(action, username=null, role=null, metadata=null) {
-    const body = { action };
+  async function adminApiCall(action, username=null, role=null, email=null) {
+    const body = { action, formTitle: FORM_TITLE };
     if (username) body.username = username;
     if (role) body.role = role;
-    if (metadata) body.metadata = metadata;
+    if (email) body.email = email;
+
     console.log("adminUsers Request body:", body);
     const res = await fetch("/.netlify/functions/adminUsers", {
       method: "POST",
-      headers: { "Content-Type": "application/json", "x-admin-token": window.ADMIN_SESSION_KEY },
+      headers: { 
+        "Content-Type": "application/json",
+        "x-admin-token": window.ADMIN_SESSION_KEY
+      },
       body: JSON.stringify(body)
     });
     return res.json();
@@ -107,21 +116,25 @@ document.addEventListener("DOMContentLoaded", () => {
   let editUsername = null;
   let usersCache = [];
 
-  async function loadUsers() {
-    const data = await adminApiCall("list");
-    if (!data.success) return;
-    usersCache = Object.entries(data.users).map(([username, user]) => ({
-      username,
-      email: user.metadata?.email || "",
-      role: user.role
-    }));
-    loadRecords({
-      records: usersCache,
-      listEl: list,
-      form,
-      editBtnClass: "editUserBtn"
-    });
-  }
+async function loadUsers() {
+  const data = await adminApiCall("list");
+  if (!data.success) return;
+
+  // usersArray is already the array of users
+  usersCache = data.users.map(user => ({
+    username: user.username,
+    email: user.email || "",
+    role: user.role
+  }));
+
+  loadRecords({
+    records: usersCache,
+    listEl: list,
+    form,
+    editBtnClass: "editUserBtn"
+  });
+}
+
 
   // Edit button
   list.addEventListener("click", e => {
@@ -141,10 +154,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const record = getFormRecord(form);
     const username = record.username;
     const role = record.role;
-    const metadata = { email: record.email };
+    const email = record.email;
     const action = editUsername ? "edit" : "add";
     const apiUser = editUsername || username;
-    const data = await adminApiCall(action, apiUser, role, metadata);
+    const data = await adminApiCall(action, apiUser, role, email);
     if (data.success) {
       populateForm(form, {}); // clear form
       editUsername = null;

@@ -43,25 +43,56 @@ console.log("Write store response:", res);
 
 // --- General secure storage ---
 async function setSecureItem(BIN_ID, token, value, ttl = null) {
-console.log("SET SECURE ITEM:", { BIN_ID, token, value, ttl });
+  console.log("SET SECURE ITEM:", { BIN_ID, token, value, ttl });
+
   const store = await readStore(BIN_ID);
-  const entry = { ...value };
-  if (ttl !== null) entry.expires = Date.now() + ttl;
-  store[token] = entry;
+
+  let newValue;
+  if (Array.isArray(value)) {
+    // Add expires to each item if ttl is provided
+    newValue = value.map(item => {
+      if (ttl !== null) return { ...item, expires: Date.now() + ttl };
+      return item;
+    });
+  } else if (typeof value === 'object' && value !== null) {
+    newValue = ttl !== null ? { ...value, expires: Date.now() + ttl } : value;
+  } else {
+    // primitives, just store as is
+    newValue = value;
+  }
+
+  store[token] = newValue;
   await writeStore(BIN_ID, store);
 }
 
+
 async function getSecureItem(BIN_ID, token) {
-console.log("GET SECURE ITEM:", { BIN_ID, token });
+  console.log("GET SECURE ITEM:", { BIN_ID, token });
   const store = await readStore(BIN_ID);
-  const entry = store[token];
+  let entry = store[token];
   if (!entry) return null;
-  if (entry.expires && Date.now() > entry.expires) {
+
+  const now = Date.now();
+
+  if (Array.isArray(entry)) {
+    // Filter out expired items if they have an expires field
+    entry = entry.filter(item => !item.expires || now <= item.expires);
+    // Write back cleaned array if any items were removed
+    if (entry.length !== store[token].length) {
+      store[token] = entry;
+      await writeStore(BIN_ID, store);
+    }
+    return entry.length ? entry : null;
+  }
+
+  if (typeof entry === 'object' && entry !== null && entry.expires && now > entry.expires) {
     await cleanupExpired(BIN_ID);
     return null;
   }
+
   return entry;
 }
+
 
 async function cleanupExpired(BIN_ID) {
   const now = Date.now();

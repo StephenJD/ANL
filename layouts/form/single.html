@@ -66,20 +66,38 @@ function fitElements(elements) {
     if (!hasSubmittedBy && optionalEmail) optionalEmail.style.display = "block";
   }
 
-  // === Rename radio groups ===
-  function renameRadioGroups() {
-    const form = document.querySelector("form.verified-form");
-    if (!form) return;
+function renameRadioGroups() {
+  const form = document.querySelector("form.verified-form");
+  if (!form) return;
 
-    let radioGroupCounter = 0;
-    form.querySelectorAll('fieldset').forEach(fs => {
-      const radios = fs.querySelectorAll('input[type="radio"]');
+  let groupCounter = 0;
+
+  form.querySelectorAll('fieldset').forEach(fs => {
+    const labels = Array.from(fs.querySelectorAll('label'));
+    let currentGroupRadios = [];
+
+    labels.forEach((label, i) => {
+      const radios = label.querySelectorAll('input[type="radio"]');
+
       if (radios.length) {
-        radioGroupCounter++;
-        radios.forEach(r => r.name = `r${radioGroupCounter}`);
+        // This label contains radios; collect them for current group
+        currentGroupRadios.push(...radios);
+      } else if (currentGroupRadios.length) {
+        // Previous radios collected — assign them a name
+        groupCounter++;
+        currentGroupRadios.forEach(r => r.name = `r${groupCounter}`);
+        currentGroupRadios = [];
       }
     });
-  }
+
+    // Handle any remaining radios at the end
+    if (currentGroupRadios.length) {
+      groupCounter++;
+      currentGroupRadios.forEach(r => r.name = `r${groupCounter}`);
+    }
+  });
+}
+
 
   // === Date fields autocomplete off ===
   function disableDateAutocomplete() {

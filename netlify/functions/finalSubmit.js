@@ -4,7 +4,7 @@
 // - Emails to form-recipient (website owner).
 // Called by Client: send_submission_page
 
-const { getSecureItem, setSecureItem } = require("./secureStore");
+const { getSecureItem } = require("./multiSecureStore");
 const { sendEmail } = require("./sendEmail");
 
 exports.handler = async function (event) {
@@ -23,7 +23,7 @@ exports.handler = async function (event) {
     }
 
     // --- 1. Retrieve stored form record ---
-    const storedFormData = await getSecureItem(token);
+    const storedFormData = await getSecureItem(process.env.ACCESS_TOKEN_BIN, token);
     if (!storedFormData) {
       console.error("[ERROR] Invalid or expired token:", token);
       return { statusCode: 400, body: JSON.stringify({ success: false, error: "Invalid or expired token" }) };

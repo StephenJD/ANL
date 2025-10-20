@@ -21,7 +21,7 @@ console.log("password:", password);
 
     const sessionKey = generateUserToken(username, Date.now().toString());
     const expires = Date.now() + 30 * 60 * 1000; // 30 min TTL
-    await setSecureItem(process.env.USER_ACCESS_BIN, sessionKey, { username }, 30 * 60 * 1000);
+    await setSecureItem(process.env.ACCESS_TOKEN_BIN, sessionKey, { username }, 30 * 60 * 1000);
 
     return { statusCode: 200, body: JSON.stringify({ success: true, sessionKey, expires }) };
   } catch (err) {

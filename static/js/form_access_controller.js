@@ -36,110 +36,94 @@ Server-side:
 9. Server handles final submission to Netlify.
 */
 
-
 document.addEventListener("DOMContentLoaded", async () => {
   const form = document.querySelector("form.verified-form");
-
   const requestBox = document.querySelector(".form-request-box");
   const messageBox = requestBox?.querySelector(".form-link-message");
   const request_link_btn = requestBox?.querySelector(".request-form-link-btn");
   const emailInput = requestBox?.querySelector(".request-form-link-email");
   const url_token = new URLSearchParams(window.location.search).get("token");
-  //console.log("[DEBUG] url_token from URL:", url_token);
-  
+
   let requireRequestLink = false;
   let requireFinalSubmit = false;
-  let cleanTitle = null;
   let frontMatter = null;
-  // --- 1. Fetch frontmatter to determine validation mode ---
+  let cleanTitle = null;
+
+  // --- 1. Fetch frontmatter ---
   try {
     const formPath = window.location.pathname;
-    console.debug("[DEBUG] Fetching frontmatter for:", formPath);
-    
-    const frontMatterObj = await fetch("/.netlify/functions/getFormFrontMatter", {
+    const res = await fetch("/.netlify/functions/getFormFrontMatter", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ formPath })
     });
-
-    try {
-      frontMatter = await frontMatterObj.json();
-    } catch (jsonErr) {
-      const text = await frontMatterObj.text();
-      console.error("[DEBUG] JSON parse failed. Raw response text:", text);
-      throw jsonErr;
-    }
-    console.debug("[DEBUG] getFormFrontMatter got :", frontMatter);
+    frontMatter = await res.json();
     cleanTitle = frontMatter?.title?.trim() || form.name || "Untitled Form";
 
-    const validation = Array.isArray(frontMatter.validation)
-      ? frontMatter.validation
-      : Array.isArray(frontMatter.validation)
-      ? frontMatter.validation
-      : ["none"];
-
-    console.debug("[DEBUG] Parsed validation:", validation);
-  
+    const validation = Array.isArray(frontMatter.validation) ? frontMatter.validation : ["none"];
     requireRequestLink = validation.includes("requestLink");
     requireFinalSubmit = validation.includes("submit");
   } catch (err) {
     console.error("[DEBUG] Failed to get frontmatter:", err);
   }
 
-  // --- 2. Setup form based on requireRequestLink ---
+  // --- 2. Setup form request box ---
   if (requestBox && request_link_btn) {
-    if (requireRequestLink) { // always start with disabled-form, even if token present, as it may be invalid
+    if (requireRequestLink) {
       requestBox.style.display = "block";
       form.querySelectorAll('input, textarea, select, button[type="submit"]').forEach(el => {
         if (!el.closest(".form-request-box")) el.disabled = true;
       });
 
-      request_link_btn.addEventListener("click", async () => {
-        const email = emailInput?.value.trim();
-        if (!email) return alert("Enter your email");
+request_link_btn.addEventListener("click", async () => {
+  const email = emailInput?.value.trim();
+  if (!email) return alert("Enter your email");
 
-        try {
-          const resp = await fetch("/.netlify/functions/sendFormAccessLink", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              email,
-              formPath: window.location.pathname,
-              formName: cleanTitle,
-              site_root: window.location.origin
-            })
-          });
-          const result = await resp.json();
-          alert(result.success ? "Check your email for the link." : "Error sending link: " + (result.error || "unknown"));
-        } catch (err) {
-          console.error("[DEBUG] sendFormAccessLink error:", err);
-          alert("Request failed");
-        }
-      });
+  try {
+    // --- Check if email is authorized ---
+    const checkRes = await fetch("/.netlify/functions/checkAllowableUserRequest", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, formTitle: "Permitted Users" }) // <-- pass formTitle
+    });
+    const checkData = await checkRes.json();
+    if (!checkData.allowed) {
+      if (messageBox) messageBox.textContent = "This email is not authorized to request access for this form.";
+      return;
+    }
+
+    // --- Send form access link ---
+    const resp = await fetch("/.netlify/functions/sendFormAccessLink", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, formPath: window.location.pathname, formName: cleanTitle, site_root: window.location.origin })
+    });
+    const result = await resp.json();
+    alert(result.success ? "Check your email for the link." : "Error sending link: " + (result.error || "unknown"));
+  } catch (err) {
+    console.error("[DEBUG] sendFormAccessLink error:", err);
+    alert("Request failed");
+  }
+});
+
     } else {
       requestBox.style.display = "none";
     }
   }
 
-  // --- 3. Verify RequestLink url_token  ---
-  //console.debug("[DEBUG] url_token?:", requireRequestLink, url_token);
-  
+  // --- 3. Verify url_token ---
   if (requireRequestLink && url_token) {
-    //console.debug("[DEBUG] has url_token:", url_token);
-
     try {
       const resp = await fetch("/.netlify/functions/secureStore_ClientAccess", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token: url_token })
+        body: JSON.stringify({bin: "ACCESS_TOKEN_BIN", token: url_token, formPath: window.location.pathname })
       });
       const data = await resp.json();
-	const valid =
-      data.valid &&
-      data.email &&
-      data.formPath === window.location.pathname;
+      const valid = data.valid && data.email && data.formPath === window.location.pathname;
 
       if (valid) {
+	  emailInput.removeAttribute('required');
         form.querySelectorAll('input, textarea, select, button[type="submit"]').forEach(el => el.disabled = false);
         const submittedBy = form.querySelector("#submitted_by");
         if (submittedBy) {
@@ -158,21 +142,74 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   // --- 4. Form submission ---
-  form.addEventListener("submit", async (e) => {
+  form.addEventListener("submit", async e => {
     e.preventDefault();
-    console.debug("[DEBUG] form_access_controller submit...");
+    if (cleanTitle === "User Account Application") {
+      const emailInput = form.querySelector("#submitted_by");
+      const userNameInput = form.querySelector(".name");
+      const passwordInput = form.querySelector("input[type='password']");
 
-    const formElement = document.querySelector("form.verified-form");
-    const clonedForm = formElement.cloneNode(true);
+      if (!emailInput?.value || !userNameInput?.value || !passwordInput?.value) {
+        return alert("Please fill all required fields.");
+      }
+ 
+      const tokenResp = await fetch("/.netlify/functions/generateUserToken_ClientAccess", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userName: userNameInput.value.trim(),
+        password: passwordInput.value
+      })
+    });
 
+    const { token } = await tokenResp.json();
+
+    const entry = {
+      "E-mail address": emailInput.value.trim(),
+      "User name": userNameInput.value.trim(),
+      "login_token": token
+    };
+
+    try {
+      // --- fetch current store ---
+      const resp = await fetch(`${window.location.origin}/.netlify/functions/secureStore_ClientAccess`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: "user_logins" }) // read existing array
+      });
+      let data = await resp.json();
+      let userLogins = (data?.user_logins || []).slice(); // existing array
+
+      // --- append new entry ---
+      userLogins.push(entry);
+
+      // --- write back ---
+      await fetch(`${window.location.origin}/.netlify/functions/secureStore_ClientAccess`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+		  bin: "USER_ACCESS_BIN",
+		  token: "user_logins",
+		  value: userLogins 
+        })
+      });
+
+      alert("Your account application has been recorded.");
+      form.reset();
+    } catch (err) {
+      console.error("Error storing user login:", err);
+      alert("Failed to save your submission.");
+    }
+
+    return; // stop generic submission
+  }
+  
+    const clonedForm = form.cloneNode(true);
     clonedForm.querySelectorAll("input, textarea, select").forEach(input => {
       if (input.type === "checkbox" || input.type === "radio") {
-        if (input.checked) input.setAttribute("checked", "");
-        else input.removeAttribute("checked");
+        if (input.checked) input.setAttribute("checked", ""); else input.removeAttribute("checked");
       } else if (input.tagName.toLowerCase() === "textarea") {
-        input.textContent = input.value;  // critical for JSDOM
-        console.log("[DEBUG] cloned textarea value:", JSON.stringify(input.value), input.textContent);
-        // do NOT set textContent; leave value as-is
+        input.textContent = input.value;
       } else {
         input.setAttribute("value", input.value);
       }
@@ -183,17 +220,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     const submittedBy = form.querySelector("#submitted_by")?.value.trim() || "";
     const optionalEmail = form.querySelector("#optionalEmail input[type='email']")?.value.trim() || "";
 
-    let payload = { formName: cleanTitle , formData, formPath };
-    
-    if (!requireRequestLink && submittedBy) {
-      payload.submittedBy = submittedBy;
-    } else if (optionalEmail) {
-      payload.optionalEmail = optionalEmail;
-    }
-    if (url_token) {
-     payload.token = url_token;
-    }
-    console.debug("[DEBUG] form_access_controller:", payload);
+    const payload = {bin: "ACCESS_TOKEN_BIN", formName: cleanTitle, formData, formPath };
+    if (!requireRequestLink && submittedBy) payload.submittedBy = submittedBy;
+    else if (optionalEmail) payload.optionalEmail = optionalEmail;
+    if (url_token) payload.token = url_token;
 
     try {
       const resp = await fetch("/.netlify/functions/submitFormController", {
@@ -201,27 +231,18 @@ document.addEventListener("DOMContentLoaded", async () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
       });
-	const text = await resp.text();
-
+      const text = await resp.text();
       let data;
-      try {
-        data = JSON.parse(text);
-      } catch (e) {
-        console.error("[ERROR] Invalid JSON from submitFormController:", e, text);
-        throw new Error("Server returned invalid JSON");
-      }
+      try { data = JSON.parse(text); } catch (e) { throw new Error("Server returned invalid JSON"); }
 
-      // Redirect client to the submission page with url_token (only for non-final-submit cases)
-      if (data.token) {
-        window.location.href = `/send_submission_page.html?token=${encodeURIComponent(data.token)}`;
-      } else if (requireFinalSubmit) {
-        alert("Check your email for the submission link to finalize your form.");
-      } else {
-        alert("Form saved, but no token was returned.");
-      }
+      if (data.token) window.location.href = `/send_submission_page.html?token=${encodeURIComponent(data.token)}`;
+      else if (requireFinalSubmit) alert("Check your email for the submission link to finalize your form.");
+      else alert("Form saved, but no token was returned.");
     } catch (err) {
       console.error("[DEBUG] submitFormController error:", err);
       alert("Form submission failed: " + (err.message || "unknown error"));
     }
   });
 });
+
+

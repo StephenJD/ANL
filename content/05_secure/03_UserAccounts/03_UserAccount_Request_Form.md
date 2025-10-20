@@ -1,6 +1,6 @@
 ---
 title: "User Account Application"
-summary: "To be completed by all staff and volunteers of ANL"
+summary: "User Account Application"
 last_reviewed: 2025-09-28
 review_period: 1y
 reviewed_by: Cheryl Cross
