@@ -1,6 +1,6 @@
 ---
-title: "TnT Parental Consent Form"
-summary: ""
+title: "TnT Parental Medical Consent Form"
+summary: "TnT Parental Medical Consent Form"
 last_reviewed: 2025-09-20
 review_period: 1y
 reviewed_by: Cheryl Cross

@@ -12,7 +12,7 @@ function formatFormData({ formData, effectiveSubmittedBy, includeUnselected = fa
   const form = dom.window.document.querySelector("form");
   if (!form) return "";
    
-  console.log("[DEBUG] formatFormData: effectiveSubmittedBy ", effectiveSubmittedBy);
+  //console.log("[DEBUG] formatFormData: effectiveSubmittedBy ", effectiveSubmittedBy);
 
   // Replace submitted_by value if provided
   const submittedInput = form.querySelector("#submitted_by");
@@ -65,8 +65,8 @@ function formatFormData({ formData, effectiveSubmittedBy, includeUnselected = fa
       if (labelText && input.tagName.toLowerCase() === "textarea" && !labelText.endsWith(":")) {
         labelText += ":";
       }
-      console.log("[DEBUG] format: labelText raw:", JSON.stringify(labelText));
-      console.log("[DEBUG] format: input.value raw:", JSON.stringify(input.value)); 
+      //console.log("[DEBUG] format: labelText raw:", JSON.stringify(labelText));
+      //console.log("[DEBUG] format: input.value raw:", JSON.stringify(input.value)); 
       //console.log("[DEBUG] format: textarea check:", input, input.value, input.textContent);
 
       let valueIncluded = true;

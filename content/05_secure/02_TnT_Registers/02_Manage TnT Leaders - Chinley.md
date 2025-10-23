@@ -39,7 +39,7 @@ type: form
 <ul id="leaderList"></ul>
 
 <script type="module">
-import { getFormRecord, populateForm, loadRecords } from '/js/adminForms.js';
+import { getFormRecord, populateForm, loadRecords } from '/js/binArrayInterface.js';
 
 document.addEventListener("DOMContentLoaded", () => {
   const form = document.querySelector("form.verified-form");

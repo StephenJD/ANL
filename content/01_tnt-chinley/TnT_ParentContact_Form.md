@@ -1,6 +1,6 @@
 ---
 title: "TnT Parental Contact Form"
-summary: ""
+summary: "TnT Parental Contact Form"
 last_reviewed: 2025-10-17
 review_period: 1y
 reviewed_by: Stephen Dolley

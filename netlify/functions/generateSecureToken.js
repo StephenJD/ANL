@@ -1,7 +1,7 @@
 // netlify/functions/generateSecureToken.js
 const crypto = require("crypto");
 
-function generateSecureToken(request_origin) {
+function generateTempAccessToken(request_origin) {
   const secret = process.env.TOKEN_SECRET || "supersecret";
   const today = Date.now();
   return crypto
@@ -18,7 +18,7 @@ function generateUserToken(userName, password) {
     .digest("hex");
 }
 
-module.exports = { generateSecureToken, generateUserToken };
+module.exports = { generateTempAccessToken, generateUserToken };
 
 
 

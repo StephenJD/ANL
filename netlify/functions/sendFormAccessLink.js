@@ -1,6 +1,6 @@
 // netlify/functions/sendFormAccessLink.js
 const { setSecureItem  } = require("./multiSecureStore");
-const { generateSecureToken } = require("./generateSecureToken");
+const { generateTempAccessToken } = require("./generateSecureToken");
 const { sendEmail } = require("./sendEmail");
 
 exports.handler = async function(event) {
@@ -14,7 +14,7 @@ exports.handler = async function(event) {
     }
 
     const valueObject = { email, formPath, formName };
-    const token = generateSecureToken(valueObject);
+    const token = generateTempAccessToken(valueObject);
 
     console.log("[DEBUG] Storing request-link token:", token, valueObject);
 

@@ -61,8 +61,8 @@ label > input[type="email"],
 label > input[type="date"],
 label > input[type="password"] {
   display: inline-block;
-  width: auto;
-  max-width: 400px;
+  width: 100%;
+  max-width: 20em;
   margin-left: 1em; /* horizontal gap from label text */
 }
 

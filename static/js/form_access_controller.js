@@ -8,6 +8,7 @@ non-validated forms may be anonymous and have an optionalEmail field. All other 
 1. Obtain validation mode from server:getFormFrontMatter.js:
    - requireRequestLink
    - requireFinalSubmit
+   - 
 
 2. If requireRequestLink:
    a) Display the form but disable all inputs except the form-request-box.
@@ -39,171 +40,204 @@ Server-side:
 document.addEventListener("DOMContentLoaded", async () => {
   const form = document.querySelector("form.verified-form");
   const requestBox = document.querySelector(".form-request-box");
+  const submitBox = document.querySelector(".form-submit-box");
   const messageBox = requestBox?.querySelector(".form-link-message");
-  const request_link_btn = requestBox?.querySelector(".request-form-link-btn");
+  const requestBtn = requestBox?.querySelector(".request-form-link-btn");
   const emailInput = requestBox?.querySelector(".request-form-link-email");
-  const url_token = new URLSearchParams(window.location.search).get("token");
+  const urlToken = new URLSearchParams(window.location.search).get("token");
 
   let requireRequestLink = false;
   let requireFinalSubmit = false;
-  let frontMatter = null;
+  let showSubmit = true;
   let cleanTitle = null;
+  let restrictUsers = false;
+  let frontMatter = null;
 
-  // --- 1. Fetch frontmatter ---
-  try {
-    const formPath = window.location.pathname;
-    const res = await fetch("/.netlify/functions/getFormFrontMatter", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ formPath })
-    });
-    frontMatter = await res.json();
-    cleanTitle = frontMatter?.title?.trim() || form.name || "Untitled Form";
-
-    const validation = Array.isArray(frontMatter.validation) ? frontMatter.validation : ["none"];
-    requireRequestLink = validation.includes("requestLink");
-    requireFinalSubmit = validation.includes("submit");
-  } catch (err) {
-    console.error("[DEBUG] Failed to get frontmatter:", err);
-  }
-
-  // --- 2. Setup form request box ---
-  if (requestBox && request_link_btn) {
-    if (requireRequestLink) {
-      requestBox.style.display = "block";
-      form.querySelectorAll('input, textarea, select, button[type="submit"]').forEach(el => {
-        if (!el.closest(".form-request-box")) el.disabled = true;
+  async function fetchFrontMatter() {
+    console.log("Fetching frontmatter for:", window.location.pathname);
+    try {
+      const res = await fetch("/.netlify/functions/getFormFrontMatter", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ formPath: window.location.pathname })
       });
+      frontMatter = await res.json();
+      cleanTitle = frontMatter?.title?.trim() || form.name || "Untitled Form";
+      restrictUsers =
+        frontMatter?.restrict_users !== false &&
+        !(Array.isArray(frontMatter?.restrict_users)
+          ? frontMatter.restrict_users.includes("none")
+          : frontMatter?.restrict_users === "none");
+      const validation = Array.isArray(frontMatter.validation) ? frontMatter.validation : ["none"];
+      requireRequestLink = validation.includes("requestLink");
+      requireFinalSubmit = validation.includes("submit");
+	showSubmit = !validation.includes("noSend")
+console.log("fetchFrontMatter:", {
+  title: frontMatter?.title,
+  path: frontMatter?.path,
+  restrict_users: frontMatter?.restrict_users,
+  restrictUsers,
+  validation
+});
 
-request_link_btn.addEventListener("click", async () => {
-  const email = emailInput?.value.trim();
-  if (!email) return alert("Enter your email");
+    } catch (err) {
+      console.error("Failed to get frontmatter:", err);
+    }
+  }
+  
+async function controlRestrictedAccess(frontMatter) {
+  console.log("controlRestrictedAccess: restrictUsers:", restrictUsers, "session_key:", localStorage.getItem("session_key"));
 
-  try {
-    // --- Check if email is authorized ---
-    const checkRes = await fetch("/.netlify/functions/checkAllowableUserRequest", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, formTitle: "Permitted Users" }) // <-- pass formTitle
-    });
-    const checkData = await checkRes.json();
-    if (!checkData.allowed) {
-      if (messageBox) messageBox.textContent = "This email is not authorized to request access for this form.";
+  const sessionKey = localStorage.getItem("session_key");
+  const userRole = localStorage.getItem("user_role") || "";
+  const allowedRoles = Array.isArray(frontMatter?.restrict_users)
+    ? frontMatter.restrict_users.map(r => r.toLowerCase())
+    : [String(frontMatter?.restrict_users || "").toLowerCase()];
+
+  if (restrictUsers) {
+    if (!sessionKey) {
+      const currentPath = window.location.pathname;
+      console.log("Redirecting now to:", `/static/user-login.html?redirect=${encodeURIComponent(currentPath)}`);
+      window.location.href = `/user-login.html?redirect=${encodeURIComponent(currentPath)}`;
       return;
     }
 
-    // --- Send form access link ---
+    if (allowedRoles.length && !allowedRoles.includes(userRole.toLowerCase())) {
+      document.body.innerHTML = `
+        <div style="margin:3em auto;max-width:600px;text-align:center;font-family:sans-serif;">
+          <h2 style="color:red;">Access Denied</h2>
+          <p>Your role "<strong>${userRole}</strong>" does not have permission to access this form.</p>
+          <p>Allowed roles: <strong>${allowedRoles.join(", ")}</strong></p>
+        </div>
+      `;
+      return;
+    }
+  }
+  return true;
+}
+  
+  function setupAccessControls() {
+    console.log("setupAccessControls: requireRequestLink", requireRequestLink, "restrictUsers", restrictUsers, "showSubmit", showSubmit);
+
+    const allInputs = form.querySelectorAll('input, textarea, select, button[type="submit"]');
+  
+    allInputs.forEach(el => el.disabled = requireRequestLink);
+
+    if (!requestBox || !requestBtn) return;
+    if (requireRequestLink) {
+      requestBox.style.display = "block";
+      allInputs.forEach(el => {
+       if (!el.closest(".form-request-box")) el.disabled = true;
+      });
+      requestBtn.addEventListener("click", handleRequestButtonClick);
+    } else {
+      requestBox.style.display = "none";
+    }
+    if (showSubmit) {
+	submitBox.style.display = "block";
+    } else {
+      submitBox.style.display = "none";
+    }
+  }
+
+  async function isEmailAllowed(email) {
+    if (!restrictUsers) return { success: true };
+    const resp = await fetch("/.netlify/functions/verifyUser", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "checkIsPermittedUser", email })
+    });
+    return resp.json();
+  }
+
+  async function sendAccessLink(email) {
     const resp = await fetch("/.netlify/functions/sendFormAccessLink", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, formPath: window.location.pathname, formName: cleanTitle, site_root: window.location.origin })
     });
-    const result = await resp.json();
-    alert(result.success ? "Check your email for the link." : "Error sending link: " + (result.error || "unknown"));
-  } catch (err) {
-    console.error("[DEBUG] sendFormAccessLink error:", err);
-    alert("Request failed");
+    return resp.json();
   }
-});
 
-    } else {
-      requestBox.style.display = "none";
+  async function handleRequestButtonClick() {
+    const email = emailInput?.value.trim();
+    if (!email) return alert("Enter your email");
+
+    const checkData = await isEmailAllowed(email);
+    if (!checkData.success) {
+      if (messageBox) messageBox.textContent = "This email is not authorized to request access for this form.";
+      return;
     }
+
+    const result = await sendAccessLink(email);
+    alert(result.success ? "Check your email for the link." : "Error sending link: " + (result.error || "unknown"));
   }
 
-  // --- 3. Verify url_token ---
-  if (requireRequestLink && url_token) {
+  async function verifyToken() {
+    if (!requireRequestLink || !urlToken) return;
     try {
       const resp = await fetch("/.netlify/functions/secureStore_ClientAccess", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({bin: "ACCESS_TOKEN_BIN", token: url_token, formPath: window.location.pathname })
+        body: JSON.stringify({ bin: "ACCESS_TOKEN_BIN", token: urlToken, formPath: window.location.pathname })
       });
       const data = await resp.json();
       const valid = data.valid && data.email && data.formPath === window.location.pathname;
-
-      if (valid) {
-	  emailInput.removeAttribute('required');
-        form.querySelectorAll('input, textarea, select, button[type="submit"]').forEach(el => el.disabled = false);
-        const submittedBy = form.querySelector("#submitted_by");
-        if (submittedBy) {
-          submittedBy.value = decodeURIComponent(data.email);
-          submittedBy.setAttribute("readonly", "true");
-          submittedBy.setAttribute("aria-readonly", "true");
-        }
-        if (requestBox) requestBox.style.display = "none";
-      } else if (messageBox) {
-        messageBox.textContent = "This access link is invalid or expired.";
+      if (!valid) {
+        if (messageBox) messageBox.textContent = "This access link is invalid or expired.";
+        return;
       }
+      form.querySelectorAll('input, textarea, select, button[type="submit"]').forEach(el => el.disabled = false);
+      emailInput.removeAttribute("required");
+      const submittedBy = form.querySelector("#submitted_by");
+      if (submittedBy) {
+        submittedBy.value = decodeURIComponent(data.email);
+        submittedBy.setAttribute("readonly", "true");
+        submittedBy.setAttribute("aria-readonly", "true");
+      }
+      if (requestBox) requestBox.style.display = "none";
     } catch (err) {
-      console.error("[DEBUG] verifyToken error:", err);
+      console.error("verifyToken error:", err);
       if (messageBox) messageBox.textContent = "Verification failed.";
     }
   }
 
-  // --- 4. Form submission ---
-  form.addEventListener("submit", async e => {
+  async function handleUserAccountApplicationSubmission(e) {
     e.preventDefault();
-    if (cleanTitle === "User Account Application") {
-      const emailInput = form.querySelector("#submitted_by");
-      const userNameInput = form.querySelector(".name");
-      const passwordInput = form.querySelector("input[type='password']");
-
-      if (!emailInput?.value || !userNameInput?.value || !passwordInput?.value) {
-        return alert("Please fill all required fields.");
-      }
- 
-      const tokenResp = await fetch("/.netlify/functions/generateUserToken_ClientAccess", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        userName: userNameInput.value.trim(),
-        password: passwordInput.value
-      })
-    });
-
-    const { token } = await tokenResp.json();
-
-    const entry = {
-      "E-mail address": emailInput.value.trim(),
-      "User name": userNameInput.value.trim(),
-      "login_token": token
-    };
+    const emailInput = form.querySelector("#submitted_by");
+    const userNameInput = form.querySelector(".name");
+    const passwordInput = form.querySelector("input[type='password']");
+    if (!emailInput?.value || !userNameInput?.value || !passwordInput?.value) {
+      return alert("Please fill all required fields.");
+    }
 
     try {
-      // --- fetch current store ---
-      const resp = await fetch(`${window.location.origin}/.netlify/functions/secureStore_ClientAccess`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token: "user_logins" }) // read existing array
-      });
-      let data = await resp.json();
-      let userLogins = (data?.user_logins || []).slice(); // existing array
-
-      // --- append new entry ---
-      userLogins.push(entry);
-
-      // --- write back ---
-      await fetch(`${window.location.origin}/.netlify/functions/secureStore_ClientAccess`, {
+      const resp = await fetch("/.netlify/functions/verifyUser", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-		  bin: "USER_ACCESS_BIN",
-		  token: "user_logins",
-		  value: userLogins 
+          action: "addUserLogin",
+          email: emailInput.value.trim(),
+          userName: userNameInput.value.trim(),
+          password: passwordInput.value
         })
       });
-
+      const data = await resp.json();
+      if (!data.success) return alert(data.message || "Not permitted");
       alert("Your account application has been recorded.");
       form.reset();
     } catch (err) {
-      console.error("Error storing user login:", err);
+      console.error("Error adding user login:", err);
       alert("Failed to save your submission.");
     }
-
-    return; // stop generic submission
   }
-  
+
+  async function handleFormSubmission(e) {
+    e.preventDefault();
+    if (cleanTitle === "User Account Application") {
+      return handleUserAccountApplicationSubmission(e);
+    }
+
     const clonedForm = form.cloneNode(true);
     clonedForm.querySelectorAll("input, textarea, select").forEach(input => {
       if (input.type === "checkbox" || input.type === "radio") {
@@ -219,11 +253,10 @@ request_link_btn.addEventListener("click", async () => {
     const formData = `<h2>${cleanTitle}</h2>` + clonedForm.outerHTML;
     const submittedBy = form.querySelector("#submitted_by")?.value.trim() || "";
     const optionalEmail = form.querySelector("#optionalEmail input[type='email']")?.value.trim() || "";
-
-    const payload = {bin: "ACCESS_TOKEN_BIN", formName: cleanTitle, formData, formPath };
+    const payload = { bin: "ACCESS_TOKEN_BIN", formName: cleanTitle, formData, formPath };
     if (!requireRequestLink && submittedBy) payload.submittedBy = submittedBy;
     else if (optionalEmail) payload.optionalEmail = optionalEmail;
-    if (url_token) payload.token = url_token;
+    if (urlToken) payload.token = urlToken;
 
     try {
       const resp = await fetch("/.netlify/functions/submitFormController", {
@@ -231,18 +264,28 @@ request_link_btn.addEventListener("click", async () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
       });
-      const text = await resp.text();
-      let data;
-      try { data = JSON.parse(text); } catch (e) { throw new Error("Server returned invalid JSON"); }
+      const data = await resp.json();
 
-      if (data.token) window.location.href = `/send_submission_page.html?token=${encodeURIComponent(data.token)}`;
-      else if (requireFinalSubmit) alert("Check your email for the submission link to finalize your form.");
-      else alert("Form saved, but no token was returned.");
+      if (requireFinalSubmit) {
+        alert("Check your email for the submission link to finalize your form.");
+      } else if (data.token) {
+        window.location.href = `/send_submission_page.html?token=${encodeURIComponent(data.token)}`;
+      } else {
+        alert("Form saved, but no token was returned.");
+      }
     } catch (err) {
-      console.error("[DEBUG] submitFormController error:", err);
+      console.error("submitFormController error:", err);
       alert("Form submission failed: " + (err.message || "unknown error"));
     }
-  });
-});
+  }
 
+  await fetchFrontMatter();
+  const ok = await controlRestrictedAccess(frontMatter);
+  if (!ok) return;
+  setupAccessControls();
+  await verifyToken();
+  document.dispatchEvent(new Event("access-validated"));
+  form.addEventListener("submit", handleFormSubmission);
+  
+});
 

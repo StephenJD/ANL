@@ -35,7 +35,7 @@ async function readStore(BIN_ID) {
 async function writeStore(BIN_ID, store) {
   try {
     const res = await apiRequest('PUT', `https://api.jsonbin.io/v3/b/${BIN_ID}?versioning=false`, store);
-console.log("Write store response:", res);
+//console.log("Write store response:", res);
   } catch (err) {
     console.error('Error writing store:', err);
   }
@@ -43,7 +43,7 @@ console.log("Write store response:", res);
 
 // --- General secure storage ---
 async function setSecureItem(BIN_ID, token, value, ttl = null) {
-  console.log("SET SECURE ITEM:", { BIN_ID, token, value, ttl });
+  //console.log("SET SECURE ITEM:", { BIN_ID, token, value, ttl });
 
   const store = await readStore(BIN_ID);
 
@@ -67,7 +67,7 @@ async function setSecureItem(BIN_ID, token, value, ttl = null) {
 
 
 async function getSecureItem(BIN_ID, token) {
-  console.log("GET SECURE ITEM:", { BIN_ID, token });
+  //console.log("GET SECURE ITEM:", { BIN_ID, token });
   const store = await readStore(BIN_ID);
   let entry = store[token];
   if (!entry) return null;

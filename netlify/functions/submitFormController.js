@@ -4,10 +4,10 @@
 // Called by client: form_access_controller
 
 const { setSecureItem, getSecureItem } = require("./multiSecureStore");
-const { generateSecureToken } = require("./generateSecureToken");
+const { generateTempAccessToken } = require("./generateSecureToken");
 const { formatFormData } = require("./formatFormData");
 const { sendEmail } = require("./sendEmail");
-const getFormFrontMatter = require("./getFormFrontMatter").handler;
+const getFormFrontMatter = require("./getFormFrontMatter").getFormFrontMatter;
 
 exports.handler = async function(event) {
   if (event.httpMethod !== "POST") {
@@ -28,8 +28,10 @@ exports.handler = async function(event) {
     const requireRequestLink = validation.includes("requestLink");
     const {include_unselected_options} = parsed;
     
+    console.debug("[DEBUG] Parsed frontMatter validation:", parsed.validation, "Type:", typeof parsed.validation);
+
     // Determine effective submitter
-    console.debug("[DEBUG] submitFormController: Token:", token ?? "null/undefined");
+    console.debug("[DEBUG] submitFormController: Token:", token ?? "null/undefined", "RequireSubmit:", requireFinalSubmit);
 
     let effectiveSubmittedBy = null;
     let existing = null;
@@ -64,7 +66,7 @@ exports.handler = async function(event) {
       formPath,
       email: effectiveSubmittedBy
     };
-    const secureToken = generateSecureToken(valueToStore);
+    const secureToken = generateTempAccessToken(valueToStore);
     const ONE_HOUR_MS = 60 * 60 * 1000;
 
     await setSecureItem(process.env.ACCESS_TOKEN_BIN, secureToken, valueToStore, ONE_HOUR_MS);
