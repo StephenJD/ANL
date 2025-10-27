@@ -1,16 +1,19 @@
 // /.netlify/functions/getFormFrontMatter.js
-const fs = require("fs").promises;
-const path = require("path");
+const fetch = require("node-fetch");
 
-async function getFormFrontMatter({ formPath }) {
+async function getFormFrontMatter({ formPath, baseURL }) {
   if (!formPath) throw new Error("Missing formPath");
+  if (!baseURL) throw new Error("Missing baseURL");
 
-  const metadataFile = path.join(__dirname, "../../public", formPath, "form_metadata.json");
+  const url = `${baseURL}/${formPath}/form_metadata.json`;
+
   let raw;
   try {
-    raw = await fs.readFile(metadataFile, "utf-8");
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
+    raw = await res.text();
   } catch (err) {
-    throw new Error(`Cannot read form metadata: ${err.message}`);
+    throw new Error(`Cannot fetch form metadata from ${url}: ${err.message}`);
   }
 
   let metadata;
@@ -52,9 +55,10 @@ async function handler(event) {
 
   try {
     const { formPath } = JSON.parse(event.body || "{}");
+    const baseURL = process.env.SITE_URL || "https://ascendnextlevel.org.uk"; // set environment variable for deploy
     console.log("[DEBUG] formPath received:", formPath);
 
-    const result = await getFormFrontMatter({ formPath });
+    const result = await getFormFrontMatter({ formPath, baseURL });
     console.log("[DEBUG] metadata result:", result);
 
     return { statusCode: 200, body: JSON.stringify({ success: true, ...result }) };
