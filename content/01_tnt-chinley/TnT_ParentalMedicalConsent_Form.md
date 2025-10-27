@@ -80,7 +80,7 @@ Form Rules
 
 <fieldset>
    <legend>Parent/Guardian Consent</legend>
-   <label><input required type="checkbox"> I give explicit permission for Chinley TnT to process personal/medical data.</label>
+   <label><input required type="checkbox"> I give permission for Ascend Next Level to process this personal/medical data.</label>
    <label><input required type="checkbox"> I confirm the information provided is accurate.</label>
    <label><input required type="checkbox"> I confirm that typing my name below acts as my electronic signature.</label>
    <label>Name:<input required class="name" type="text"></label>

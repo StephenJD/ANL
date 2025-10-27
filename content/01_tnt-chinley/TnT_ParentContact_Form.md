@@ -45,7 +45,7 @@ Form Rules
    <legend>Parent/Guardian Consent</legend>
    <label><input type="checkbox"> I give permission for my child to attend Chinley TnT.</label>
    <label><input type="checkbox"> I give permission for my child to attend Whaley Bridge TnT.</label>
-   <label><input required type="checkbox"> I give explicit permission for Chinley TnT to securely retain this information.</label>
+   <label><input required type="checkbox"> I give permission for Ascend Next Level to securely retain this information.</label>
    <label><input required type="checkbox"> I confirm that typing my name below acts as my electronic signature.</label>
    <label>Name:<input required class="name" type="text"></label>
    <label>Date:<input required class="autofill-today" type="date"></label>

@@ -86,11 +86,12 @@ export function loadRecords({ records, listEl, form, editBtnClass }) {
     li.appendChild(btn);
 
     Object.entries(record)
-      .filter(([k, v]) => v !== undefined && v !== null && v !== "")
+      .filter(([k, v]) => v !== undefined && v !== null && v !== "" && !k.toLowerCase().includes("token"))
       .forEach(([k, v], i) => {
         li.appendChild(document.createTextNode(i === 0 ? " " : ", "));
         li.appendChild(document.createTextNode(Array.isArray(v) ? `${k}: ${v.join(", ")}` : `${k}: ${v}`));
       });
+
 
     listEl.appendChild(li);
   });

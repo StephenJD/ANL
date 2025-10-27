@@ -14,6 +14,7 @@ validation: [noSend] # options: requestLink, submit, none (default), noSend
     <legend>Permitted User Details</legend>
     <label>Name<input required class="name" type="text" /></label>
     <label>Email<input required type="email" /></label>
+    <label>User name<input class="name" type="text" readonly /></label>
   </fieldset>
 
   <fieldset>

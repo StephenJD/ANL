@@ -1,4 +1,4 @@
-// /netlify/functions/generate_qr.js
+// \build_scripts\generate_qr.js
 const QRCode = require("qrcode");
 const fs = require("fs");
 const path = require("path");
@@ -12,7 +12,7 @@ if (!match) {
   console.error("Error: baseURL not found in", configPath);
   process.exit(1);
 }
-const baseURL = match[1].replace(/\/+$/, ""); // remove trailing slashes
+const baseURL = match[1].replace(/\/+$/, "");
 console.log(`Using baseURL: ${baseURL}`);
 
 const contentDir = "content";
@@ -28,24 +28,38 @@ function getMarkdownFiles(dir) {
   });
 }
 
-(async () => {
+async function main() {
+  console.log("=== Starting QR generation ===", new Date().toISOString());
+
   for (const file of getMarkdownFiles(contentDir)) {
     const src = fs.readFileSync(file, "utf8");
     const { data } = matter(src);
 
     if (data.qrCode === true) {
-      let rel = file
-        .replace(/^content[\\/]/, "")
-        .replace(/\.md$/, "")
-        .replace(/index$/, "");
-      rel = rel.replace(/\\/g, "/"); // normalize for URL
+      // Compute relative path
+      let rel = path.relative(contentDir, file).replace(/\.md$/, ""); // remove extension
+      rel = rel.replace(/index$/, "");                                   // remove index
+      rel = rel.replace(/\\/g, "/");                                     // normalize slashes
+
+      // Flatten path for filename to match Hugo partial
+      const flatName = rel.split("/").filter(Boolean).join("_");
+
+      // Construct URL for QR code
       const url = `${baseURL}/${rel}/`;
 
-      const outFile = path.join(outputDir, rel.replace(/[\\/]/g, "_") + ".png");
+      // Ensure output directory exists and generate QR file
+      const outFile = path.join(outputDir, flatName + ".png");
       fs.mkdirSync(path.dirname(outFile), { recursive: true });
       await QRCode.toFile(outFile, url, { width: 64, margin: 1 });
 
       console.log(`Generated QR for: ${url}`);
     }
   }
-})();
+
+  console.log("=== QR generation complete ===", new Date().toISOString());
+}
+
+main().catch(err => {
+  console.error(err);
+  process.exit(1);
+});

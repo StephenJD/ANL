@@ -32,7 +32,12 @@ url = "/#04_contact"    # Section on home page
 weight = 50
 
 [[main]]
-name = "Login"
+name = "Secure"
 url = "05_secure"
+weight = 60
+
+[[main]]
+name = "Login"
+url = "user-login"
 weight = 100
   

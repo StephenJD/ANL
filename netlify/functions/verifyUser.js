@@ -30,13 +30,25 @@ async function addUserLogin(email, userName, password) {
     console.log("[verifyUser] permittedUsers loaded:", permittedUsers);
     const userEntry = permittedUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
     if (!userEntry) {
+    // // 2) Superuser check: loginToken matches ADMIN_SUPERUSER_HASH
+    // if (!currentUser) {
+      // console.log("[verifyUser] Comparing loginToken to ADMIN_SUPERUSER_HASH:", ADMIN_SUPERUSER_HASH);
+      // if (loginToken === ADMIN_SUPERUSER_HASH) {
+        // const superUserRecord = usersArray.find(u => u.email === userName);
+        // const roles = superUserRecord ? superUserRecord.role : ["SuperUser"];
+        // currentUser = { userName, email: userName, role: roles };
+        // console.log("[verifyUser] SuperUser login granted:", currentUser);
+      // } else {
+        // console.log("[verifyUser] loginToken does NOT match superuser hash");
+      // }
+    // }
       console.log("[verifyUser] User not permitted");
       return { status: "Not permitted" };
     }
 
     const loginToken = generateUserToken(userName, password);
     userEntry.login_token = loginToken;
-
+    userEntry.user_name = userName;
     await setSecureItem(USER_ACCESS_BIN, PERMITTED_USERS_KEY, permittedUsers);
     console.log("[verifyUser] User login added, token =", loginToken);
     return { status: "success", loginToken, role: userEntry.role };
@@ -48,43 +60,114 @@ async function addUserLogin(email, userName, password) {
 
 // --- 3) Get a session token for a login ---
 async function getLogin_SessionToken(userName, password) {
-  console.log("[verifyUser] getLogin_SessionToken: userName =", userName);
+  console.log("[verifyUser] getLogin_SessionToken called with:", { userName, passwordExists: !!password });
+
   try {
     const loginToken = generateUserToken(userName, password);
     console.log("[verifyUser] Generated loginToken:", loginToken);
 
-    // Check permitted users
     const usersArray = await getSecureItem(USER_ACCESS_BIN, PERMITTED_USERS_KEY) || [];
     console.log("[verifyUser] Users array:", usersArray);
+
+    // 1) Try to find a user with matching login_token
     let currentUser = usersArray.find(u => u.login_token === loginToken);
-
-    // Check superuser
-    if (!currentUser && loginToken === ADMIN_SUPERUSER_HASH) {
-      currentUser = { role: "SuperUser", userName: userName, email: userName }; // UN is email
-      console.log("[verifyUser] SuperUser login");
+    if (currentUser) {
+      console.log("[verifyUser] Found user by login_token:", currentUser);
+    } else {
+      console.log("[verifyUser] Login not registered for user:", userName);
+      return { status: "Not Registered" };
     }
 
-    if (!currentUser) {
-      console.log("[verifyUser] Login not permitted");
-      return { status: "Not permitted" };
-    }
+    // 3) Generate temporary session key
+    const sessionToken = generateTempAccessToken(loginToken);
+    console.log("[verifyUser] Generated session key:", sessionToken);
 
-    // Generate temporary session key
-    const sessionKey = generateTempAccessToken(loginToken);
     await setSecureItem(
       ACCESS_TOKEN_BIN,
-      sessionKey,
-      { userName: currentUser.userName, role: currentUser.role },
+      sessionToken,
+      { user_name: currentUser.user_name, role: currentUser.role },
       30 * 60 * 1000
     );
-    console.log("[verifyUser] Session key generated:", sessionKey);
 
-    return { status: "success", sessionKey, role: currentUser.role };
+    console.log("[verifyUser] Session key stored successfully.");
+    return { status: "success", sessionToken, role: currentUser.role };
+
   } catch (err) {
     console.error("[verifyUser] getLogin_SessionToken error:", err);
     return { status: "error" };
   }
 }
+
+async function deleteUserLogin(email) {
+  console.log("[verifyUser] deleteUserLogin: email =", email);
+  try {
+    const permittedUsers = await getSecureItem(USER_ACCESS_BIN, PERMITTED_USERS_KEY) || [];
+    console.log("[verifyUser] permittedUsers loaded:", permittedUsers);
+    const userEntry = permittedUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
+    if (!userEntry) {
+      console.log("[verifyUser] User not found");
+      return { status: "Not found" };
+    }
+
+    userEntry.login_token = null;
+    userEntry.user_name = null;
+    await setSecureItem(USER_ACCESS_BIN, PERMITTED_USERS_KEY, permittedUsers);
+    console.log("[verifyUser] User login deleted");
+    return { status: "success" };
+  } catch (err) {
+    console.error("[verifyUser] deleteUserLogin error:", err);
+    return { status: "error" };
+  }
+}
+
+// --- 4) Check session token is valid ---
+async function check_SessionToken(session_token) {
+  console.log("[verifyUser] check_SessionToken called with:", { session_token });
+
+  try {
+    const entry = await getSecureItem(ACCESS_TOKEN_BIN, session_token);
+    if (!entry) {
+      console.log("[verifyUser] Session token not found.");
+      return { status: "Not found" };
+    }
+
+    const now = Date.now();
+    if (entry.expires > now) {
+      console.log("[verifyUser] Session token valid:", entry);
+      return { status: "success", entry };
+    } else {
+      console.log("[verifyUser] Session token expired.");
+      return { status: "expired" };
+    }
+  } catch (err) {
+    console.error("[verifyUser] check_SessionToken error:", err);
+    return { status: "error" };
+  }
+}
+
+
+async function deleteUserLogin(email) {
+  console.log("[verifyUser] deleteUserLogin: email =", email);
+  try {
+    const permittedUsers = await getSecureItem(USER_ACCESS_BIN, PERMITTED_USERS_KEY) || [];
+    console.log("[verifyUser] permittedUsers loaded:", permittedUsers);
+    const userEntry = permittedUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
+    if (!userEntry) {
+      console.log("[verifyUser] User not found");
+      return { status: "Not found" };
+    }
+
+    userEntry.login_token = null;
+    userEntry.user_name = null;
+    await setSecureItem(USER_ACCESS_BIN, PERMITTED_USERS_KEY, permittedUsers);
+    console.log("[verifyUser] User login deleted");
+    return { status: "success" };
+  } catch (err) {
+    console.error("[verifyUser] deleteUserLogin error:", err);
+    return { status: "error" };
+  }
+}
+
 
 // --- Exported Netlify handler ---
 async function handler(event) {
@@ -95,9 +178,9 @@ async function handler(event) {
   }
 
   try {
-    const { action, email, userName, password } = JSON.parse(event.body || "{}");
+    const { action, email, userName, password, session_token } = JSON.parse(event.body || "{}");
     console.log("[verifyUser] Parsed action:", action);
-
+    let result = null;
     switch (action) {
       case "checkIsPermittedUser":
         const check = await checkIsPermittedUser(email);
@@ -105,14 +188,23 @@ async function handler(event) {
         return { statusCode: 200, body: JSON.stringify({ success: check }) };
 
       case "addUserLogin":
-        const addResult = await addUserLogin(email, userName, password);
-        console.log("[verifyUser] addUserLogin result:", addResult);
-        return { statusCode: 200, body: JSON.stringify(addResult) };
+        result = await addUserLogin(email, userName, password);
+        console.log("[verifyUser] addUserLogin result:", result);
+        return { statusCode: 200, body: JSON.stringify(result) };
 
       case "getLogin_SessionToken":
-        const sessionResult = await getLogin_SessionToken(userName, password);
-        console.log("[verifyUser] getLogin_SessionToken result:", sessionResult);
-        return { statusCode: 200, body: JSON.stringify(sessionResult) };
+        result = await getLogin_SessionToken(userName, password);
+        console.log("[verifyUser] getLogin_SessionToken result:", result);
+        return { statusCode: 200, body: JSON.stringify(result) };
+
+      case "deleteUserLogin":
+        result = await deleteUserLogin(email);
+        console.log("[verifyUser] deleteUserLogin result:", result);
+        return { statusCode: 200, body: JSON.stringify(result) };
+      case "check_SessionToken":
+        result = await check_SessionToken(session_token);
+        console.log("[verifyUser] check_SessionToken result:", result);
+        return { statusCode: 200, body: JSON.stringify(result) };
 
       default:
         console.log("[verifyUser] Invalid action:", action);
@@ -128,3 +220,4 @@ exports.handler = handler;
 exports.checkIsPermittedUser = checkIsPermittedUser;
 exports.addUserLogin = addUserLogin;
 exports.getLogin_SessionToken = getLogin_SessionToken;
+exports.deleteUserLogin = deleteUserLogin;

@@ -1,5 +1,5 @@
 [build]
-  command = "node netlify/functions/gen_qr.js && hugo --gc --minify -b $URL"
+  command = "node build_scripts/generate_qr.js && hugo --gc --minify -b $URL"
   publish = "public"
   
 [build.environment]
