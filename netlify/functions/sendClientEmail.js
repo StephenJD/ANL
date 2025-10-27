@@ -3,8 +3,9 @@
 // - Sends to client using sendEmail
 // - Optionally appends submission link (for validate-submit)
 
-const { getSecureItem } = require("./secureStore");
+const { getSecureItem } = require("./multiSecureStore");
 const { sendEmail } = require("./sendEmail");
+const ACCESS_TOKEN_BIN = process.env.ACCESS_TOKEN_BIN;
 
 exports.handler = async function(event) {
   console.log("[DEBUG] Raw event.body:", event.body);
@@ -20,7 +21,7 @@ exports.handler = async function(event) {
       return { statusCode: 400, body: JSON.stringify({ success: false, error: "Missing token or email" }) };
     }
 
-    const storedData = await getSecureItem(token);
+    const storedData = await getSecureItem(ACCESS_TOKEN_BIN, token);
     console.log("[DEBUG] Retrieved storedData from store:", storedData);
 
     if (!storedData || !storedData.formattedHTML) {
