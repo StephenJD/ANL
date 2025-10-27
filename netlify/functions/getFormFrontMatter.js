@@ -1,16 +1,12 @@
 // /.netlify/functions/getFormFrontMatter.js
 import process from "process";
-import { readFile } from "fs/promises";
 import path from "path";
-import { fileURLToPath } from "url";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 export async function getFormFrontMatter({ formPath }) {
   if (!formPath) throw new Error("Missing formPath");
 
-  const metadataFile = path.join(__dirname, "../../public", formPath, "form_metadata.json");
+  // Use process.cwd() to locate project root
+  const metadataFile = path.join(process.cwd(), "public", formPath, "form_metadata.json");
 
   const siteURL = process.env.URL || process.env.DEPLOY_URL || "http://localhost:8888";
   const res = await fetch(`${siteURL}${formPath}form_metadata.json`);
