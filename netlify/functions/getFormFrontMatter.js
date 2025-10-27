@@ -3,9 +3,13 @@
 // Called by server: submitFormController
 //           client: form_access_controller
 
+// /.netlify/functions/getFormFrontMatter.js
 const fs = require("fs").promises;
 const path = require("path");
-const fetch = require("node-fetch");
+
+// Safe import: works in both Netlify dev and production
+const fetch = (...args) => import("node-fetch").then(({ default: fetch }) => fetch(...args));
+
 
 async function getFormFrontMatter({ formPath }) {
   if (!formPath) throw new Error("Missing formPath");
@@ -64,11 +68,11 @@ async function handler(event) {
     const result = await getFormFrontMatter({ formPath });
     return { statusCode: 200, body: JSON.stringify({ success: true, ...result }) };
   } catch (err) {
-    console.error("[ERROR] getFormFrontMatter exception:", err.message);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ success: false, error: err.message || "Server error" })
-    };
+    console.error("[ERROR] getFormFrontMatter exception:", err.stack || err);
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ success: false, error: err.message || "Server error" })
+      };
   }
 }
 
