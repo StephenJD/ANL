@@ -1,5 +1,14 @@
 // /netlify/functions/manageBinArrays.js
-require("dotenv").config();
+const isLocal = !process.env.SMTP_HOST;
+
+if (isLocal) {
+  try {
+    require('dotenv').config();
+    console.log("[verifyUser] Loaded .env locally");
+  } catch (err) {
+    console.warn("[verifyUser] dotenv not available in production");
+  }
+}
 const { getSecureItem, setSecureItem } = require("./multiSecureStore");
 
 const USER_ACCESS_BIN_KEY = process.env.USER_ACCESS_BIN;

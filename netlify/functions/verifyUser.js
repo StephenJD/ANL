@@ -1,5 +1,15 @@
 // /netlify/functions/verifyUser.js
-require("dotenv").config();
+const isLocal = !process.env.SMTP_HOST;
+
+if (isLocal) {
+  try {
+    require('dotenv').config();
+    console.log("[verifyUser] Loaded .env locally");
+  } catch (err) {
+    console.warn("[verifyUser] dotenv not available in production");
+  }
+}
+
 const { getSecureItem, setSecureItem } = require("./multiSecureStore");
 const { generateUserToken, generateTempAccessToken } = require("./generateSecureToken");
 
