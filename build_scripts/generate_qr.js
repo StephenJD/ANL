@@ -1,8 +1,12 @@
 // \build_scripts\generate_qr.js
-const QRCode = require("qrcode");
-const fs = require("fs");
-const path = require("path");
-const matter = require("gray-matter");
+import QRCode from "qrcode";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+import matter from "gray-matter";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const configPath = path.join(process.cwd(), "config/_default/config.toml");
 const toml = fs.readFileSync(configPath, "utf8");
@@ -36,18 +40,14 @@ async function main() {
     const { data } = matter(src);
 
     if (data.qrCode === true) {
-      // Compute relative path
-      let rel = path.relative(contentDir, file).replace(/\.md$/, ""); // remove extension
-      rel = rel.replace(/index$/, "");                                   // remove index
-      rel = rel.replace(/\\/g, "/");                                     // normalize slashes
+      let rel = path.relative(contentDir, file).replace(/\.md$/, "");
+      rel = rel.replace(/index$/, "");
+      rel = rel.replace(/\\/g, "/");
 
-      // Flatten path for filename to match Hugo partial
       const flatName = rel.split("/").filter(Boolean).join("_");
 
-      // Construct URL for QR code
       const url = `${baseURL}/${rel}/`;
 
-      // Ensure output directory exists and generate QR file
       const outFile = path.join(outputDir, flatName + ".png");
       fs.mkdirSync(path.dirname(outFile), { recursive: true });
       await QRCode.toFile(outFile, url, { width: 64, margin: 1 });
