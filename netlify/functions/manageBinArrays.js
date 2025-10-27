@@ -1,19 +1,12 @@
-// /netlify/functions/manageBinArrays.js
-const isLocal = !process.env.SMTP_HOST;
+// /.netlify/functions/manageBinArrays.js
+import { config as dotenvConfig } from "dotenv";
+import { getSecureItem, setSecureItem } from "./multiSecureStore.js";
 
-if (isLocal) {
-  try {
-    require('dotenv').config();
-    console.log("[verifyUser] Loaded .env locally");
-  } catch (err) {
-    console.warn("[verifyUser] dotenv not available in production");
-  }
-}
-const { getSecureItem, setSecureItem } = require("./multiSecureStore");
+import 'dotenv/config';
 
 const USER_ACCESS_BIN_KEY = process.env.USER_ACCESS_BIN;
 
-exports.handler = async (event) => {
+export async function handler(event) {
   console.log("=== manageBinArrays (first-field index) START ===");
 
   if (event.httpMethod !== "POST") {
@@ -92,4 +85,4 @@ exports.handler = async (event) => {
     default:
       return { statusCode: 400, body: JSON.stringify({ success: false, error: "Invalid action" }) };
   }
-};
+}

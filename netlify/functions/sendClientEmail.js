@@ -1,13 +1,10 @@
-// Server-Side: /netlify/functions/sendClientEmail.js
-// - Retrieves stored form via token
-// - Sends to client using sendEmail
-// - Optionally appends submission link (for validate-submit)
+// /.netlify/functions/sendClientEmail.js
+import { getSecureItem } from "./multiSecureStore.js";
+import { sendEmail } from "./sendEmail.js";
 
-const { getSecureItem } = require("./multiSecureStore");
-const { sendEmail } = require("./sendEmail");
 const ACCESS_TOKEN_BIN = process.env.ACCESS_TOKEN_BIN;
 
-exports.handler = async function(event) {
+export async function handler(event) {
   console.log("[DEBUG] Raw event.body:", event.body);
 
   if (event.httpMethod !== "POST") {
@@ -47,4 +44,4 @@ exports.handler = async function(event) {
     console.error("[ERROR] sendClientEmail exception:", err);
     return { statusCode: 500, body: JSON.stringify({ success: false, error: err.message || "Server error" }) };
   }
-};
+}

@@ -1,9 +1,9 @@
-// netlify/functions/sendFormAccessLink.js
-const { setSecureItem  } = require("./multiSecureStore");
-const { generateTempAccessToken } = require("./generateSecureToken");
-const { sendEmail } = require("./sendEmail");
+// /.netlify/functions/sendFormAccessLink.js
+import { setSecureItem } from "./multiSecureStore.js";
+import { generateTempAccessToken } from "./generateSecureToken.js";
+import { sendEmail } from "./sendEmail.js";
 
-exports.handler = async function(event) {
+export async function handler(event) {
   if (event.httpMethod !== "POST") return { statusCode: 405, body: "Method Not Allowed" };
 
   try {
@@ -44,5 +44,4 @@ Form link: ${accessLink}`;
     console.error("[ERROR] sendFormAccessLink failed:", err);
     return { statusCode: 500, body: JSON.stringify({ success: false, error: err.message || "Server error" }) };
   }
-};
-
+}

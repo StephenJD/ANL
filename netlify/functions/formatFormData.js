@@ -1,8 +1,7 @@
-// netlify/functions/formatFormData.js
-// Server-side: parses <form> HTML, preserves fieldsets, legends, inputs
-const { JSDOM } = require("jsdom");
+// /.netlify/functions/formatFormData.js
+import { JSDOM } from "jsdom";
 
-function formatFormData({ formData, effectiveSubmittedBy, includeUnselected = false }) {
+export function formatFormData({ formData, effectiveSubmittedBy, includeUnselected = false }) {
   if (!formData || typeof formData !== "string") {
     console.warn("[DEBUG] formatFormData: No formData provided!", { formData });
     return "";
@@ -11,17 +10,14 @@ function formatFormData({ formData, effectiveSubmittedBy, includeUnselected = fa
   const dom = new JSDOM(formData);
   const form = dom.window.document.querySelector("form");
   if (!form) return "";
-   
-  //console.log("[DEBUG] formatFormData: effectiveSubmittedBy ", effectiveSubmittedBy);
 
-  // Replace submitted_by value if provided
   const submittedInput = form.querySelector("#submitted_by");
   if (submittedInput) {
     submittedInput.value = effectiveSubmittedBy
       ? `${effectiveSubmittedBy}{@V}`
       : "{@}";
   }
-  
+
   const optionalEmailInput = form.querySelector("#optionalEmail input[type='email']");
   if (optionalEmailInput && optionalEmailInput.value.trim()) {
     const label = optionalEmailInput.closest("label");
@@ -31,9 +27,7 @@ function formatFormData({ formData, effectiveSubmittedBy, includeUnselected = fa
     optionalEmailInput.value = `Copy requested by ${optionalEmailInput.value.trim()}`;
   }
 
-
   const output = [];
-  // Grab the first <h1> or <h2> that precedes the form
   let titleEl = null;
   const allTitles = dom.window.document.querySelectorAll("h1, h2");
   for (const el of allTitles) {
@@ -44,15 +38,12 @@ function formatFormData({ formData, effectiveSubmittedBy, includeUnselected = fa
   }
   if (titleEl) output.push(`<${titleEl.tagName.toLowerCase()}>${titleEl.textContent.trim()}</${titleEl.tagName.toLowerCase()}>`);
 
-  
   form.querySelectorAll("fieldset").forEach((fs) => {
     const legend = fs.querySelector("legend")?.textContent.trim();
     if (legend) output.push(`<strong>${legend}</strong> `);
 
     fs.querySelectorAll("input, textarea, select").forEach((input) => {
       let labelText = "";
-
-      // Find label text
       const label = fs.querySelector(`label[for="${input.id}"]`);
       if (label) labelText = label.textContent.trim();
       else if (input.closest("label")) {
@@ -65,9 +56,6 @@ function formatFormData({ formData, effectiveSubmittedBy, includeUnselected = fa
       if (labelText && input.tagName.toLowerCase() === "textarea" && !labelText.endsWith(":")) {
         labelText += ":";
       }
-      //console.log("[DEBUG] format: labelText raw:", JSON.stringify(labelText));
-      //console.log("[DEBUG] format: input.value raw:", JSON.stringify(input.value)); 
-      //console.log("[DEBUG] format: textarea check:", input, input.value, input.textContent);
 
       let valueIncluded = true;
       let line = labelText;
@@ -93,5 +81,3 @@ function formatFormData({ formData, effectiveSubmittedBy, includeUnselected = fa
 
   return output.filter(l => l && l.trim() !== "").join("<br>");
 }
-
-module.exports = { formatFormData };

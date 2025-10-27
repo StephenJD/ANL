@@ -1,21 +1,20 @@
-// Server-only: netlify/functions/sendEmail.js
+// /.netlify/functions/sendEmail.js
 // - Single responsibility: send email
 // - Can attach the body as a .pdf file optionally
 // - Local/dev mode skips actual sending
 
-const nodemailer = require("nodemailer");
-const { makePDF } = require("./makePDF"); // server-only PDF utility
+import nodemailer from "nodemailer";
+import { makePDF } from "./makePDF.js"; // server-only PDF utility
 
-async function sendEmail({
-    to,
-    subject,
-    html,
-    attachBodyAsFile = false
-  }) 
-{
+export async function sendEmail({
+  to,
+  subject,
+  html,
+  attachBodyAsFile = false
+}) {
   console.log("[DEBUG] sendEmail invoked");
-  console.log("[DEBUG] Params:", { to, subject, htmlLength: html?.length, attachBodyAsFile });  
-	  
+  console.log("[DEBUG] Params:", { to, subject, htmlLength: html?.length, attachBodyAsFile });
+
   if (!to || !subject || !html) {
     console.error("[ERROR] Missing required email parameters", { to, subject, htmlLength: html ? html.length : 0 });
     throw new Error(`Missing required email parameters: ${JSON.stringify({
@@ -28,13 +27,12 @@ async function sendEmail({
   let attachments = [];
 
   if (attachBodyAsFile) {
-    // generate PDF from HTML body
     const pdfBytes = await makePDF(html);
     attachments.push({ filename: `${subject}.pdf`, content: pdfBytes });
   }
 
   console.log("[DEBUG] Attachments set:", attachments.length);
-  
+
   const isLocal = !process.env.SMTP_HOST;
 
   if (isLocal) {
@@ -82,5 +80,3 @@ async function sendEmail({
     throw err;
   }
 }
-  
-module.exports = { sendEmail };

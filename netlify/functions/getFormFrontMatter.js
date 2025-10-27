@@ -1,26 +1,21 @@
 // /.netlify/functions/getFormFrontMatter.js
-// - Returns front-matter metadata for any Hugo-generated form JSON
-// Called by server: submitFormController
-//           client: form_access_controller
+import process from "process";
+import { readFile } from "fs/promises";
+import path from "path";
+import { fileURLToPath } from "url";
 
-// /.netlify/functions/getFormFrontMatter.js
-const fs = require("fs").promises;
-const path = require("path");
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-// Safe import: works in both Netlify dev and production
-const fetch = (...args) => import("node-fetch").then(({ default: fetch }) => fetch(...args));
-
-
-async function getFormFrontMatter({ formPath }) {
+export async function getFormFrontMatter({ formPath }) {
   if (!formPath) throw new Error("Missing formPath");
 
   const metadataFile = path.join(__dirname, "../../public", formPath, "form_metadata.json");
-  
+
   const siteURL = process.env.URL || process.env.DEPLOY_URL || "http://localhost:8888";
   const res = await fetch(`${siteURL}${formPath}form_metadata.json`);
   if (!res.ok) throw new Error(`Fetch failed: ${res.status} ${res.statusText}`);
   const raw = await res.text();
-
 
   let metadata;
   try {
@@ -42,8 +37,6 @@ async function getFormFrontMatter({ formPath }) {
     validation = ["none"];
   }
 
-  console.debug("[DEBUG] getFormFrontMatter Parsed validation:", validation);
-
   return {
     validation,
     title: metadata.title,
@@ -58,7 +51,7 @@ async function getFormFrontMatter({ formPath }) {
   };
 }
 
-async function handler(event) {
+export async function handler(event) {
   if (event.httpMethod !== "POST") {
     return { statusCode: 405, body: "Method Not Allowed" };
   }
@@ -69,11 +62,9 @@ async function handler(event) {
     return { statusCode: 200, body: JSON.stringify({ success: true, ...result }) };
   } catch (err) {
     console.error("[ERROR] getFormFrontMatter exception:", err.stack || err);
-      return {
-        statusCode: 500,
-        body: JSON.stringify({ success: false, error: err.message || "Server error" })
-      };
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ success: false, error: err.message || "Server error" })
+    };
   }
 }
-
-exports.handler = handler;

@@ -24,7 +24,3 @@
   for = "index.xml"
   [headers.values]
     Content-Type = "application/rss+xml"
-
-[functions]
-  directory = "netlify/functions"
-  included_files = ["netlify/functions/**"]

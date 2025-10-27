@@ -1,10 +1,7 @@
-// Server-only: netlify/functions/makePDF.js
-// - Converts HTML to readable PDF
-// - Large title, bold headings, preserves line breaks
+// /.netlify/functions/makePDF.js
+import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 
-const { PDFDocument, StandardFonts, rgb } = require('pdf-lib');
-
-async function makePDF(htmlText) {
+export async function makePDF(htmlText) {
   const pdfDoc = await PDFDocument.create();
   let page = pdfDoc.addPage();
   const { width, height } = page.getSize();
@@ -12,7 +9,6 @@ async function makePDF(htmlText) {
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
   const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
-  // Normalize line breaks, mark structure, strip tags
   const lines = htmlText
     .replace(/<br\s*\/?>/gi, '\n')
     .replace(/<h1[^>]*>(.*?)<\/h1>/gi, '\n##H1##$1\n')
@@ -61,5 +57,3 @@ async function makePDF(htmlText) {
 
   return pdfDoc.save();
 }
-
-module.exports = { makePDF };

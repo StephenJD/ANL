@@ -1,7 +1,7 @@
-// netlify/functions/generateUserToken_ClientAccess.js
-const { generateUserToken } = require("./generateSecureToken");
+// /.netlify/functions/generateUserToken_ClientAccess.js
+import { generateUserToken } from "./generateSecureToken.js";
 
-exports.handler = async (event) => {
+export async function handler(event) {
   try {
     const { userName, password } = JSON.parse(event.body || "{}");
     if (!userName || !password) {
@@ -12,4 +12,4 @@ exports.handler = async (event) => {
   } catch (err) {
     return { statusCode: 500, body: JSON.stringify({ error: err.message }) };
   }
-};
+}
