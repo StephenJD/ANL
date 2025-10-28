@@ -9,7 +9,10 @@ export async function getFormFrontMatter({ formPath }) {
   const metadataFile = path.join(process.cwd(), "public", formPath, "form_metadata.json");
 
   const siteURL = process.env.URL || process.env.DEPLOY_URL || "http://localhost:8888";
-  const res = await fetch(`${siteURL}${formPath}form_metadata.json`);
+  const normalizedPath = formPath.endsWith("/") ? formPath : `${formPath}/`;
+console.log("[DEBUG] Fetching URL:", `${siteURL}${normalizedPath}form_metadata.json`);
+  const res = await fetch(`${siteURL}${normalizedPath}form_metadata.json`);
+
   if (!res.ok) throw new Error(`Fetch failed: ${res.status} ${res.statusText}`);
   const raw = await res.text();
 

@@ -51,15 +51,19 @@ If a user clicks "Reset Password":
 
 
 <fieldset>
+  <div id="login-div">
   <legend>Log-In</legend>
   <label>User name<input required class="name" type="text" data-lpignore="true"></label>
   <label>Password<input required type="password" autocomplete="current-password" data-lpignore="true"></label>
   <button type="button">Login</button>
+  </div>
   <button type="button" style="display:none;">Logout</button>
   <br><span id="login_message" style="color:red;margin-top:0.5em;"></span><br>
+  <div id="register-div">
   <label>Email<input id="submitted_by" type="email" data-lpignore="true"></label><br>
   <button type="button">Register</button>
   <button type="button">Reset Password</button>
+  </div>
 </fieldset>
 
 <script type="module">
@@ -71,7 +75,7 @@ document.addEventListener("access-validated", async () => {
   const form = document.querySelector("form[name='login']");
   console.log("Login form found:", form);
 
-  const buttons = Array.from(form.querySelectorAll("fieldset > button"));
+  const buttons = Array.from(form.querySelectorAll("button"));
   const loginBtn = buttons.find(b => b.textContent.trim() === "Login");
   const logoutBtn = buttons.find(b => b.textContent.trim() === "Logout");
   const registerBtn = buttons.find(b => b.textContent.trim() === "Register");
@@ -84,9 +88,9 @@ document.addEventListener("access-validated", async () => {
   const inputs = form.querySelectorAll("input");
   const userNameInput = inputs[0];
   const passwordInput = inputs[1];
-  const userNameLabel = userNameInput.closest("label");
-  const passwordLabel = passwordInput.closest("label");
   const sessionToken = localStorage.getItem("session_token");
+  const loginDiv = form.querySelector("#login-div");
+  const registerDiv = form.querySelector("#register-div");
 
   let userName = null;
   let email = null;
@@ -122,6 +126,7 @@ document.addEventListener("access-validated", async () => {
     userName = userNameInput.value.trim();
     password = passwordInput.value;
     email = emailInput.value.trim();
+console.log("loginDiv:", loginDiv, "logoutBtn:", logoutBtn, "registerDiv:", registerDiv, "loginBtn:", loginBtn);
 
     switch (newState) {
       case LoginStates.LOGGED_IN:
@@ -181,16 +186,9 @@ document.addEventListener("access-validated", async () => {
 
       case LoginStates.SHOWING_USER:
         console.log("runLoginSequence() SHOWING_USER:", userName);
-        userNameInput.style.display = "none";
-        passwordInput.style.display = "none";
-        userNameLabel.style.display = "none";
-        passwordLabel.style.display = "none";
+        loginDiv.style.display = "none";
         logoutBtn.style.display = "inline-block";
-        loginBtn.style.display = "none";
-        registerBtn.style.display = "none";
-        resetBtn.style.display = "none";
-        emailLabel.style.display = "none";
-        emailInput.style.display = "none";
+        registerDiv.style.display = "none";
         messageBox.textContent = `${userName} logged in`;
         return LoginStates.LOGGED_IN;
       
@@ -207,15 +205,8 @@ document.addEventListener("access-validated", async () => {
       case LoginStates.LOGGING_OUT:
         await removeSession_token();
         logoutBtn.style.display = "none";
-        userNameInput.style.display = "block";
-        passwordInput.style.display = "block";
-        userNameLabel.style.display = "block";
-        passwordLabel.style.display = "block";
-        loginBtn.style.display = "inline-block";
-        registerBtn.style.display = "inline-block";
-        resetBtn.style.display = "inline-block";
-        emailLabel.style.display = "inline-block";
-        emailInput.style.display = "inline-block";
+        loginDiv.style.display = "block";
+        registerDiv.style.display = "block";
         messageBox.textContent = "To Register or Reset your account, enter your email below";
         emailInput.value = "";
         userNameInput.value = "";
