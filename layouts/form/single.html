@@ -1,6 +1,16 @@
 {{/* layouts/forms/single.html */}}
 {{ define "main" }}
+  {{ $current_page := . }}
+  {{ $breadcrumb_page_types := site.Params.breadcrumb.page_types | default dict }}
+  {{ $show_breadcrumb := index $breadcrumb_page_types .Type | default false }}
+
   <link rel="stylesheet" href="{{ "css/forms.css" | relURL }}">
+  
+  <div class="no-print">  
+    {{ if $show_breadcrumb }}  
+      {{ partial "breadcrumb" $current_page }}   
+    {{ end }}
+  </div>
 
   <div class="form-container">
     <h1>{{ .Title }}</h1>

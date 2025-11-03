@@ -4,63 +4,43 @@ last_reviewed: 2025-10-18
 review_period: 1y
 reviewed_by: Stephen Dolley
 type: form
-restrict_users: limited # [full, limited]
+restrict_users: [Helper]
+validation: [noSend] # options: requestLink, submit, none (default), noSend
 ---
 
 <h2>Weekly Leader Register</h2>
 
-<label>Date: <input required type="date" class="short-input" /></label>
+<label>Date: <input required type="date" class="autofill-today" /></label>
 
-<div id="leaderCheckList"></div>
-
-<button type="button" class="sendButton" id="submitWeekBtn">Submit</button>
+  <fieldset>
+    <legend>Helpers</legend>
+    <div class="leaders-container"></div>
+  </fieldset>
+  
 
 <h2>Previous Weekly Records</h2>
 <ul id="weeklyRecordsList"></ul>
 
-<script>
-document.addEventListener("DOMContentLoaded", async () => {
-  const submitBtn = document.getElementById("submitWeekBtn");
-  const checkListContainer = document.getElementById("leaderCheckList");
-  const weeklyList = document.getElementById("weeklyRecordsList");
+<script type="module">
+  import { manageBinArrayForm } from "/js/binArrayInterface.js";
 
-  // === Fetch leaders ===
-  async function getLeaders() {
-    const res = await fetch("/.netlify/functions/secureStore_ClientAccess", {
+  document.addEventListener("access-validated", async () => {
+    const form = document.querySelector("form.verified-form");
+    const leadersContainer = form.querySelector(".leaders-container");
+
+    // --- fetch leaders dynamically from the bin-store ---
+    const leadersData = await fetch("/.netlify/functions/manageBinArrays", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token: "TnT_Leaders_Chinley" }),
-    });
-    const data = await res.json();
-    return data.valid && Array.isArray(data.record) ? data.record : [];
-  }
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ action: "list", bin_id: "HELPER_BIN", section_key: "TnT-Helpers" })
+    }).then(res => res.json());
 
-  // === Fetch weekly records ===
-  async function getWeeklyRecords() {
-    const res = await fetch("/.netlify/functions/secureStore_ClientAccess", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token: "TnT_WeeklyRegister_Chinley" }),
-    });
-    const data = await res.json();
-    return data.valid && data.record ? data.record : {};
-  }
-
-  // === Store weekly records ===
-  async function setWeeklyRecords(records) {
-    await fetch("/.netlify/functions/secureStore_ClientAccess", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token: "TnT_WeeklyRegister_Chinley", value: { record: records } }),
-    });
-  }
-
-  // === Populate leader check-list dynamically ===
-  async function renderCheckList() {
-    const leaders = await getLeaders();
-    checkListContainer.innerHTML = "";
-
-    leaders.forEach(leader => {
+    if (leadersData.success && Array.isArray(leadersData.records)) {
+      // each record represents a leader
+      leadersContainer.innerHTML = "";
+      leadersData.records.forEach(leader => {
       const labelText = leader.name || "Unnamed Leader";
       const checkbox = document.createElement("input");
       checkbox.type = "checkbox";
@@ -70,52 +50,18 @@ document.addEventListener("DOMContentLoaded", async () => {
       label.appendChild(checkbox);
       label.appendChild(document.createTextNode(" " + labelText));
 
-      checkListContainer.appendChild(label);
+      leadersContainer.appendChild(label);
     });
-  }
+    }
 
-  // === Render weekly records list ===
-  async function renderWeeklyRecords() {
-    const data = await getWeeklyRecords();
-    const records = Object.entries(data.record || {}).sort((a,b) => new Date(b[0]) - new Date(a[0]));
-    weeklyList.innerHTML = "";
-
-    records.forEach(([date, leaders]) => {
-      const li = document.createElement("li");
-      li.innerHTML = `<strong>${date}</strong>: ${leaders.map(l => l.name || "Unnamed Leader").join(", ")}`;
-      weeklyList.appendChild(li);
+    // --- manage the form using binArrayInterface ---
+    manageBinArrayForm({
+      bin_id: "TNT_SESSIONS_BIN",
+      sectionKey: "TnT-Sessions",
+      listLabel: "Previous Sessions",
+      form
     });
-  }
-
-  // === Submit selected leaders ===
-  submitBtn.addEventListener("click", async () => {
-    const dateInput = document.querySelector('input[type="date"]');
-    const date = dateInput.value;
-    if (!date) return alert("Please select a date.");
-
-    const selectedLeaders = Array.from(checkListContainer.querySelectorAll("input[type='checkbox']:checked"))
-      .map(cb => cb.nextSibling.textContent.trim());
-
-    if (!selectedLeaders.length) return alert("Please select at least one leader.");
-
-    const allLeaders = await getLeaders();
-    const leaderObjects = allLeaders.filter(l => selectedLeaders.includes(l.name));
-
-    const weeklyRecords = await getWeeklyRecords();
-    weeklyRecords.record = weeklyRecords.record || {};
-    weeklyRecords.record[date] = leaderObjects;
-
-    await setWeeklyRecords(weeklyRecords);
-
-    // Reset form
-    dateInput.value = "";
-    checkListContainer.querySelectorAll("input[type='checkbox']").forEach(cb => cb.checked = false);
-
-    await renderWeeklyRecords();
   });
-
-  // Initial render
-  await renderCheckList();
-  await renderWeeklyRecords();
-});
 </script>
+
+

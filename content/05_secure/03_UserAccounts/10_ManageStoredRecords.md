@@ -4,6 +4,8 @@ last_reviewed: 2025-10-18
 review_period: 1y
 reviewed_by: Stephen Dolley
 type: form
+restrict_users: SuperUser
+validation: [noSend] # options: requestLink, submit, none (default), noSend
 ---
 
 <h2>Stored Secure Records</h2>

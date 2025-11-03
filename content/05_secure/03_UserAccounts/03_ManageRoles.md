@@ -1,6 +1,5 @@
 ---
 title: "Manage Roles"
-summary: "Define system roles"
 last_reviewed: 2025-10-22
 review_period: 1y
 reviewed_by: Stephen Dolley
@@ -20,7 +19,7 @@ validation: [noSend] # options: requestLink, submit, none (default), noSend
   document.addEventListener("access-validated", () => {
     const form = document.querySelector("form.verified-form");
     manageBinArrayForm({
-      binKey: "UserAccess",
+      bin_id: "USER_ACCESS_BIN",
       sectionKey: "Roles",
       listLabel: "Existing Roles",
       form

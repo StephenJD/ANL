@@ -10,6 +10,13 @@
     "nodemailer": "^7.0.9",
     "pdf-lib": "1.17.1",
     "qrcode": "^1.5.4"
+  },
+  "devDependencies": {
+    "cpx": "^1.5.0"
+  },
+  "scripts": {
+    "prebuild": "cpx build_scripts/form_parser.js static/js/",
+    "build": "hugo"
   }
 }
 

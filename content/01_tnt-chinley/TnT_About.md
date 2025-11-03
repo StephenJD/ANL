@@ -47,4 +47,4 @@ Ascend Next Level have prepared the Risk Assessment, Safeguarding arrangements a
 You can enquire about TnT via:
 
 -   Contact Form
--   ascendnextleveluk@gmail.com
+-   TnT@ascendnextlevel.org.uk

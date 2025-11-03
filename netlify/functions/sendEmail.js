@@ -13,7 +13,7 @@ export async function sendEmail({
   attachBodyAsFile = false
 }) {
   console.log("[DEBUG] sendEmail invoked");
-  console.log("[DEBUG] Params:", { to, subject, htmlLength: html?.length, attachBodyAsFile });
+  console.log("[DEBUG] Params:", { to, subject, html });
 
   if (!to || !subject || !html) {
     console.error("[ERROR] Missing required email parameters", { to, subject, htmlLength: html ? html.length : 0 });
@@ -46,14 +46,14 @@ export async function sendEmail({
     return { success: true, debug: true };
   }
 
-  console.log("[DEBUG] Creating Nodemailer transporter with host:", process.env.SMTP_HOST);
+  console.log("[DEBUG] Creating Nodemailer", process.env.SMTP_HOST);
   const transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST,
     port: 587,
     secure: false,
     auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
-    logger: true,
-    debug: true
+    //logger: true,
+    //debug: true
   });
 
   try {

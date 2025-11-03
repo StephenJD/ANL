@@ -1,12 +1,11 @@
 ---
 title: "TnT Shopping List"
-summary: "Stuff to buy"
 last_reviewed: 2025-09-28
 review_period: 1y
 reviewed_by: Stephen Dolley
 type: form
 include_unselected_options: false
-restrict_users: false
+restrict_users: helper
 validation: [none] # options: requestLink, submit, none (default)
 qrCode: false
 ---

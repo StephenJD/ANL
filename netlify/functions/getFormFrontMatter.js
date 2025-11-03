@@ -10,7 +10,7 @@ export async function getFormFrontMatter({ formPath }) {
 
   const siteURL = process.env.URL || process.env.DEPLOY_URL || "http://localhost:8888";
   const normalizedPath = formPath.endsWith("/") ? formPath : `${formPath}/`;
-console.log("[DEBUG] Fetching URL:", `${siteURL}${normalizedPath}form_metadata.json`);
+
   const res = await fetch(`${siteURL}${normalizedPath}form_metadata.json`);
 
   if (!res.ok) throw new Error(`Fetch failed: ${res.status} ${res.statusText}`);

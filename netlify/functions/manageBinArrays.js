@@ -1,4 +1,4 @@
-// /.netlify/functions/manageBinArrays.js
+// /netlify/functions/manageBinArrays.js
 import { config as dotenvConfig } from "dotenv";
 import { getSecureItem, setSecureItem } from "./multiSecureStore.js";
 
@@ -19,7 +19,7 @@ export async function handler(event) {
   let body = {};
   try {
     body = JSON.parse(event.body || "{}");
-    console.log("[DEBUG] Parsed body:", body);
+    console.log("[DEBUG] manageBinArrays Parsed body:", body);
   } catch (e) {
     console.error("[ERROR] Invalid JSON body:", e);
     return {
@@ -28,7 +28,7 @@ export async function handler(event) {
     };
   }
 
-  const { action, section_key, record, keyValue } = body;
+  const { action, bin_id, section_key, record, keyValue } = body;
   if (!section_key) {
     return {
       statusCode: 400,
@@ -36,7 +36,10 @@ export async function handler(event) {
     };
   }
 
-  let dataArray = await getSecureItem(USER_ACCESS_BIN_KEY, section_key);
+  const BIN_KEY = process.env[bin_id]; // access env variable dynamically
+  console.log("[DEBUG] manageBinArrays BIN_KEY:",BIN_KEY, action, bin_id,  section_key);
+
+  let dataArray = await getSecureItem(BIN_KEY, section_key);
   if (!Array.isArray(dataArray)) dataArray = [];
 
   const firstField = dataArray[0] ? Object.keys(dataArray[0])[0] : null;
@@ -53,7 +56,7 @@ export async function handler(event) {
         };
       }
       dataArray.push(record);
-      await setSecureItem(USER_ACCESS_BIN_KEY, section_key, dataArray);
+      await setSecureItem(BIN_KEY, section_key, dataArray);
       return { statusCode: 200, body: JSON.stringify({ success: true }) };
 
     case "edit":
@@ -64,9 +67,12 @@ export async function handler(event) {
         return { statusCode: 400, body: JSON.stringify({ success: false, error: "Missing keyValue or record" }) };
       }
       const editIdx = dataArray.findIndex(r => r[firstField] === keyValue);
-      if (editIdx === -1) return { statusCode: 404, body: JSON.stringify({ success: false, error: "Record not found" }) };
+      if (editIdx === -1) {
+        console.log("[DEBUG] manageBinArrays keyValue not found:",action, keyValue, firstField);
+        return { statusCode: 404, body: JSON.stringify({ success: false, error: "Record not found" }) };
+      }
       dataArray[editIdx] = record;
-      await setSecureItem(USER_ACCESS_BIN_KEY, section_key, dataArray);
+      await setSecureItem(BIN_KEY, section_key, dataArray);
       return { statusCode: 200, body: JSON.stringify({ success: true }) };
 
     case "delete":
@@ -79,7 +85,7 @@ export async function handler(event) {
       const deleteIdx = dataArray.findIndex(r => r[firstField] === keyValue);
       if (deleteIdx === -1) return { statusCode: 404, body: JSON.stringify({ success: false, error: "Record not found" }) };
       dataArray.splice(deleteIdx, 1);
-      await setSecureItem(USER_ACCESS_BIN_KEY, section_key, dataArray);
+      await setSecureItem(BIN_KEY, section_key, dataArray);
       return { statusCode: 200, body: JSON.stringify({ success: true }) };
 
     default:

@@ -1,11 +1,10 @@
 ---
 title: "Manage Permitted Users"
-summary: "Manage Permitted Users"
 last_reviewed: 2025-10-17
 review_period: 1y
 reviewed_by: Stephen Dolley
 type: form
-restrict_users: [Full, SuperUser]
+restrict_users: [Full]
 validation: [noSend] # options: requestLink, submit, none (default), noSend
 ---
 
@@ -34,10 +33,9 @@ validation: [noSend] # options: requestLink, submit, none (default), noSend
     const rolesData = await fetch("/.netlify/functions/manageBinArrays", {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
-        "x-admin-token": window.ADMIN_SESSION_KEY
+        "Content-Type": "application/json"
       },
-      body: JSON.stringify({ action: "list", section_key: "Roles", bin_key: "UserAccess" })
+      body: JSON.stringify({ action: "list", bin_id: "USER_ACCESS_BIN", section_key: "Roles" })
     }).then(res => res.json());
 
     if (rolesData.success && Array.isArray(rolesData.records)) {
@@ -57,7 +55,7 @@ validation: [noSend] # options: requestLink, submit, none (default), noSend
 
     // --- manage the form using binArrayInterface ---
     manageBinArrayForm({
-      binKey: "UserAccess",
+      bin_id: "USER_ACCESS_BIN",
       sectionKey: "permitted_users",
       listLabel: "Existing Accounts",
       form

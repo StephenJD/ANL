@@ -126,8 +126,7 @@ document.addEventListener("access-validated", async () => {
     userName = userNameInput.value.trim();
     password = passwordInput.value;
     email = emailInput.value.trim();
-console.log("loginDiv:", loginDiv, "logoutBtn:", logoutBtn, "registerDiv:", registerDiv, "loginBtn:", loginBtn);
-
+ 
     switch (newState) {
       case LoginStates.LOGGED_IN:
         const redirect = new URLSearchParams(window.location.search).get("redirect");
@@ -253,14 +252,11 @@ console.log("loginDiv:", loginDiv, "logoutBtn:", logoutBtn, "registerDiv:", regi
   }
 
   async function getSessionTokenForUser() {
-    console.log("getSessionTokenForUser() called.");
-
     console.log("getSessionTokenForUser:", userName, password);
     if (!userName || !password) {
       return false;
     }
     try {
-      console.log("Sending verifyUser request for login token...");
       const resp = await fetch("/.netlify/functions/verifyUser", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

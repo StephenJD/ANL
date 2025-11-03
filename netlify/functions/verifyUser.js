@@ -14,8 +14,14 @@ const ADMIN_SUPERUSER_HASH = process.env.ADMIN_SUPERUSER_HASH;
 // --- 1) Check if email is in permitted_users ---
 export async function checkIsPermittedUser(email) {
   try {
+    //console.log("[DEBUG] checkIsPermittedUser:", email); 
     const permittedUsers = await getSecureItem(USER_ACCESS_BIN, PERMITTED_USERS_KEY) || [];
-    return permittedUsers.some(u => u.email.toLowerCase() === email.toLowerCase());
+    const permitted = permittedUsers.some(u => u.email.toLowerCase() === email.toLowerCase());
+    if (permitted) return permitted;
+    else {
+      console.log("[DEBUG] checkIsPermittedUser: False:", email, permittedUsers); 
+      return false;
+    }
   } catch (err) {
     console.error("[verifyUser] checkIsPermittedUser error:", err);
     return false;
@@ -25,6 +31,7 @@ export async function checkIsPermittedUser(email) {
 // --- 2) Add a user login if permitted ---
 export async function addUserLogin(email, userName, password) {
   try {
+    //console.log("[DEBUG] addUserLogin:", email, userName, password); 
     const permittedUsers = await getSecureItem(USER_ACCESS_BIN, PERMITTED_USERS_KEY) || [];
     const userEntry = permittedUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
     if (!userEntry) return { status: "Not permitted" };
@@ -43,11 +50,15 @@ export async function addUserLogin(email, userName, password) {
 // --- 3) Get a session token for a login ---
 export async function getLogin_SessionToken(userName, password) {
   try {
+    console.log("[DEBUG] getLogin_SessionToken:", userName, password); 
     const loginToken = generateUserToken(userName, password);
     const usersArray = await getSecureItem(USER_ACCESS_BIN, PERMITTED_USERS_KEY) || [];
 
     const currentUser = usersArray.find(u => u.login_token === loginToken);
-    if (!currentUser) return { status: "Not Registered" };
+    if (!currentUser) {
+      console.log("[DEBUG] getLogin_SessionToken no login_token for:", userName, password, loginToken, usersArray, );  
+      return { status: "Not Registered" };
+    }
 
     const sessionToken = generateTempAccessToken(loginToken);
     await setSecureItem(

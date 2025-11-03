@@ -1,6 +1,6 @@
 {{ $current_page := . }}
 
-{{/* Check whether to show breadcrumb navigation. */}}
+{{/* Breadcrumb control (unchanged) */}}
 {{ $breadcrumb_page_types := site.Params.breadcrumb.page_types | default dict }}
 {{ $show_breadcrumb := index $breadcrumb_page_types .Type | default false }}
 
@@ -15,29 +15,30 @@
       <h1>{{ .Title }}</h1>
 
       <div class="directory-style">
-        <!-- Nested folders (_index.md in subdirs) -->
         {{ range .Sections }}
           <p><a href="{{ .Permalink }}">{{ .Title }}/</a></p>
         {{ end }}
 
         <!-- Document-folder pages directly under this section -->
         {{ range .Pages }}
-          {{ if eq .Type "document-folder" }}
+          {{ if and (eq .Type "document-folder") (not .IsSection) }}
             <p><a href="{{ .Permalink }}">{{ .Title }}/</a></p>
           {{ end }}
         {{ end }}
+
       </div>
 
-      <!-- Document and form pages directly under this section -->
 {{ range .Pages }}
   {{ if or (eq .Type "document") (eq .Type "form") }}
+    {{ $auto_summary_types := site.Params.auto_summary | default dict }}
+    {{ $auto_summary := index $auto_summary_types .Type | default false }}
     <div class="summary-style">		
       <p><a href="{{ .Permalink }}">{{ .Title }}</a></p>
       {{ if .Params.summary }}
         {{ .Params.summary | plainify | emojify }}
       {{ else if .Params.abstract }}
         {{ .Params.abstract | plainify | emojify | truncate 250 }}
-      {{ else if .Summary }}
+      {{ else if and .Summary $auto_summary }}
         {{ .Summary | plainify | emojify }}
       {{ end }}
     </div>

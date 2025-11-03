@@ -1,131 +1,68 @@
 ---
-title: "Manage TnT Leaders - Chinley"
+title: "Manage TnT Helpers"
 last_reviewed: 2025-10-17
 review_period: 1y
 reviewed_by: Stephen Dolley
 type: form
+restrict_users: Full
+validation: [noSend] # options: requestLink, submit, none (default), noSend
 ---
 
-<fieldset>
-  <legend>Leader Details</legend>
-  <label>Name: <input required class="name" type="text" /></label>
-  <label>Mobile No: <input class="" type="tel" /></label>
-  <label>Email: <input class="" type="email" /></label>
+{{< comment `
+Form Rules
+1. Default: No attributes except type (email, tel, date, text) — except...
+2. Add ONE class: name, address, or short-input where relevant.
+3. Use class address for name & address field.
+4. Inexact dates use short-input (not type="date").
+5. id="submitted_by" for the submitter’s email field.
+6. Use <fieldset> and <legend> to group fields, instead of headings.
+7. NO MORE THAN 3 SPACE INDENT
+8. Attribute order: <required> <id> <class> <type> .
+9. Add "None" default text in all required text fields that ask for additional information.
+` >}}
+
+<label>Name: <input required class="name" type="text" /></label>
+<fieldset><legend>Contact Details</legend>
+  <label>Mobile No: <input required type="tel" /></label>
+  <label>Email: <input required type="email" /></label>
 </fieldset>
 
-<fieldset>
-  <legend>Role</legend>
-  <label><input required type="radio"> Leader</label>
-  <label><input required type="radio"> Helper</label>
+<fieldset><legend>Role</legend>
+  <fieldset>
+   <label><input type="checkbox">Chinley</label>
+   <fieldset>
+   <label><input required type="radio"> Leader</label>
+   <label><input required type="radio"> Helper</label>
+   </fieldset>
+  </fieldset>
+  <fieldset>
+   <label><input type="checkbox">Whaley Bridge</label>
+   <fieldset>
+   <label><input required type="radio"> Leader</label>
+   <label><input required type="radio"> Helper</label>
+   </fieldset>
+  </fieldset>
 </fieldset>
 
-<fieldset>
-  <legend>DBS</legend>
+<fieldset><legend>DBS</legend>
   <label>DBS Number: <input class="short-input" type="text" /></label>
   <label>DBS Date: <input class="" type="date" /></label>
 </fieldset>
 
-<fieldset>
-  <legend>Safeguarding</legend>
+<fieldset><legend>Safeguarding</legend>
   <label>Safeguarding Date: <input class="" type="date" /></label>
   <label>Safeguarding Level: <input class="short-input" type="text" /></label>
 </fieldset>
 
-<button type="button" class="sendButton" id="saveLeaderBtn">Add/Edit</button>
-<button type="button" class="sendButton" id="cancelEditBtn" style="display:none;">Cancel</button>
-<button type="button" class="sendButton" id="deleteLeaderBtn" style="display:none;">Delete</button>
-
-<h2>Current Leaders</h2>
-<ul id="leaderList"></ul>
-
 <script type="module">
-import { getFormRecord, populateForm, loadRecords } from '/js/binArrayInterface.js';
-
-document.addEventListener("DOMContentLoaded", () => {
-  const form = document.querySelector("form.verified-form");
-  const saveBtn = document.getElementById("saveLeaderBtn");
-  const cancelBtn = document.getElementById("cancelEditBtn");
-  const deleteBtn = document.getElementById("deleteLeaderBtn");
-  const list = document.getElementById("leaderList");
-  let editIndex = null;
-  let leadersCache = [];
-
-  async function getLeaders() {
-    const res = await fetch("/.netlify/functions/secureStore_ClientAccess", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token: "TnT_Leaders_Chinley" }),
+  import { manageBinArrayForm } from "/js/binArrayInterface.js";
+  document.addEventListener("access-validated", () => {
+    const form = document.querySelector("form.verified-form");
+    manageBinArrayForm({
+      bin_id: "HELPER_BIN",
+      sectionKey: "TnT-Helpers",
+      listLabel: "Existing Helpers",
+      form
     });
-    const data = await res.json();
-    if (!data.valid) return [];
-    return Array.isArray(data.record) ? data.record : [];
-  }
-
-  async function setLeaders(leaders) {
-    await fetch("/.netlify/functions/secureStore_ClientAccess", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token: "TnT_Leaders_Chinley", value: { record: leaders } }),
-    });
-  }
-
-  async function loadLeaders() {
-    leadersCache = await getLeaders();
-    loadRecords({
-      records: leadersCache,
-      listEl: list,
-      form,
-      editBtnClass: "editLeaderBtn"
-    });
-  }
-
-  list.addEventListener("click", e => {
-    if (!e.target.classList.contains("editLeaderBtn")) return;
-    const idx = parseInt(e.target.dataset.index);
-    const leader = leadersCache[idx];
-    if (!leader) return;
-    editIndex = idx;
-    populateForm(form, leader);
-    cancelBtn.style.display = "inline-block";
-    deleteBtn.style.display = "inline-block";
   });
-
-  saveBtn.addEventListener("click", async () => {
-    if (!form.reportValidity()) return;
-    const record = getFormRecord(form);
-
-    if (editIndex !== null) leadersCache[editIndex] = record;
-    else {
-      const existingIndex = leadersCache.findIndex(l => l.name?.toLowerCase() === record.name?.toLowerCase());
-      existingIndex >= 0 ? leadersCache[existingIndex] = record : leadersCache.push(record);
-    }
-
-    await setLeaders(leadersCache);
-    populateForm(form, {}); // clear form
-    editIndex = null;
-    cancelBtn.style.display = "none";
-    deleteBtn.style.display = "none";
-    await loadLeaders();
-  });
-
-  cancelBtn.addEventListener("click", () => {
-    populateForm(form, {}); // clear form
-    editIndex = null;
-    cancelBtn.style.display = "none";
-    deleteBtn.style.display = "none";
-  });
-
-  deleteBtn.addEventListener("click", async () => {
-    if (editIndex === null) return;
-    leadersCache.splice(editIndex, 1);
-    await setLeaders(leadersCache);
-    populateForm(form, {}); // clear form
-    editIndex = null;
-    cancelBtn.style.display = "none";
-    deleteBtn.style.display = "none";
-    await loadLeaders();
-  });
-
-  loadLeaders();
-});
 </script>

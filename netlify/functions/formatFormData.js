@@ -1,5 +1,6 @@
-// /.netlify/functions/formatFormData.js
+// /netlify/functions/formatFormData.js
 import { JSDOM } from "jsdom";
+import { parseFormElements, urlize } from "../../build_scripts/form_parser.js";
 
 export function formatFormData({ formData, effectiveSubmittedBy, includeUnselected = false }) {
   if (!formData || typeof formData !== "string") {
@@ -27,6 +28,7 @@ export function formatFormData({ formData, effectiveSubmittedBy, includeUnselect
     optionalEmailInput.value = `Copy requested by ${optionalEmailInput.value.trim()}`;
   }
 
+
   const output = [];
   let titleEl = null;
   const allTitles = dom.window.document.querySelectorAll("h1, h2");
@@ -38,6 +40,26 @@ export function formatFormData({ formData, effectiveSubmittedBy, includeUnselect
   }
   if (titleEl) output.push(`<${titleEl.tagName.toLowerCase()}>${titleEl.textContent.trim()}</${titleEl.tagName.toLowerCase()}>`);
 
+// --- parse form elements ---
+  const elements = parseFormElements(form, { includeUnselected });
+
+  elements.forEach(el => {
+    if ("fields" in el) {
+      if (el.legend) output.push(`<strong>${el.legend}</strong>`);
+      el.fields.forEach(f => {
+        let line = f.label;
+        if (f.checked === false && f.value === "") line = `<s>${line}</s>`;
+        output.push(f.value ? `${line} ${f.value}` : line);
+      });
+    } else {
+      output.push(`<strong>${el.label}:</strong> ${el.value}`);
+    }
+  });
+
+
+
+
+/*
   form.querySelectorAll("fieldset").forEach((fs) => {
     const legend = fs.querySelector("legend")?.textContent.trim();
     if (legend) output.push(`<strong>${legend}</strong> `);
@@ -78,6 +100,7 @@ export function formatFormData({ formData, effectiveSubmittedBy, includeUnselect
       if (valueIncluded) output.push(line);
     });
   });
+*/
 
   return output.filter(l => l && l.trim() !== "").join("<br>");
 }
