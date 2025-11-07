@@ -1,0 +1,333 @@
+<fieldset>
+  <div id="login-div">
+  <legend>Log-In</legend>
+  <label>User name<input required class="name" type="text" data-lpignore="true"></label>
+  <label>Password<input required type="password" autocomplete="current-password" data-lpignore="true"></label>
+  <button type="button">Login</button>
+  </div>
+  <button type="button" style="display:none;">Logout</button>
+  <br><span id="login_message" style="color:red;margin-top:0.5em;"></span><br>
+  <div id="register-div">
+  <label>Email<input id="submitted_by" type="email" data-lpignore="true"></label><br>
+  <button type="button">Register</button>
+  <button type="button">Reset Password</button>
+  </div>
+</fieldset>
+
+<script type="module">
+console.log("Login form script loaded, waiting for access-validated event.");
+
+document.addEventListener("access-validated", async () => {
+  console.log("Access validated event triggered.");
+
+  const form = document.querySelector("form[name='login']");
+  console.log("Login form found:", form);
+
+  const buttons = Array.from(form.querySelectorAll("button"));
+  const loginBtn = buttons.find(b => b.textContent.trim() === "Login");
+  const logoutBtn = buttons.find(b => b.textContent.trim() === "Logout");
+  const registerBtn = buttons.find(b => b.textContent.trim() === "Register");
+  const resetBtn = buttons.find(b => b.textContent.trim() === "Reset Password");
+  console.log("Buttons mapped:", { loginBtn, logoutBtn, registerBtn, resetBtn });
+  const messageBox = document.getElementById("login_message");
+  const emailInput = document.getElementById("submitted_by");
+  const emailLabel = emailInput.closest("label");
+  let urlToken = new URLSearchParams(window.location.search).get("token");
+  const inputs = form.querySelectorAll("input");
+  const userNameInput = inputs[0];
+  const passwordInput = inputs[1];
+  const userLoginToken = localStorage.getItem("userLogin_token");
+  const loginDiv = form.querySelector("#login-div");
+  const registerDiv = form.querySelector("#register-div");
+
+  let userName = null;
+  let email = null;
+  let loginState = null;
+  let password = null;
+ 
+  const LoginStates = Object.freeze({
+    UNKNOWN: "unknown",
+    LOGGING_OUT: "logging_out",
+    LOGGED_OUT: "logged_out",
+    CHECK_USER_LOGIN_TOKEN: "checking_user_login_token",
+    LOGGING_IN: "logging_in",
+    SHOWING_USER: "showing_user",
+    LOGGED_IN: "logged_in",
+    REGISTER_LINK_REQUESTED: "register_link_requested",
+    REGISTERING: "registering",
+    RESETTING: "resetting"
+  });
+  
+  async function findLogin_State() {
+    if (userLoginToken) {
+      return LoginStates.CHECK_USER_LOGIN_TOKEN;
+    } else if (urlToken) {
+      return LoginStates.REGISTERING;
+    } else {
+      return LoginStates.LOGGED_OUT;
+    }
+    console.log("Initial loginState:", loginState);
+  };
+
+  async function runLoginSequence(newState) {
+    console.log("runLoginSequence() New State:", newState);
+    userName = userNameInput.value.trim();
+    password = passwordInput.value;
+    email = emailInput.value.trim();
+ 
+    switch (newState) {
+      case LoginStates.LOGGED_IN:
+        const redirect = new URLSearchParams(window.location.search).get("redirect");
+        if (redirect) window.location.href = redirect;
+        return LoginStates.LOGGED_IN;
+  
+      case LoginStates.CHECK_USER_LOGIN_TOKEN:
+        if (await check_UserLoginToken(userLoginToken)) {
+          return LoginStates.SHOWING_USER;
+        }
+        return LoginStates.LOGGING_OUT;
+
+      case LoginStates.REGISTERING:
+        console.log("runLoginSequence() REGISTERING: Em,Un,Pw,Tk", email, userName, password, urlToken);
+        if (urlToken && email) {
+          if (!userName || !password) {
+            messageBox.textContent = `Enter your User-Name and Password above then click "Register"`;
+            loginBtn.style.display = "none";
+            return LoginStates.REGISTERING;
+          }
+          if (await submit_new_user_login()) return LoginStates.LOGGING_IN;
+          else {
+            messageBox.textContent = `${email} not allowed to register. Contact admin at ANL.`;
+            return LoginStates.LOGGED_OUT;
+          }
+        } else if (email) {
+          messageBox.textContent = `Register UN/PW for ${email}`;
+          return LoginStates.REGISTER_LINK_REQUESTED;
+        } else {
+          return LoginStates.LOGGED_OUT;
+        }
+
+      case LoginStates.REGISTER_LINK_REQUESTED:
+        console.log("runLoginSequence() REGISTER_LINK_REQUESTED:", email);
+        if (await requestAccount(email)) {
+          messageBox.textContent = `Registration link emailed to ${email}`;
+          return LoginStates.REGISTER_LINK_REQUESTED;
+        } else {
+          messageBox.textContent = "This email is not authorized to request an account.";
+          return LoginStates.LOGGED_OUT;
+        }
+
+      case LoginStates.LOGGING_IN:
+
+        console.log("runLoginSequence() LOGGING_IN:", userName, password);
+        if (!userName || !password) {
+          messageBox.textContent = `Please enter your User Name and Password above and click "Login".`;
+          return LoginStates.LOGGED_OUT;
+        }
+        if (await get_UserLoginToken()) {
+          return LoginStates.SHOWING_USER;
+        } else if (userName) {
+          messageBox.textContent = `User Name ${userName} not found. Please enter your email below and click "Register".`;
+        }
+        return LoginStates.LOGGED_OUT;
+
+      case LoginStates.SHOWING_USER:
+        console.log("runLoginSequence() SHOWING_USER:", userName);
+        loginDiv.style.display = "none";
+        logoutBtn.style.display = "inline-block";
+        registerDiv.style.display = "none";
+        messageBox.textContent = `${userName} logged in`;
+        return LoginStates.LOGGED_IN;
+      
+      case LoginStates.RESETTING:
+        if (email) {
+          if (await remove_login_token()) {
+            return LoginStates.LOGGING_OUT;
+          } else {
+            messageBox.textContent = `Acount for ${email} not found`;
+          }
+        }
+        return LoginStates.LOGGED_OUT
+  
+      case LoginStates.LOGGING_OUT:
+        await removeLogin_token();
+        logoutBtn.style.display = "none";
+        loginDiv.style.display = "block";
+        registerDiv.style.display = "block";
+        messageBox.textContent = "To Register or Reset your account, enter your email below";
+        emailInput.value = "";
+        userNameInput.value = "";
+        passwordInput.value = "";
+        urlToken = null;
+        return LoginStates.LOGGED_OUT;
+
+      case LoginStates.LOGGED_OUT:
+        //messageBox.textContent = "Enter UN & PW above to log-in, or to Register or Reset your account, enter your email below";
+        return loginState;
+
+      default:
+        console.log("Unknown state");
+        return loginState;
+    }
+  }
+
+  async function check_UserLoginToken(token) {
+    console.log("check_UserLoginToken:", token);
+
+    try {
+      console.log("Sending check_UserLoginToken request...");
+      const resp = await fetch("/.netlify/functions/verifyUser", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "check_userLoginToken", userLogin_token: token })
+      });
+
+      const data = await resp.json();
+      console.log("check_UserLoginToken response:", data);
+
+      if (data.status === "success") {
+        userNameInput.value = data.entry.user_name;
+        console.log("userLoginToken valid for", userNameInput.value);
+        return true;
+      }
+
+      console.warn("userLoginToken invalid", data.status);
+
+    } catch (err) {
+      console.error("check_UserLoginToken failed:", err);
+    }
+    return false;
+  }
+
+  async function get_UserLoginToken() {
+    console.log("get_UserLoginToken:", userName, password);
+    if (!userName || !password) {
+      return false;
+    }
+    try {
+      const resp = await fetch("/.netlify/functions/verifyUser", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "get_UserLoginToken", userName, password })
+      });
+
+      const data = await resp.json();
+      console.log("Parsed verifyUser response:", data);
+
+      if (data.status === "success") {
+        console.log("Login successful, saving userLoginToken...");
+        localStorage.setItem("userLogin_token", data.userLoginToken);
+        localStorage.setItem("user_role", JSON.stringify(data.role));
+        return true;
+      }
+
+      console.warn("Login not permitted:", data.status);
+      
+      /*
+      // --- Check superuser ---
+      console.log("Checking superuser credentials...");
+      const suResp = await fetch("/.netlify/functions/verifyUser", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "checkSuperUser", userName, password })
+      });
+      const suData = await suResp.json();
+      console.log("Superuser check response:", suData);
+
+      if (suData.status != "success") {
+        console.warn("Login failed for non-superuser.");
+        registerBtn.style.display = "inline-block";
+        resetBtn.style.display = "inline-block";
+        //alert("Login failed. Please register or reset your account.");
+      }
+      */
+
+    } catch (err) {
+      console.error("Login request failed:", err);
+      //alert("Login failed. Check console for details.");
+    }
+    return false;
+  }
+
+  function removeLogin_token() {
+    console.log("removeLogin_token() called, clearing loginToken...");
+    localStorage.removeItem("userLogin_token");
+    localStorage.removeItem("user_role");
+    console.log("Login-options buttons restored after logout.");
+  }
+
+  async function submit_new_user_login() {
+    console.log("submit_new_user_login() email/UN/PW:",email, userName, password);
+
+    try {
+      const resp = await fetch("/.netlify/functions/verifyUser", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "addUserLogin",
+          email: email,
+          userName: userName,
+          password: password
+        })
+      });
+      const data = await resp.json();
+      if (data.status !== "success") {
+        messageBox.textContent = `${email} Not permitted`;
+        return false;
+      }
+      return true;
+    } catch (err) {
+      console.error("Error adding user login:", err);
+      messageBox.textContent = `Error trying to verify ${email}`;
+    }
+    return false;
+  }
+
+  async function remove_login_token() {
+    console.log("remove_login_token() Email:", email);
+
+    try {
+      const resp = await fetch("/.netlify/functions/verifyUser", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "deleteUserLogin",
+          email: email
+        })
+      });
+      const data = await resp.json();
+      console.log("remove_login_token() data:", data);
+      if (data.status !== "success") {
+        return false;
+      }
+      return true;
+    } catch (err) {
+      console.error("Error adding user login:", err);
+      messageBox.textContent = `Error trying to delete ${userName}`;
+    }
+    return false;
+  }
+
+  async function runStateMachine(triggerState) {
+    let newState = await runLoginSequence(triggerState);
+    while (newState !== loginState) {
+      loginState = newState;
+      newState = await runLoginSequence(loginState);
+    }
+    console.log("runLoginSequence() Final State:", loginState);
+  }  
+
+  (async () => {
+    loginState = await findLogin_State();
+    runStateMachine(loginState);
+  })();
+
+  loginBtn.addEventListener("click", () => runStateMachine(LoginStates.LOGGING_IN));
+  logoutBtn.addEventListener("click", () => runStateMachine(LoginStates.LOGGING_OUT));
+  registerBtn.addEventListener("click", () => runStateMachine(LoginStates.REGISTERING));
+  resetBtn.addEventListener("click", () => runStateMachine(LoginStates.RESETTING));
+
+  console.log("Event listeners attached for login and logout.");
+});
+</script>
+

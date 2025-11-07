@@ -24,30 +24,28 @@ export async function getFormFrontMatter({ formPath }) {
     throw new Error(`Invalid JSON in form metadata for path: ${formPath}`);
   }
 
-  let validation;
+  // Ensure validation is always an array of strings
   if (Array.isArray(metadata.validation)) {
-    validation = metadata.validation.map(String).filter(Boolean);
+    metadata.validation = metadata.validation.map(String).filter(Boolean);
   } else if (typeof metadata.validation === "string") {
-    validation = metadata.validation
+    metadata.validation = metadata.validation
       .split(/[\s,;|]+/)
       .map(s => s.trim())
       .filter(Boolean);
   } else {
-    validation = ["none"];
+    metadata.validation = ["none"];
   }
-
-  return {
-    validation,
-    title: metadata.title,
-    path: metadata.path,
-    restrict_users: metadata.restrict_users || false,
-    include_unselected_options: metadata.include_unselected_options || false,
-    summary: metadata.summary || "",
-    last_reviewed: metadata.last_reviewed || "",
-    review_period: metadata.review_period || "",
-    reviewed_by: metadata.reviewed_by || "",
-    type: metadata.type || "form"
-  };
+  
+  // Ensure restrict_users is always an array
+  if (Array.isArray(metadata.restrict_users)) {
+    metadata.restrict_users = metadata.restrict_users.map(String).filter(Boolean);
+  } else if (typeof metadata.restrict_users === "string") {
+    metadata.restrict_users = [metadata.restrict_users.trim()];
+  } else {
+    metadata.restrict_users = [];
+  }
+  
+  return metadata; // return everything, with validation and restrict_users normalized
 }
 
 export async function handler(event) {

@@ -6,7 +6,10 @@ type: document
 geometry: [margin=2cm, a4paper]
 share: true
 summary: Keeping all those involved with us safe from harm
-weight: 30
+last_reviewed: 2025-10-18
+review_period: 1y
+reviewed_by: Cheryl Cross
+
 ---
 
 # ANL Safeguarding Policy

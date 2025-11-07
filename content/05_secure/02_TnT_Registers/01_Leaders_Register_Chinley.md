@@ -8,17 +8,23 @@ restrict_users: [Helper]
 validation: [noSend] # options: requestLink, submit, none (default), noSend
 ---
 
-<h2>Weekly Leader Register</h2>
+<!--
+These are the form rules:
+All radios and checkboxes (values) are in fieldsets and can be a mix of radios and checkboxes
+Any fieldset with no legend is a member of a value array
+The radio / checkbox members of a fieldset form a value array
+A radio or checkbox immediatly followed by a fieldset becomes the key for that fieldset
+Nested labels or legends become nested keys.
+Text-like inputs are always value and may occur inside or outside fieldsets.
+-->
+
 
 <label>Date: <input required type="date" class="autofill-today" /></label>
-
   <fieldset>
     <legend>Helpers</legend>
     <div class="leaders-container"></div>
   </fieldset>
   
-
-<h2>Previous Weekly Records</h2>
 <ul id="weeklyRecordsList"></ul>
 
 <script type="module">
@@ -38,18 +44,14 @@ validation: [noSend] # options: requestLink, submit, none (default), noSend
     }).then(res => res.json());
 
     if (leadersData.success && Array.isArray(leadersData.records)) {
-      // each record represents a leader
       leadersContainer.innerHTML = "";
       leadersData.records.forEach(leader => {
-      const labelText = leader.name || "Unnamed Leader";
+      const labelText = leader.name;
       const checkbox = document.createElement("input");
       checkbox.type = "checkbox";
-
       const label = document.createElement("label");
-      label.style.display = "block";
       label.appendChild(checkbox);
       label.appendChild(document.createTextNode(" " + labelText));
-
       leadersContainer.appendChild(label);
     });
     }

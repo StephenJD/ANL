@@ -1,0 +1,10 @@
+{
+  "title": "Manage Roles",
+  "summary": "",
+  "validation": [
+    "noSend"
+  ],
+  "restrict_users": [
+    "SuperUser"
+  ]
+}

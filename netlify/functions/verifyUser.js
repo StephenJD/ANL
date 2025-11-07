@@ -47,38 +47,38 @@ export async function addUserLogin(email, userName, password) {
   }
 }
 
-// --- 3) Get a session token for a login ---
-export async function getLogin_SessionToken(userName, password) {
+// --- 3) Get a userlogin token  ---
+export async function get_UserLoginToken(userName, password) {
   try {
-    console.log("[DEBUG] getLogin_SessionToken:", userName, password); 
+    console.log("[DEBUG] get_UserLoginToken:", userName, password); 
     const loginToken = generateUserToken(userName, password);
     const usersArray = await getSecureItem(USER_ACCESS_BIN, PERMITTED_USERS_KEY) || [];
 
     const currentUser = usersArray.find(u => u.login_token === loginToken);
     if (!currentUser) {
-      console.log("[DEBUG] getLogin_SessionToken no login_token for:", userName, password, loginToken, usersArray, );  
+      console.log("[DEBUG] get_UserLoginToken no login_token for:", userName, password, loginToken, usersArray, );  
       return { status: "Not Registered" };
     }
 
-    const sessionToken = generateTempAccessToken(loginToken);
+    const userLoginToken = generateTempAccessToken(loginToken);
     await setSecureItem(
       ACCESS_TOKEN_BIN,
-      sessionToken,
+      userLoginToken,
       { user_name: currentUser.user_name, role: currentUser.role },
       30 * 60 * 1000
     );
 
-    return { status: "success", sessionToken, role: currentUser.role };
+    return { status: "success", userLoginToken, role: currentUser.role };
   } catch (err) {
-    console.error("[verifyUser] getLogin_SessionToken error:", err);
+    console.error("[verifyUser] get_UserLoginToken error:", err);
     return { status: "error" };
   }
 }
 
-// --- 4) Check session token is valid ---
-export async function check_SessionToken(session_token) {
+// --- 4) Check userLogin token is valid ---
+export async function check_userLoginToken(userLogin_token) {
   try {
-    const entry = await getSecureItem(ACCESS_TOKEN_BIN, session_token);
+    const entry = await getSecureItem(ACCESS_TOKEN_BIN, userLogin_token);
     if (!entry) return { status: "Not found" };
 
     if (entry.expires > Date.now()) {
@@ -87,7 +87,7 @@ export async function check_SessionToken(session_token) {
       return { status: "expired" };
     }
   } catch (err) {
-    console.error("[verifyUser] check_SessionToken error:", err);
+    console.error("[verifyUser] check_userLoginToken error:", err);
     return { status: "error" };
   }
 }
@@ -116,7 +116,7 @@ export async function handler(event) {
   }
 
   try {
-    const { action, email, userName, password, session_token } = JSON.parse(event.body || "{}");
+    const { action, email, userName, password, userLogin_token } = JSON.parse(event.body || "{}");
     let result;
 
     switch (action) {
@@ -126,14 +126,14 @@ export async function handler(event) {
       case "addUserLogin":
         result = await addUserLogin(email, userName, password);
         return { statusCode: 200, body: JSON.stringify(result) };
-      case "getLogin_SessionToken":
-        result = await getLogin_SessionToken(userName, password);
+      case "get_UserLoginToken":
+        result = await get_UserLoginToken(userName, password);
         return { statusCode: 200, body: JSON.stringify(result) };
       case "deleteUserLogin":
         result = await deleteUserLogin(email);
         return { statusCode: 200, body: JSON.stringify(result) };
-      case "check_SessionToken":
-        result = await check_SessionToken(session_token);
+      case "check_userLoginToken":
+        result = await check_userLoginToken(userLogin_token);
         return { statusCode: 200, body: JSON.stringify(result) };
       default:
         return { statusCode: 400, body: JSON.stringify({ status: "error", error: "Invalid action" }) };

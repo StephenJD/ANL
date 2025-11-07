@@ -166,18 +166,18 @@ legend {
   margin-bottom: 0.5em;
 }
 
-fieldset input[type="radio"],
-fieldset input[type="checkbox"] {
+input[type="radio"],
+input[type="checkbox"] {
   margin: 0;
   vertical-align: middle;
 }
 
-fieldset input[type="radio"] {
+input[type="radio"] {
   width: auto;
 }
 
-fieldset label:has(input[type="radio"]),
-fieldset label:has(input[type="checkbox"]) {
+label:has(input[type="radio"]),
+label:has(input[type="checkbox"]) {
   align-items: center;
   gap: 1em;
   font-weight: normal;
@@ -185,13 +185,13 @@ fieldset label:has(input[type="checkbox"]) {
   display: flex; 
 }
 
-fieldset label:has(input[type="radio"]) {
+label:has(input[type="radio"]) {
   display: inline-flex;
   margin-right: 2em;
   width: auto;
 }
 
-fieldset label:has(input[type="checkbox"]) input[type="checkbox"] {
+label:has(input[type="checkbox"]) input[type="checkbox"] {
   display: inline-block;
   width: auto;
 }

@@ -1,0 +1,8 @@
+{
+  "title": "Manage Stored Records",
+  "summary": "",
+  "validation": [
+    "noSend"
+  ],
+  "restrict_users": []
+}

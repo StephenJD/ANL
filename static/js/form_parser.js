@@ -73,25 +73,47 @@ export function urlize(str) {
   .replace(/^_+|_+$/g, ""); // remove leading/trailing underscores or hyphens
 }
 
-export function setInputsFromRecord(form, startElement, pathParts) {
-  const allElements = [...form.querySelectorAll('input, label, legend')];
-  let startIndex = 0;
-  if (startElement) {
-    startIndex = allElements.indexOf(startElement);
-    if (startIndex < 0) startIndex = 0;
-  }
-  let lastKey = null;
-  let lastRadioElement = null
-  let lastText = null;
+function flattenRecord(record) {
+  const result = [];
 
-  const pathPartsArr = String(pathParts).split(',').map(s => s.trim()).filter(Boolean);
+  function recurse(value) {
+    if (Array.isArray(value)) {
+      value.forEach(v => recurse(v));
+    } else if (value && typeof value === 'object') {
+      for (const [k, v] of Object.entries(value)) {
+        result.push(k);
+        recurse(v);
+      }
+    } else {
+      result.push(String(value));
+    }
+  }
+
+  recurse(record);
+  return result;
+}
+
+export function setInputsFromRecord(form, record) {
+	
+  const pathPartsArr = flattenRecord(record);
+
+  let lastRecordKey = null;
+  let lastRadioElement = null
+  let lastFormText = null;
+
   let pathIndex = 0;
   let pathPart = urlize(pathPartsArr[pathIndex]);
 
-  console.log("setInputsFromRecord at:",startIndex, pathParts);
-
-  for (const el of allElements.slice(startIndex)) {
-    //console.log("next el:", el, `pathIndex[${pathIndex}] el.name: ${el.name}`);
+  console.log("setInputsFromRecord pathPartsArr:", pathPartsArr);
+  
+  const allElements = [...form.querySelectorAll('input, label, legend')];
+  for (const el of allElements) {
+    if (lastRecordKey && (el.tagName !== 'INPUT')) {
+      //console.log("Next El: lastRecordKey:", lastRecordKey, "GetNextPath");
+      ++pathIndex;
+      pathPart = pathIndex < pathPartsArr.length ? urlize(pathPartsArr[pathIndex]) : null;
+    }
+    //console.log("next el:", el, "lastRecordKey", lastRecordKey,...(pathPart ? [`pathPart: ${pathPart}`] : []),...(el.name ? [`el.name: ${el.name}`] : []));
 
     const tag = el.tagName;
     if (tag !== 'INPUT') {
@@ -101,310 +123,157 @@ export function setInputsFromRecord(form, startElement, pathParts) {
       const hasOwnText = [...el.childNodes].some(n => n.nodeType === Node.TEXT_NODE && n.textContent.trim());
       if (!hasOwnText) continue;
       const text = urlize(clone.textContent);
-      //console.log("Text/lastKey:", text, lastKey);
       if (text) {
-        lastText = text;
-        if (pathPart === text) {
-          lastKey = text;
-          ++pathIndex;
-          pathPart = pathIndex < pathPartsArr.length ? urlize(pathPartsArr[pathIndex]) : null;
-        }
+        lastFormText = text;
+        if (text === pathPart  ) {
+          lastRecordKey = pathPart;
+        } 
+        //console.log("Got FormText: lastRecordKey/FormText:", lastRecordKey, text);
       }
-    } else if (lastKey) {
-      if (lastRadioElement && el.name !== lastRadioElement.name) {
-        //console.log("Quit");
-        return lastRadioElement;
-      }
+    } else if (lastRecordKey) {
       const type = el.type;
-
       if (['text', 'tel', 'email', 'date'].includes(type)) {
-        el.value = pathPartsArr[pathIndex];
+	  ++pathIndex;	
         //console.log(`text set '${pathPartsArr[pathIndex]}'`);
-        return el;
+        el.value = pathPartsArr[pathIndex];
+        ++pathIndex;
       } else if (type === 'checkbox') {
-        el.checked = (lastText === lastKey);
-        //console.log(`checkbox ${lastText} ? ${lastKey}: ${(lastText === lastKey)}`);
-        continue;
+        el.checked = (lastFormText === lastRecordKey);
+	  if (el.checked) ++pathIndex;
+        //console.log(`checkbox ${lastFormText} =? key: ${lastRecordKey}: ${el.checked}`);
       } else if (type === 'radio') {
-        el.checked = lastText === lastKey;
-        //console.log(`radio ${lastText} ? ${lastKey}: ${(lastText === lastKey)}`);
+        el.checked = lastFormText === lastRecordKey;
         lastRadioElement = el;
-        continue;
+	  if (el.checked) ++pathIndex;
+        //console.log(`radio ${lastFormText} =? ${lastRecordKey}: ${el.checked}`);
       }
-      return el;
+      pathPart = pathIndex < pathPartsArr.length ? urlize(pathPartsArr[pathIndex]) : null;
+	lastRecordKey = null;
     }
   }
-  //console.log(`[END] reached end of elements; returning null`);
-  return null;
 }
 
-
-
-
-
-
-export function getRecordFromInputs(form) {
+export function getFormRecord(form) {
 /*
-1. Form traversed linearly over field-sets, labels and inputs, starting outside any fieldset.
-2. Creates an array of records, where each record is an array of path-elements.
-3. A path-element is any legend or label text found before an input.
-4. When entering a nested fieldset, insert { into the record (after any legend if present), and capture the contents for recursive processing.
-5. When the current fieldset processing is complete, insert } at the end of the last record generated for this fieldset.
-6. Check-box label should be preceeded with ! if unchecked, "checked"/"unchecked" should not be inserted into the record.
-7. Radios are ignored if unchecked and only the checked label added.
-8. Every record ends at an input (value element). The value is the value of any text-like input, or the label of a check-box or selected radio.
-9. If the next input is at the same level, start a new record.
-
-Note:
-When an input is found its index in the record array must be recorded (last_input_index and last_input_depth), as it may be the end of the record. But that cannot be confirmed until the next input is found. If it is deeper nested then reset last_input_index and last_input_depth to the new input. If the next input is at the same level as the indexed one then split the record at that index and push it to the record-set. The remainder is the start of the current record.
+These are the form rules:
+1. All radios and checkboxes (values) are in fieldsets and can be a mix of radios and checkboxes
+2. A fieldset with no legend contributes to the value array of its parent label or legend.
+3. The radio / checkbox members of a fieldset form a value array
+4. A radio or checkbox immediatly followed by a fieldset becomes the key for that fieldset
+5. Nested labels or legends become nested keys.
+6. Text-like inputs are always values and may be inside or outside fieldsets.
 */
 
-  const recordSet = [];
-  const pathStack = [];
+const result = Array.from(form.children).flatMap(el => parseElement(el));
 
-  let last_input_index = -1;
-  let last_input_depth = -1;
+// frozen snapshot of original parse
+const snapshotFinal = JSON.parse(JSON.stringify(result));
+console.debug('Final recordSet snapshot:', snapshotFinal);
 
-  function processElement(el, depth = 0, currentRecord = [...pathStack]) {
-    const children = [...el.children];  // Keep all children to include top-level elements
-    //console.debug(`Entering element <${el.tagName}> at depth ${depth}, currentRecord:`, currentRecord);
+// remove empty arrays on a cloned copy
+const cleaned = removeEmptyArrays(structuredClone(result));
+const snapshotCleaned = JSON.parse(JSON.stringify(cleaned));
+console.debug('Cleaned recordSet snapshot:', snapshotCleaned);
 
-    for (let i = 0; i < children.length; i++) {
-      const node = children[i];
-      const tag = node.tagName;
+// merge cleaned array into object
+const merged = Object.assign({}, ...cleaned);
+const snapshotMerged = JSON.parse(JSON.stringify(merged));
+console.debug('Merged recordSet snapshot:', snapshotMerged);
 
-      // --- INPUT / LABEL processing ---
-      if (tag === 'LABEL' || tag === 'INPUT') {
-        let labelText = '';
-        let input = null;
+return merged;
+}
 
-        if (tag === 'LABEL') {
-          const clone = node.cloneNode(true);
-          clone.querySelectorAll('input').forEach(n => n.remove());
-          labelText = urlize(clone.textContent);
-          input = node.querySelector('input');
-          if (!input) continue;
-        } else {
-          input = node;
+function removeEmptyArrays(data) {
+  if (Array.isArray(data)) {
+    const filtered = data
+      .map(removeEmptyArrays)
+      .filter(el => {
+        if (Array.isArray(el)) {
+          // keep only arrays that are non-empty and contain at least one keyed object
+          const hasKeyedObject = el.some(e => e && typeof e === 'object' && !Array.isArray(e) && Object.keys(e).length);
+          return el.length > 0 && hasKeyedObject;
         }
-
-        if (labelText) currentRecord.push(labelText);
-        //console.debug(`Found input of type ${input?.type || 'unknown'} at depth ${depth}, currentRecord before split:`, currentRecord);
-
-        if (input) {
-          if (last_input_index >= 0 && depth === last_input_depth) {
-            const completeRecord = currentRecord.slice(0, last_input_index + 1);
-            const remainder = currentRecord.slice(last_input_index + 1);
-            recordSet.push(completeRecord);
-            //console.debug('Same-level split occurred. CompleteRecord pushed:', completeRecord, 'Remainder:', remainder);
-            currentRecord = remainder;
-          }
-
-          const type = input.type;
-          if (['text','tel','email','date'].includes(type)) {
-            currentRecord.push(input.value);
-            //console.debug('Text input added:', currentRecord);
-            last_input_index = currentRecord.length - 1;
-            last_input_depth = depth;
-          } else if (type === 'checkbox') {
-            if (!input.checked && currentRecord.length) {
-			currentRecord.pop();
-              //currentRecord[currentRecord.length - 1] = '!' + currentRecord[currentRecord.length - 1];
-            }
-            //console.debug('Checkbox processed:', currentRecord);
-            last_input_index = currentRecord.length - 1;
-            last_input_depth = depth;
-          } else if (type === 'radio') {
-            if (!input.checked) {
-              currentRecord.pop();
-              //console.debug('Radio unchecked, popped:', currentRecord);
-            } else {
-              //console.debug('Radio checked:', currentRecord);
-              last_input_index = currentRecord.length - 1;
-              last_input_depth = depth;
-            }
-          }
-        }
-        continue;
-      }
-
-      // --- FIELDSET processing ---
-      if (tag === 'FIELDSET') {
-        const legend = node.querySelector(':scope > legend');
-        const legendText = legend ? urlize(legend.textContent) : '';
-        if (legendText) currentRecord.push(legendText);
-        currentRecord.push('{');  // always insert { for nested fieldsets
-
-        const startRecordIndex = recordSet.length;
-
-        const saved_index = last_input_index;
-        const saved_depth = last_input_depth;
-        last_input_index = -1;
-        last_input_depth = -1;
-
-        //console.debug(`Entering FIELDSET at depth ${depth} with legend '${legendText}', startRecordIndex: ${startRecordIndex}`);
-        currentRecord = processElement(node, depth + 1, currentRecord);
-        //console.debug(`Exiting FIELDSET at depth ${depth} with legend '${legendText}', currentRecord:`, currentRecord);
-
-        last_input_index = saved_index;
-        last_input_depth = saved_depth;
-
-        if (recordSet.length > startRecordIndex) {
-          recordSet[recordSet.length - 1].push('}');
-        } else if (currentRecord.length) {
-          currentRecord.push('}');
-        }
-        continue;
-      }
-
-      if (node.children.length > 0) currentRecord = processElement(node, depth, currentRecord);
-    }
-
-    if (currentRecord.length) {
-      recordSet.push(currentRecord);
-      //console.debug('End of container, pushed remaining record:', currentRecord);
-      last_input_index = -1;
-      last_input_depth = -1;
-    }
-
-    return [];
-  }
-
-  processElement(form, 0, [...pathStack]);
-  //console.debug('Final recordSet:', recordSet);
-  return { startElement: null, pathArr: recordSet };
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// --- input type extractors ---
-function extractCheckboxWithNestedRadios(checkboxNode, storedValue, includeUnselected = false) {
-  const checkbox = checkboxNode.querySelector("input[type=checkbox]");
-  if (!checkbox) return null;
-
-  const labelText = getLabelText(checkbox);
-
-  if (storedValue && storedValue[labelText] !== undefined) {
-    checkbox.checked = true;
-  }
-
-  const radios = [];
-  let next = checkboxNode.nextElementSibling;
-  const seenRadios = new Set(); // <-- track duplicates
-
-  while (next) {
-    const nextInput = next.querySelector("input[type=radio]");
-    if (!nextInput) { next = next.nextElementSibling; continue; }
-
-    const radioLabel = next.textContent.trim();
-    if (!seenRadios.has(radioLabel)) { // <-- only add once
-      radios.push({ label: radioLabel, checked: nextInput.checked });
-      seenRadios.add(radioLabel);
-    }
-
-    if (storedValue && storedValue[labelText] !== undefined) {
-      nextInput.checked = radioLabel === storedValue[labelText];
-    }
-
-    if (nextInput.querySelector("input[type=checkbox]")) break; // next checkbox ends group
-    next = next.nextElementSibling;
-  }
-
-  return {
-    label: labelText,
-    value: checkbox.checked ? storedValue[labelText] || checkbox.value : checkbox.value,
-    checked: checkbox.checked,
-    radios
-  };
-}
-
-
-
-
-function extractStandaloneRadio(radioNode, includeUnselected = false) {
-  const radio = radioNode.querySelector("input[type=radio]");
-  if (!radio) return null;
-
-  const labelText = getLabelText(radio);
-
-  if (radio.checked) return { label: labelText, value: radio.value, checked: true };
-  if (includeUnselected) return { label: labelText, value: "", checked: false };
-  return null;
-}
-
-function extractOtherInput(inputNode, includeUnselected = false) {
-  const input = inputNode.querySelector("input:not([type=checkbox]):not([type=radio]), textarea, select");
-  if (!input) return null;
-
-  const labelText = getLabelText(input);
-  return { label: labelText, value: input.value || "", checked: input.checked };
-}
-
-// --- fieldset extractor ---
-export function extractFieldset(fieldsetNode, includeUnselected = false) {
-  const legend = fieldsetNode.querySelector("legend")?.textContent.trim() || null;
-  const fields = [];
-
-  Array.from(fieldsetNode.children).forEach(child => {
-    let field = null;
-
-    if (child.querySelector("input[type=checkbox]")) {
-      field = extractCheckboxWithNestedRadios(child, includeUnselected);
-    } else if (child.querySelector("input[type=radio]")) {
-      field = extractStandaloneRadio(child, includeUnselected);
-    } else if (child.querySelector("input, textarea, select")) {
-      field = extractOtherInput(child, includeUnselected);
-    }
-
-    if (field) fields.push(field);
-  });
-
-  if (fields.length === 0) return null;
-  return { legend, fields };
-}
-
-// --- main parser ---
-export function parseFormElements(form, { includeUnselected = false } = {}) {
-  const elements = [];
-  const walker = document.createTreeWalker(form, NodeFilter.SHOW_ELEMENT, null);
-
-  while (walker.nextNode()) {
-    const node = walker.currentNode;
-
-    if (node.tagName === "FIELDSET") {
-      const fs = extractFieldset(node, includeUnselected);
-      if (fs) elements.push(fs);
-    } else if (node.tagName === "LABEL") {
-      if (!node.closest("fieldset")) {   // <-- only labels not inside a fieldset
-        const lbl = extractOtherInput(node, includeUnselected);
-        if (lbl) elements.push(lbl);
+        if (el && typeof el === 'object') return Object.keys(el).length > 0;
+        return el !== undefined && el !== null;
+      });
+    return filtered;
+  } else if (data && typeof data === 'object') {
+    const newObj = {};
+    for (const [k, v] of Object.entries(data)) {
+      const filtered = removeEmptyArrays(v);
+      if (filtered !== undefined && (Array.isArray(filtered) ? filtered.length > 0 : true)) {
+        newObj[k] = filtered;
       }
     }
+    return newObj;
+  } else {
+    return data;
   }
-
-  return elements;
 }
 
+function parseFieldset(fieldset) {
+  const legend = fieldset.querySelector('legend');
+  const hasLegend = !!legend;
+  //For every direct child element of this <fieldset>, call parseElement() on it, and flatten all returned arrays into a single array.
+  const items = Array.from(fieldset.children).flatMap(parseElement);
+  return hasLegend ? { [urlize(legend.textContent)]: items } : items;
+}
+
+function parseElement(el) {
+  //console.debug('Parsing element:', el.tagName, el);
+
+  if (el.tagName === 'FIELDSET') return [parseFieldset(el)];
+  else if (el.tagName === 'LABEL') { // look for input within a label
+    const input = el.querySelector('input');
+    if (!input) return [];
+    else if (['checkbox','radio'].includes(input.type)) {
+	return parseCheckedInputWithFieldset(el, input);
+    } else { // text-input
+      return [{ [getLabelText(el)]: input.value }]; // Braces inserted round key:value pairs
+    }
+  } else if (el.tagName === 'INPUT') {
+    if (['checkbox','radio'].includes(el.type)) {
+      if (el.checked) {
+        const labelText = getLabelText(el.closest('label'));
+        //console.debug('INPUT element (checked):', labelText);
+        return [labelText];
+      } else return [];
+    } else { // text-type input
+      return [el.value];
+    }
+  } else if (el.children.length) { // extract and process any elements wrapped in non-text ways (<p>, <div> etc.)
+    const nestedItems = Array.from(el.children).flatMap(c => parseElement(c));
+    //console.debug('Nested children parsed:', nestedItems);
+    return nestedItems;
+  }
+  return [];
+}
+
+function parseCheckedInputWithFieldset(labelEl, inputEl) {
+  if (!inputEl.checked) return [];
+  // Look for a fieldset inside a label
+  const childFieldset = Array.from(labelEl.children)
+    .find(c => c.tagName === 'FIELDSET');
+  
+  let fieldsetControlledByCheckedInput;
+  if (childFieldset) {
+    fieldsetControlledByCheckedInput = childFieldset;
+  } else if (labelEl.nextElementSibling?.tagName === 'FIELDSET') { // Look for an immediate sibling fieldset
+    fieldsetControlledByCheckedInput = labelEl.nextElementSibling;
+  } else {
+    fieldsetControlledByCheckedInput = null;
+  }
+  
+  const labelText = getLabelText(labelEl);
+  if (fieldsetControlledByCheckedInput) {
+    return [{ [labelText]: parseFieldset(fieldsetControlledByCheckedInput) }]; // Braces inserted round key:value pairs
+  }
+  return [labelText];
+}
+
+function getLabelText(labelEl) {
+  if (!labelEl) return 'checked_input';
+  const clone = labelEl.cloneNode(true);
+  clone.querySelector('input')?.remove();
+  return urlize(clone.textContent);
+}

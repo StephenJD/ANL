@@ -8,7 +8,6 @@ restrict_users: [Full]
 validation: [noSend] # options: requestLink, submit, none (default), noSend
 ---
 
-<form class="verified-form">
   <fieldset>
     <legend>Permitted User Details</legend>
     <label>Name<input required class="name" type="text" /></label>
@@ -20,7 +19,7 @@ validation: [noSend] # options: requestLink, submit, none (default), noSend
     <legend>Role</legend>
     <div class="roles-container"></div>
   </fieldset>
-</form>
+
 
 <script type="module">
   import { manageBinArrayForm } from "/js/binArrayInterface.js";

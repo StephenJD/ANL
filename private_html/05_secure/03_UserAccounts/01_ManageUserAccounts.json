@@ -1,0 +1,10 @@
+{
+  "title": "Manage Permitted Users",
+  "summary": "",
+  "validation": [
+    "noSend"
+  ],
+  "restrict_users": [
+    "Full"
+  ]
+}

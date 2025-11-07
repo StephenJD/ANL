@@ -1,0 +1,8 @@
+{
+  "title": "TnT Parental Contact Form",
+  "summary": "TnT Parental Contact Form",
+  "validation": [
+    "submit"
+  ],
+  "restrict_users": []
+}

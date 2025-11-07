@@ -5,8 +5,11 @@ headless: true  # This file represents a page section.
 type: document
 geometry: [margin=2cm, a4paper]
 share: true
-summary: Data Protection Pilicy
-weight: 40
+summary: Data Protection Policy
+last_reviewed: 2025-10-18
+review_period: 1y
+reviewed_by: Stephen Dolley
+
 ---
 
 # ANL GDPR Data Protection Policy

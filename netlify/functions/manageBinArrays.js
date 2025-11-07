@@ -7,7 +7,7 @@ import 'dotenv/config';
 const USER_ACCESS_BIN_KEY = process.env.USER_ACCESS_BIN;
 
 export async function handler(event) {
-  console.log("=== manageBinArrays (first-field index) START ===");
+  console.log("=== manageBinArrays START ===");
 
   if (event.httpMethod !== "POST") {
     return {
@@ -71,6 +71,7 @@ export async function handler(event) {
         console.log("[DEBUG] manageBinArrays keyValue not found:",action, keyValue, firstField);
         return { statusCode: 404, body: JSON.stringify({ success: false, error: "Record not found" }) };
       }
+      console.log("[DEBUG] manageBinArrays Edit at index:", editIdx, JSON.stringify(record, null, 2));
       dataArray[editIdx] = record;
       await setSecureItem(BIN_KEY, section_key, dataArray);
       return { statusCode: 200, body: JSON.stringify({ success: true }) };

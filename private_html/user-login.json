@@ -1,0 +1,10 @@
+{
+  "title": "Login",
+  "summary": "User Login",
+  "validation": [
+    "noSend"
+  ],
+  "restrict_users": [
+    "none"
+  ]
+}

@@ -25,14 +25,13 @@ Form Rules
 {{< comment `
 Login Sequence:
 User tries to access a restricted page.
-/static/js/form_access_controller.js : controlRestrictedAccess() checks to see if page has restricted Access.
 If it does:
-  1. If there is a session-key and the role matches the page-role then the page is served.
-  2. If there is a session-key and the role does NOT match the page-role then "No-Access" message shown.
-  3. If there is NO session-key they are redirected to /user-login
+  1. If there is a userLoginToken and the role matches the page-role then the page is served.
+  2. If there is a userLoginToken and the role does NOT match the page-role then "No-Access" message shown.
+  3. If there is NO userLoginToken they are redirected to /user-login
 /user-login flow:
 If a user enters UN & PW and clicks "Login":
-  4. functions/verifyUser getLogin_SessionToken() looks in permitted_users for a login_token for that UN
+  4. functions/verifyUser get_UserLoginToken() looks in permitted_users for a login_token for that UN
   5. If it finds one, it generates a temporary access-token in accessTokens with the roles for that user.
   6. User is redirected back to the original page, to step 1 above. 
   7. If there is no login_token it displays "Enter email below and click "Register" to apply for an account"
@@ -88,7 +87,7 @@ document.addEventListener("access-validated", async () => {
   const inputs = form.querySelectorAll("input");
   const userNameInput = inputs[0];
   const passwordInput = inputs[1];
-  const sessionToken = localStorage.getItem("session_token");
+  const userLoginToken = localStorage.getItem("userLogin_token");
   const loginDiv = form.querySelector("#login-div");
   const registerDiv = form.querySelector("#register-div");
 
@@ -101,7 +100,7 @@ document.addEventListener("access-validated", async () => {
     UNKNOWN: "unknown",
     LOGGING_OUT: "logging_out",
     LOGGED_OUT: "logged_out",
-    CHECK_SESSION_TOKEN: "checking_session_token",
+    CHECK_USER_LOGIN_TOKEN: "checking_user_login_token",
     LOGGING_IN: "logging_in",
     SHOWING_USER: "showing_user",
     LOGGED_IN: "logged_in",
@@ -111,8 +110,8 @@ document.addEventListener("access-validated", async () => {
   });
   
   async function findLogin_State() {
-    if (sessionToken) {
-      return LoginStates.CHECK_SESSION_TOKEN;
+    if (userLoginToken) {
+      return LoginStates.CHECK_USER_LOGIN_TOKEN;
     } else if (urlToken) {
       return LoginStates.REGISTERING;
     } else {
@@ -133,8 +132,8 @@ document.addEventListener("access-validated", async () => {
         if (redirect) window.location.href = redirect;
         return LoginStates.LOGGED_IN;
   
-      case LoginStates.CHECK_SESSION_TOKEN:
-        if (await checkSessionToken(sessionToken)) {
+      case LoginStates.CHECK_USER_LOGIN_TOKEN:
+        if (await check_UserLoginToken(userLoginToken)) {
           return LoginStates.SHOWING_USER;
         }
         return LoginStates.LOGGING_OUT;
@@ -176,7 +175,7 @@ document.addEventListener("access-validated", async () => {
           messageBox.textContent = `Please enter your User Name and Password above and click "Login".`;
           return LoginStates.LOGGED_OUT;
         }
-        if (await getSessionTokenForUser()) {
+        if (await get_UserLoginToken()) {
           return LoginStates.SHOWING_USER;
         } else if (userName) {
           messageBox.textContent = `User Name ${userName} not found. Please enter your email below and click "Register".`;
@@ -202,7 +201,7 @@ document.addEventListener("access-validated", async () => {
         return LoginStates.LOGGED_OUT
   
       case LoginStates.LOGGING_OUT:
-        await removeSession_token();
+        await removeLogin_token();
         logoutBtn.style.display = "none";
         loginDiv.style.display = "block";
         registerDiv.style.display = "block";
@@ -223,36 +222,36 @@ document.addEventListener("access-validated", async () => {
     }
   }
 
-  async function checkSessionToken(token) {
-    console.log("checkSessionToken:", token);
+  async function check_UserLoginToken(token) {
+    console.log("check_UserLoginToken:", token);
 
     try {
-      console.log("Sending checkSessionToken request...");
+      console.log("Sending check_UserLoginToken request...");
       const resp = await fetch("/.netlify/functions/verifyUser", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "check_SessionToken", session_token: token })
+        body: JSON.stringify({ action: "check_userLoginToken", userLogin_token: token })
       });
 
       const data = await resp.json();
-      console.log("checkSessionToken response:", data);
+      console.log("check_UserLoginToken response:", data);
 
       if (data.status === "success") {
         userNameInput.value = data.entry.user_name;
-        console.log("SessionToken valid for", userNameInput.value);
+        console.log("userLoginToken valid for", userNameInput.value);
         return true;
       }
 
-      console.warn("SessionToken invalid", data.status);
+      console.warn("userLoginToken invalid", data.status);
 
     } catch (err) {
-      console.error("checkSessionToken failed:", err);
+      console.error("check_UserLoginToken failed:", err);
     }
     return false;
   }
 
-  async function getSessionTokenForUser() {
-    console.log("getSessionTokenForUser:", userName, password);
+  async function get_UserLoginToken() {
+    console.log("get_UserLoginToken:", userName, password);
     if (!userName || !password) {
       return false;
     }
@@ -260,15 +259,15 @@ document.addEventListener("access-validated", async () => {
       const resp = await fetch("/.netlify/functions/verifyUser", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "getLogin_SessionToken", userName, password })
+        body: JSON.stringify({ action: "get_UserLoginToken", userName, password })
       });
 
       const data = await resp.json();
       console.log("Parsed verifyUser response:", data);
 
       if (data.status === "success") {
-        console.log("Login successful, saving session...");
-        localStorage.setItem("session_token", data.sessionToken);
+        console.log("Login successful, saving userLoginToken...");
+        localStorage.setItem("userLogin_token", data.userLoginToken);
         localStorage.setItem("user_role", JSON.stringify(data.role));
         return true;
       }
@@ -301,9 +300,9 @@ document.addEventListener("access-validated", async () => {
     return false;
   }
 
-  function removeSession_token() {
-    console.log("removeSession_token() called, clearing session...");
-    localStorage.removeItem("session_token");
+  function removeLogin_token() {
+    console.log("removeLogin_token() called, clearing loginToken...");
+    localStorage.removeItem("userLogin_token");
     localStorage.removeItem("user_role");
     console.log("Login-options buttons restored after logout.");
   }
