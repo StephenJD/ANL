@@ -1,5 +1,5 @@
 [build]
-  command = "node build_scripts/generate_qr.js && node build_scripts/buildForms.js && hugo --gc --minify -b $URL"
+  command = "node build_scripts/generate_qr.js && node build_scripts/buildForms.js && npx cpx private_html/**/* netlify/functions/private_html && hugo --gc --minify -b $URL"
   publish = "public"
   
 [build.environment]
