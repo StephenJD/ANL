@@ -24,7 +24,7 @@ export async function handler(event) {
 
   const token = event.headers["authorization"]?.replace("Bearer ", "");
   const queryformName = event.queryStringParameters?.form;
-  const formName = queryformName?.replace(/^\/|\/$/g, "");
+  const formName = queryformName?.replace(/^\/|\/$/g, "").toLowerCase();
   console.log("[gatedForm] formName:", formName);
 
   if (!formName) {

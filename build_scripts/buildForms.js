@@ -45,7 +45,8 @@ function processFile(filePath) {
 
       const relPath = path
         .relative(contentDir, filePath)
-        .replace(/\.md$/, ".html");
+        .replace(/\.md$/, ".html")
+	  .toLowerCase();
       const outHtmlPath = path.join(outputDir, relPath);
       const outJsonPath = outHtmlPath.replace(/\.html$/, ".json");
 
