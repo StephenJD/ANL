@@ -51,28 +51,17 @@ If a user clicks "Reset Password":
 
 <fieldset>
   <div id="login-div">
-    <legend>Log-In</legend>
-    <label for="username_input">User name</label>
-    <input required id="username_input" class="name" type="text" data-lpignore="true">
-    
-    <label for="password_input">Password</label>
-    <input required id="password_input" type="password" autocomplete="current-password" data-lpignore="true">
-    
-    <button type="button" id="login_btn">Login</button>
+  <legend>Log-In</legend>
+  <label>User name<input required class="name" type="text" data-lpignore="true"></label>
+  <label>Password<input required type="password" autocomplete="current-password" data-lpignore="true"></label>
+  <button type="button" id="login_btn">Login</button>
   </div>
-
   <button type="button" id="logout_btn" style="display:none;">Logout</button>
-
-  <br>
-  <span id="login_message" style="color:red;margin-top:0.5em;"></span>
-  <br>
-
+  <br><span id="login_message" style="color:red;margin-top:0.5em;"></span><br>
   <div id="register-div">
-    <label for="submitted_by">Email</label>
-    <input id="submitted_by" type="email" data-lpignore="true"><br>
-    
-    <button type="button" id="register_btn">Register</button>
-    <button type="button" id="reset_btn">Reset Password</button>
+  <label id="email_lbl">Email<input id="submitted_by" type="email" data-lpignore="true"></label><br>
+  <button type="button" id="register_btn">Register</button>
+  <button type="button" id="reset_btn">Reset Password</button>
   </div>
 </fieldset>
 
@@ -89,21 +78,21 @@ document.addEventListener("access-validated", async () => {
   const logoutBtn = document.getElementById("logout_btn");
   const registerBtn = document.getElementById("register_btn");
   const resetBtn = document.getElementById("reset_btn");
-
-  const messageBox = document.getElementById("login_message");
-  const emailInput = document.getElementById("submitted_by");
-  const userNameInput = document.getElementById("username_input");
-  const passwordInput = document.getElementById("password_input");
-
-  const loginDiv = document.getElementById("login-div");
-  const registerDiv = document.getElementById("register-div");
   
+  const messageBox = document.getElementById("login_message");
+  const emailLabel = document.getElementById("email_lbl");
+  const emailInput = document.getElementById("submitted_by");
+  const userNameInput = document.querySelector("input.name");
+  const passwordInput = document.querySelector("input.password");
+  const loginDiv = form.querySelector("#login-div");
+  const registerDiv = form.querySelector("#register-div");
+
   const userLoginToken = localStorage.getItem("userLogin_token");
+  let urlToken = new URLSearchParams(window.location.search).get("token");
   let userName = null;
   let email = null;
   let loginState = null;
   let password = null;
-  let urlToken = new URLSearchParams(window.location.search).get("token");
  
   const LoginStates = Object.freeze({
     UNKNOWN: "unknown",
