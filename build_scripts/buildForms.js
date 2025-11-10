@@ -4,57 +4,83 @@ import path from "path";
 import { marked } from "marked";
 import matter from "gray-matter";
 
+console.log("[buildForms] Starting...");
+
 const contentDir = path.join(process.cwd(), "content");
 const outputDir = path.join(process.cwd(), "private_html");
 
+console.log("[buildForms] contentDir:", contentDir);
+console.log("[buildForms] outputDir:", outputDir);
+
 // Remove Hugo shortcodes ({{< ... >}} or {{% ... %}})
 function stripShortcodes(content) {
-  // Match {{< anything >}} including backticks and line breaks
-  return content.replace(/{{<[\s\S]+?>}}/g, "")
-                .replace(/{{%[\s\S]+?%}}/g, "");
+  return content
+    .replace(/{{<[\s\S]+?>}}/g, "")
+    .replace(/{{%[\s\S]+?%}}/g, "");
 }
 
-// Recursively process a directory
 function processDir(dir) {
+  console.log("[buildForms] Scanning directory:", dir);
   fs.readdirSync(dir, { withFileTypes: true }).forEach((entry) => {
     const fullPath = path.join(dir, entry.name);
     if (entry.isDirectory()) {
       processDir(fullPath);
     } else if (entry.isFile() && entry.name.endsWith(".md")) {
+      console.log("[buildForms] Found markdown:", fullPath);
       processFile(fullPath);
     }
   });
 }
 
-// Process a single Markdown file
 function processFile(filePath) {
-  const md = fs.readFileSync(filePath, "utf-8");
-  const { data: frontMatter, content: rawContent } = matter(md);
+  try {
+    const md = fs.readFileSync(filePath, "utf-8");
+    const { data: frontMatter, content: rawContent } = matter(md);
 
-  if (frontMatter.type === "form") {
-    const cleanContent = stripShortcodes(rawContent);
-    const html = marked.parse(cleanContent);
+    console.log("[buildForms] Processing:", filePath, "type:", frontMatter.type);
 
-    // Preserve directory structure
-    const relPath = path.relative(contentDir, filePath).replace(/\.md$/, ".html");
-    const outHtmlPath = path.join(outputDir, relPath);
-    const outJsonPath = outHtmlPath.replace(/\.html$/, ".json");
+    if (frontMatter.type === "form") {
+      const cleanContent = stripShortcodes(rawContent);
+      const html = marked.parse(cleanContent);
 
-    fs.mkdirSync(path.dirname(outHtmlPath), { recursive: true });
-    fs.writeFileSync(outHtmlPath, html);
+      const relPath = path
+        .relative(contentDir, filePath)
+        .replace(/\.md$/, ".html");
+      const outHtmlPath = path.join(outputDir, relPath);
+      const outJsonPath = outHtmlPath.replace(/\.html$/, ".json");
 
-    const json = {
-      title: frontMatter.title || "",
-      summary: frontMatter.summary || "",
-      validation: Array.isArray(frontMatter.validation) ? frontMatter.validation : ["none"],
-      restrict_users: Array.isArray(frontMatter.restrict_users) ? frontMatter.restrict_users : []
-    };
-    fs.writeFileSync(outJsonPath, JSON.stringify(json, null, 2));
+      fs.mkdirSync(path.dirname(outHtmlPath), { recursive: true });
+      fs.writeFileSync(outHtmlPath, html);
 
-    //console.log(`[buildForms] Rendered ${filePath} → ${outHtmlPath}`);
-    //console.log(`[buildForms] Metadata saved → ${outJsonPath}`);
+      const json = {
+        title: frontMatter.title || "",
+        summary: frontMatter.summary || "",
+        validation: Array.isArray(frontMatter.validation)
+          ? frontMatter.validation
+          : ["none"],
+        restrict_users: Array.isArray(frontMatter.restrict_users)
+          ? frontMatter.restrict_users
+          : [],
+      };
+      fs.writeFileSync(outJsonPath, JSON.stringify(json, null, 2));
+
+      console.log("[buildForms] Wrote:", outHtmlPath);
+      console.log("[buildForms] Metadata:", outJsonPath);
+    }
+  } catch (err) {
+    console.error("[buildForms] Error processing", filePath, err);
   }
 }
 
-// Start processing
-processDir(contentDir);
+process.on("uncaughtException", (err) => {
+  console.error("[buildForms] Fatal error:", err);
+  process.exit(1);
+});
+
+try {
+  processDir(contentDir);
+  console.log("[buildForms] Done. private_html exists?", fs.existsSync(outputDir));
+} catch (err) {
+  console.error("[buildForms] Top-level error:", err);
+  process.exit(1);
+}
