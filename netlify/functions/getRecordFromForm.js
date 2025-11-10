@@ -170,8 +170,6 @@ function parseFieldset(fieldset) {
   return items;
 }
 
-
-
 function getInputType(input) {
   return (input?.getAttribute?.('type') || input?.type || 'text').toLowerCase();
 }
