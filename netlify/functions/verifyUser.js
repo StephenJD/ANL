@@ -14,12 +14,12 @@ const ADMIN_SUPERUSER_HASH = process.env.ADMIN_SUPERUSER_HASH;
 // --- 1) Check if email is in permitted_users ---
 export async function checkIsPermittedUser(email) {
   try {
-    //console.log("[DEBUG] checkIsPermittedUser:", email); 
+    //console.log("[verifyUser] checkIsPermittedUser:", email); 
     const permittedUsers = await getSecureItem(USER_ACCESS_BIN, PERMITTED_USERS_KEY) || [];
-    const permitted = permittedUsers.some(u => u.email.toLowerCase() === email.toLowerCase());
+    const permitted = permittedUsers.some(u => u.Email.toLowerCase() === email.toLowerCase());
     if (permitted) return permitted;
     else {
-      console.log("[DEBUG] checkIsPermittedUser: False:", email, permittedUsers); 
+      console.log("[verifyUser] checkIsPermittedUser: False:", email, permittedUsers); 
       return false;
     }
   } catch (err) {
@@ -31,16 +31,16 @@ export async function checkIsPermittedUser(email) {
 // --- 2) Add a user login if permitted ---
 export async function addUserLogin(email, userName, password) {
   try {
-    //console.log("[DEBUG] addUserLogin:", email, userName, password); 
+    //console.log("[verifyUser] addUserLogin:", email, userName, password); 
     const permittedUsers = await getSecureItem(USER_ACCESS_BIN, PERMITTED_USERS_KEY) || [];
-    const userEntry = permittedUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
+    const userEntry = permittedUsers.find(u => u.Email.toLowerCase() === email.toLowerCase());
     if (!userEntry) return { status: "Not permitted" };
 
     const loginToken = generateUserToken(userName, password);
     userEntry.login_token = loginToken;
-    userEntry.user_name = userName;
+    userEntry["User Name"] = userName;
     await setSecureItem(USER_ACCESS_BIN, PERMITTED_USERS_KEY, permittedUsers);
-    return { status: "success", loginToken, role: userEntry.role };
+    return { status: "success", loginToken, role: userEntry["Role"] };
   } catch (err) {
     console.error("[verifyUser] addUserLogin error:", err);
     return { status: "error" };
@@ -50,13 +50,13 @@ export async function addUserLogin(email, userName, password) {
 // --- 3) Get a userlogin token  ---
 export async function get_UserLoginToken(userName, password) {
   try {
-    console.log("[DEBUG] get_UserLoginToken:", userName, password); 
+    console.log("[verifyUser] get_UserLoginToken:", userName, password); 
     const loginToken = generateUserToken(userName, password);
     const usersArray = await getSecureItem(USER_ACCESS_BIN, PERMITTED_USERS_KEY) || [];
 
     const currentUser = usersArray.find(u => u.login_token === loginToken);
     if (!currentUser) {
-      console.log("[DEBUG] get_UserLoginToken no login_token for:", userName, password, loginToken, usersArray, );  
+      console.log("[verifyUser] get_UserLoginToken no login_token for:", userName, password, loginToken, usersArray, );  
       return { status: "Not Registered" };
     }
 
@@ -64,11 +64,11 @@ export async function get_UserLoginToken(userName, password) {
     await setSecureItem(
       ACCESS_TOKEN_BIN,
       userLoginToken,
-      { user_name: currentUser.user_name, role: currentUser.role },
+      { user_name: currentUser["User name"], role: currentUser["Role"] },
       30 * 60 * 1000
     );
 
-    return { status: "success", userLoginToken, role: currentUser.role };
+    return { status: "success", userLoginToken, role: currentUser["Role"] };
   } catch (err) {
     console.error("[verifyUser] get_UserLoginToken error:", err);
     return { status: "error" };
@@ -96,11 +96,11 @@ export async function check_userLoginToken(userLogin_token) {
 export async function deleteUserLogin(email) {
   try {
     const permittedUsers = await getSecureItem(USER_ACCESS_BIN, PERMITTED_USERS_KEY) || [];
-    const userEntry = permittedUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
+    const userEntry = permittedUsers.find(u => u.Email.toLowerCase() === email.toLowerCase());
     if (!userEntry) return { status: "Not found" };
 
     userEntry.login_token = null;
-    userEntry.user_name = null;
+    userEntry["User Name"] = null;
     await setSecureItem(USER_ACCESS_BIN, PERMITTED_USERS_KEY, permittedUsers);
     return { status: "success" };
   } catch (err) {

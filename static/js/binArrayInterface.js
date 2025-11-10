@@ -31,7 +31,7 @@ function listRecord(record) {
 
 export function loadRecords({ records, listEl, form, editBtnClass }) {
   listEl.innerHTML = "";
-  console.log("[DEBUG] loadRecords:", records);
+  console.log("[binArrayInterface] loadRecords:", records);
 
   records.forEach((record, idx) => {
     const li = document.createElement("li");
@@ -77,7 +77,7 @@ function alignButtons(form) {
 export async function manageBinArrayForm({ bin_id, sectionKey, listLabel, form }) {
   if (!form) throw new Error("Form is required");
   listLabel = listLabel || sectionKey;
-  console.log("[DEBUG] manageBinArrayForm", bin_id,  sectionKey);
+  console.log("[binArrayInterface] manageBinArrayForm", bin_id,  sectionKey);
 
   const container = form;
 
@@ -117,7 +117,7 @@ async function apiCall(action, payload = {}, keyValue = null) {
 
   async function loadRecordsList() {
     const data = await apiCall("list");
-    console.log('loadRecordsList:', JSON.parse(JSON.stringify(data.records)));
+    console.log('[binArrayInterface] loadRecordsList:', JSON.parse(JSON.stringify(data.records)));
     
     if (!data.success) return;
     recordsCache = data.records || [];
@@ -135,7 +135,7 @@ async function apiCall(action, payload = {}, keyValue = null) {
         el.checked = false;
       }
     }
-    console.log('all inputs cleared');
+    console.log('[binArrayInterface] all inputs cleared');
 
     editKeyValue = null;
     cancelBtn.style.display = "none";
@@ -164,7 +164,8 @@ saveBtn.addEventListener("click", async () => {
 
   // Clone the form to avoid modifying the displayed form
   const clonedForm = form.cloneNode(true);
-  clonedForm.querySelectorAll("input, textarea, select").forEach(input => {
+  clonedForm.querySelectorAll("input, textarea, select").forEach(input => { 
+
     if (input.type === "checkbox" || input.type === "radio") {
       if (input.checked) input.setAttribute("checked", ""); else input.removeAttribute("checked");
     } else if (input.tagName.toLowerCase() === "textarea") {
@@ -173,13 +174,16 @@ saveBtn.addEventListener("click", async () => {
       input.setAttribute("value", input.value);
     }
   });
+  
+  clonedForm.querySelectorAll('[hidden], [style*="display:none"], [style*="display: none"], input[type="hidden"]').forEach(el => el.remove());
 
   // Remove all <script> tags
   clonedForm.querySelectorAll('script').forEach(s => s.remove());
   const formHtml = clonedForm.outerHTML;
   const keyValue = editKeyValue || Object.values(record)[0];
   const action = editKeyValue ? "edit" : "add"; // set by edit-button, not from input.
-  console.debug('Save recordSet:', "keyValue", keyValue, "Action:", action);
+  //console.debug('[binArrayInterface] Save formHtml:', formHtml);
+  console.debug('[binArrayInterface] Save recordSet:', "keyValue", keyValue, "Action:", action);
   // Send to backend
   const data = await apiCall(action, { formHtml }, keyValue);
 

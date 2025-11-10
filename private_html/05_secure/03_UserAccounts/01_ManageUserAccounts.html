@@ -5,23 +5,20 @@
     "listLabel": "Existing Permitted Users",
     "checkList_bin_id": "USER_ACCESS_BIN",
     "checkList_section_key": "Roles",
-    "checkList_fields": ["role"]
+    "checkList_fields": ["Role"]
   }
 </div>
 
-  <fieldset>
-    <legend>Permitted User Details</legend>
-    <label>Name<input required class="name" type="text" /></label>
-    <label>Email<input required type="email" /></label>
-    <label>User name<input class="name" type="text" readonly /></label>
-  </fieldset>
+<fieldset>
+  <legend>Permitted User</legend>
+  <label>Name<input required class="name" type="text" /></label>
+  <label>Email<input required type="email" /></label>
+  <label>User name<input class="name" type="text" readonly /></label>
 
   <fieldset>
     <legend>Role</legend>
     <div class="check-list-container"></div>
   </fieldset>
+</fieldset>
 
 <ul id="Permitted Users"></ul>
-
-<script type="module" src="/js/form-init.js"></script>
-

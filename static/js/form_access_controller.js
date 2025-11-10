@@ -101,23 +101,60 @@ async function loadGatedForm(container, formName) {
   try {
     const token = localStorage.getItem("userLogin_token");
     const fetchURL = `/.netlify/functions/gatedForm?form=${encodeURIComponent(formName)}`;
-    //console.log("[form_access_controller] About to fetch gatedForm:", fetchURL, "with token?", !!token);
 
     const res = await fetch(fetchURL, {
       method: "GET",
       headers: token ? { "Authorization": `Bearer ${token}` } : {}
     });
 
-    //console.log("[form_access_controller] fetch completed. Status:", res.status);
+    const contentType = res.headers.get("Content-Type") || "";
+    if (contentType.includes("application/json")) {
+      const data = await res.json();
+      console.log("[form_access_controller] gatedForm action:", data.action);
+
+      switch (data.action) {
+        case "redirect":
+          console.log("[form_access_controller] Redirecting to:", data.location);
+          window.location.href = data.location;
+          return;
+
+        case "accessDenied":
+          container.innerHTML = `<div style="color:red;">Access denied</div>`;
+          console.log("[form_access_controller] Access denied for this form");
+          return;
+
+        case "notFound":
+          container.innerHTML = `<div style="color:red;">Form not found</div>`;
+          console.error("[ERROR form_access_controller] Form not found");
+          return;
+
+        case "error":
+          container.innerHTML = `<div style="color:red;">Error loading form</div>`;
+          console.error("[ERROR form_access_controller] ${data.message || 'Unknown error'}");
+          return;
+
+        case "formNameMissing":
+          container.innerHTML = `<div style="color:red;">Form name missing</div>`;
+          console.error("[ERROR form_access_controller] Form name missing in request");
+          return;
+
+        case "methodNotAllowed":
+          container.innerHTML = `<div style="color:red;">Method not allowed</div>`;
+          console.error("[ERROR form_access_controller] Method not allowed");
+          return;
+
+        default:
+          container.innerHTML = `<div style="color:red;">Unexpected response</div>`;
+          console.error("[ERROR form_access_controller] Unexpected action:", data.action);
+          return;
+      }
+    }
 
     if (res.status === 200) {
       const html = await res.text();
 
-      // Inject HTML
       container.innerHTML = html;
-      //console.log("[form_access_controller] HTML injected into container");
 
-      // --- Execute external scripts first ---
       const scripts = Array.from(container.querySelectorAll("script"));
       for (const oldScript of scripts) {
         const newScript = document.createElement("script");
@@ -125,38 +162,21 @@ async function loadGatedForm(container, formName) {
 
         if (oldScript.src) {
           newScript.src = oldScript.src;
-          newScript.async = false; // preserve order
-          //console.log("[form_access_controller] External script queued:", oldScript.src);
-        } else if (oldScript.type === "module") {
-          newScript.textContent = oldScript.textContent;
-          //console.log("[form_access_controller] Inline module script queued");
+          newScript.async = false;
         } else {
           newScript.textContent = oldScript.textContent;
-          //console.log("[form_access_controller] Inline classic script queued");
         }
 
         oldScript.replaceWith(newScript);
-        // Wait for module scripts to execute before next
+
         if (newScript.type === "module" && newScript.src) {
           await new Promise(resolve => newScript.onload = resolve);
         }
       }
 
       document.dispatchEvent(new Event("gated-form-loaded"));
-      //console.log("[form_access_controller] gated-form-loaded dispatched");
-
-    } else if (res.status === 302) {
-      const location = res.headers.get("Location");
-      console.warn("[form_access_controller] Redirecting to:", location);
-      window.location.href = location;
-    } else if (res.status === 403) {
-      container.innerHTML = `<div style="color:red;">Access denied</div>`;
-      console.warn("[form_access_controller] Access denied for this form");
-    } else if (res.status === 404) {
-      container.innerHTML = `<div style="color:red;">Form not found</div>`;
-      console.error("[ERROR form_access_controller] Form not found");
     } else {
-      container.innerHTML = `<div style="color:red;">Error loading form</div>`;
+      container.innerHTML = `<div style="color:red;">Unexpected status: ${res.status}</div>`;
       console.error("[ERROR form_access_controller] Unexpected status:", res.status);
     }
   } catch (err) {

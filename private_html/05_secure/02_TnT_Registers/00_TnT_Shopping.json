@@ -4,5 +4,7 @@
   "validation": [
     "none"
   ],
-  "restrict_users": []
+  "restrict_users": [
+    "helper"
+  ]
 }

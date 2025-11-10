@@ -50,18 +50,20 @@ If a user clicks "Reset Password":
 
 
 <fieldset>
-  <div id="login-div">
   <legend>Log-In</legend>
-  <label>User name<input required class="name" type="text" data-lpignore="true"></label>
-  <label>Password<input required type="password" autocomplete="current-password" data-lpignore="true"></label>
-  <button type="button" id="login_btn">Login</button>
+  <div id="login_div">
+   <label>User name<input required class="name" type="text" data-lpignore="true"></label>
+   <label>Password<input required type="password" autocomplete="current-password" data-lpignore="true"></label>
+   <button type="button" id="login_btn">Login</button>
   </div>
+  
   <button type="button" id="logout_btn" style="display:none;">Logout</button>
   <br><span id="login_message" style="color:red;margin-top:0.5em;"></span><br>
-  <div id="register-div">
-  <label id="email_lbl">Email<input id="submitted_by" type="email" data-lpignore="true"></label><br>
-  <button type="button" id="register_btn">Register</button>
-  <button type="button" id="reset_btn">Reset Password</button>
+
+  <div id="register_div">
+   <label id="email_lbl">Email<input id="submitted_by" type="email" data-lpignore="true"></label><br>
+   <button type="button" id="register_btn">Register</button>
+   <button type="button" id="reset_btn">Reset Password</button>
   </div>
 </fieldset>
 
@@ -84,10 +86,12 @@ document.addEventListener("access-validated", async () => {
   const emailInput = document.getElementById("submitted_by");
   const userNameInput = document.querySelector("input[type='text']");
   const passwordInput = document.querySelector("input[type='password']");
-  const loginDiv = form.querySelector("#login-div");
-  const registerDiv = form.querySelector("#register-div");
+  const loginDiv = form.querySelector("#login_div");
+  const registerDiv = form.querySelector("#register_div");
 
   const userLoginToken = localStorage.getItem("userLogin_token");
+  const redirect = new URLSearchParams(window.location.search).get("redirect");
+  const loginMsg = `Enter UN & PW above and click "Login" or to Register or Reset your account, enter your email below`;
   let urlToken = new URLSearchParams(window.location.search).get("token");
   let userName = null;
   let email = null;
@@ -108,25 +112,29 @@ document.addEventListener("access-validated", async () => {
   });
   
   async function findLogin_State() {
+    let iniState = null;
     if (userLoginToken) {
-      return LoginStates.CHECK_USER_LOGIN_TOKEN;
+      iniState =  LoginStates.CHECK_USER_LOGIN_TOKEN;
     } else if (urlToken) {
-      return LoginStates.REGISTERING;
+      iniState =  LoginStates.REGISTERING;
+    } else if (redirect) {
+      iniState =  LoginStates.LOGGING_IN;
     } else {
-      return LoginStates.LOGGED_OUT;
+      iniState =  LoginStates.LOGGED_OUT;
     }
-    console.log("[user-login] Initial loginState:", loginState);
+    messageBox.textContent = loginMsg;
+    console.log("[user-login] Initial loginState:", iniState);
+    return iniState;
   };
 
   async function runLoginSequence(newState) {
-    console.log("[user-login] runLoginSequence() New State:", newState);
     userName = userNameInput.value.trim();
     password = passwordInput.value;
     email = emailInput.value.trim();
+    console.log("[user-login] runLoginSequence() New State:", newState, "userName:", userName );
  
     switch (newState) {
       case LoginStates.LOGGED_IN:
-        const redirect = new URLSearchParams(window.location.search).get("redirect");
         if (redirect) window.location.href = redirect;
         return LoginStates.LOGGED_IN;
   
@@ -170,7 +178,7 @@ document.addEventListener("access-validated", async () => {
 
         console.log("[user-login] runLoginSequence() LOGGING_IN:", userName, password);
         if (!userName || !password) {
-          messageBox.textContent = `Please enter your User Name and Password above and click "Login".`;
+          messageBox.textContent = loginMsg;
           return LoginStates.LOGGED_OUT;
         }
         if (await get_UserLoginToken()) {
@@ -211,7 +219,7 @@ document.addEventListener("access-validated", async () => {
         return LoginStates.LOGGED_OUT;
 
       case LoginStates.LOGGED_OUT:
-        //messageBox.textContent = "Enter UN & PW above to log-in, or to Register or Reset your account, enter your email below";
+        //messageBox.textContent = loginMsg;
         return loginState;
 
       default:
@@ -379,4 +387,3 @@ document.addEventListener("access-validated", async () => {
   //console.log("[user-login] Event listeners attached for login and logout.");
 });
 </script>
-

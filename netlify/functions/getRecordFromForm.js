@@ -104,8 +104,18 @@ const snapshotCleaned = JSON.parse(JSON.stringify(cleaned));
 // merge cleaned array into object
 const merged = Object.assign({}, ...cleaned);
 const snapshotMerged = JSON.parse(JSON.stringify(merged));
-//console.debug('[getRecordFromForm] Merged:', JSON.stringify(snapshotMerged, null, 2));
+console.debug('[getRecordFromForm] Merged:', JSON.stringify(snapshotMerged, null, 2));
 
+// --- Flatten single top key with nested array of objects ---
+const keys = Object.keys(merged);
+if (keys.length === 1 && Array.isArray(merged[keys[0]])) {
+  const inner = merged[keys[0]];
+  if (inner.every(item => item && typeof item === "object" && !Array.isArray(item))) {
+    const flattened = Object.assign({}, ...inner);
+    console.debug('[getRecordFromForm] Flattened nested array →', flattened);
+    return flattened;
+  }
+}
 return merged;
 }
 
