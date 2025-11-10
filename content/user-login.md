@@ -82,8 +82,8 @@ document.addEventListener("access-validated", async () => {
   const messageBox = document.getElementById("login_message");
   const emailLabel = document.getElementById("email_lbl");
   const emailInput = document.getElementById("submitted_by");
-  const userNameInput = document.querySelector("input.name");
-  const passwordInput = document.querySelector("input.password");
+  const userNameInput = document.querySelector("input[type='text']");
+  const passwordInput = document.querySelector("input[type='password']");
   const loginDiv = form.querySelector("#login-div");
   const registerDiv = form.querySelector("#register-div");
 
