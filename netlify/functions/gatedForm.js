@@ -52,9 +52,10 @@ export async function handler(event) {
   } catch (err) {
     console.error("[gatedForm] Failed to read frontMatter:", err);
     return { statusCode: 500, body: "Server error loading form metadata" };
-  }
-
-  const restrictUsers = frontMatter.restrict_users.some(r => r && r.toLowerCase() !== "none");
+  }  
+  
+  const users = frontMatter.restrict_users;
+  const restrictUsers = users.some(r => r && r.toLowerCase() !== "none");
   console.log("[gatedForm] Restricted to:", users, "restrictUsers:", restrictUsers);
 
   // Verify token if restricted
