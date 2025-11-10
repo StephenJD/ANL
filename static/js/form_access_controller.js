@@ -85,7 +85,7 @@ window.requestAccount = async function (email) {
     console.log("[form_access_controller] requestAccount(): email set to", emailInput?.value);
     return await handleRequestButtonClick();
   } catch (err) {
-    console.error("requestAccount() failed:", err);
+    console.error("[form_access_controller] requestAccount() failed:", err);
     return false;
   }
 };
@@ -94,28 +94,28 @@ async function loadGatedForm(container, formName) {
   console.log("[form_access_controller] loadGatedForm called with:", { container, formName });
 
   if (!container || !formName) {
-    console.error("[DEBUG] Missing container or formName");
+    console.error("[form_access_controller] Missing container or formName");
     return;
   }
 
   try {
     const token = localStorage.getItem("userLogin_token");
     const fetchURL = `/.netlify/functions/gatedForm?form=${encodeURIComponent(formName)}`;
-    console.log("[form_access_controller] About to fetch gatedForm:", fetchURL, "with token?", !!token);
+    //console.log("[form_access_controller] About to fetch gatedForm:", fetchURL, "with token?", !!token);
 
     const res = await fetch(fetchURL, {
       method: "GET",
       headers: token ? { "Authorization": `Bearer ${token}` } : {}
     });
 
-    console.log("[form_access_controller] fetch completed. Status:", res.status);
+    //console.log("[form_access_controller] fetch completed. Status:", res.status);
 
     if (res.status === 200) {
       const html = await res.text();
 
       // Inject HTML
       container.innerHTML = html;
-      console.log("[form_access_controller] HTML injected into container");
+      //console.log("[form_access_controller] HTML injected into container");
 
       // --- Execute external scripts first ---
       const scripts = Array.from(container.querySelectorAll("script"));
@@ -126,13 +126,13 @@ async function loadGatedForm(container, formName) {
         if (oldScript.src) {
           newScript.src = oldScript.src;
           newScript.async = false; // preserve order
-          console.log("[form_access_controller] External script queued:", oldScript.src);
+          //console.log("[form_access_controller] External script queued:", oldScript.src);
         } else if (oldScript.type === "module") {
           newScript.textContent = oldScript.textContent;
-          console.log("[form_access_controller] Inline module script queued");
+          //console.log("[form_access_controller] Inline module script queued");
         } else {
           newScript.textContent = oldScript.textContent;
-          console.log("[form_access_controller] Inline classic script queued");
+          //console.log("[form_access_controller] Inline classic script queued");
         }
 
         oldScript.replaceWith(newScript);
@@ -143,7 +143,7 @@ async function loadGatedForm(container, formName) {
       }
 
       document.dispatchEvent(new Event("gated-form-loaded"));
-      console.log("[form_access_controller] gated-form-loaded dispatched");
+      //console.log("[form_access_controller] gated-form-loaded dispatched");
 
     } else if (res.status === 302) {
       const location = res.headers.get("Location");
@@ -273,7 +273,7 @@ async function verifyFormAccessToken() {
     }
     if (requestBox) requestBox.style.display = "none";
   } catch (err) {
-    console.error(" form_access_controller verifyFormAccessToken error:", err);
+    console.error("[form_access_controller] verifyFormAccessToken error:", err);
     if (messageBox) messageBox.textContent = "Verification failed.";
   }
 }
@@ -307,7 +307,7 @@ async function handleFormSubmission(e) {
   }
 
   const formData = clonedForm.outerHTML;
-  console.log("[form_access_controller] handleFormSubmission clone:", formData);
+  //console.log("[form_access_controller] handleFormSubmission clone:", formData);
 
   const payload = { bin: "ACCESS_TOKEN_BIN", formName: cleanTitle, formData, formPath: window.location.pathname }; 
 
@@ -331,7 +331,7 @@ async function handleFormSubmission(e) {
       alert("Form saved, but no token was returned.");
     }
   } catch (err) {
-    console.error("[submitFormController] error:", err);
+    console.error("[form_access_controller] error:", err);
     alert("Form submission failed: " + (err.message || "unknown error"));
   }
 }

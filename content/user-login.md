@@ -51,50 +51,59 @@ If a user clicks "Reset Password":
 
 <fieldset>
   <div id="login-div">
-  <legend>Log-In</legend>
-  <label>User name<input required class="name" type="text" data-lpignore="true"></label>
-  <label>Password<input required type="password" autocomplete="current-password" data-lpignore="true"></label>
-  <button type="button">Login</button>
+    <legend>Log-In</legend>
+    <label for="username_input">User name</label>
+    <input required id="username_input" class="name" type="text" data-lpignore="true">
+    
+    <label for="password_input">Password</label>
+    <input required id="password_input" type="password" autocomplete="current-password" data-lpignore="true">
+    
+    <button type="button" id="login_btn">Login</button>
   </div>
-  <button type="button" style="display:none;">Logout</button>
-  <br><span id="login_message" style="color:red;margin-top:0.5em;"></span><br>
+
+  <button type="button" id="logout_btn" style="display:none;">Logout</button>
+
+  <br>
+  <span id="login_message" style="color:red;margin-top:0.5em;"></span>
+  <br>
+
   <div id="register-div">
-  <label>Email<input id="submitted_by" type="email" data-lpignore="true"></label><br>
-  <button type="button">Register</button>
-  <button type="button">Reset Password</button>
+    <label for="submitted_by">Email</label>
+    <input id="submitted_by" type="email" data-lpignore="true"><br>
+    
+    <button type="button" id="register_btn">Register</button>
+    <button type="button" id="reset_btn">Reset Password</button>
   </div>
 </fieldset>
 
 <script type="module">
-console.log("Login form script loaded, waiting for access-validated event.");
+//console.log("[user-login] Login form script loaded, waiting for access-validated event.");
 
 document.addEventListener("access-validated", async () => {
-  console.log("Access validated event triggered.");
+  //console.log("[user-login] Access validated event triggered.");
 
   const form = document.querySelector("form[name='login']");
-  console.log("Login form found:", form);
+  //console.log([user-login] Login form found:", form);
 
-  const buttons = Array.from(form.querySelectorAll("button"));
-  const loginBtn = buttons.find(b => b.textContent.trim() === "Login");
-  const logoutBtn = buttons.find(b => b.textContent.trim() === "Logout");
-  const registerBtn = buttons.find(b => b.textContent.trim() === "Register");
-  const resetBtn = buttons.find(b => b.textContent.trim() === "Reset Password");
-  console.log("Buttons mapped:", { loginBtn, logoutBtn, registerBtn, resetBtn });
+  const loginBtn = document.getElementById("login_btn");
+  const logoutBtn = document.getElementById("logout_btn");
+  const registerBtn = document.getElementById("register_btn");
+  const resetBtn = document.getElementById("reset_btn");
+
   const messageBox = document.getElementById("login_message");
   const emailInput = document.getElementById("submitted_by");
-  const emailLabel = emailInput.closest("label");
-  let urlToken = new URLSearchParams(window.location.search).get("token");
-  const inputs = form.querySelectorAll("input");
-  const userNameInput = inputs[0];
-  const passwordInput = inputs[1];
-  const userLoginToken = localStorage.getItem("userLogin_token");
-  const loginDiv = form.querySelector("#login-div");
-  const registerDiv = form.querySelector("#register-div");
+  const userNameInput = document.getElementById("username_input");
+  const passwordInput = document.getElementById("password_input");
 
+  const loginDiv = document.getElementById("login-div");
+  const registerDiv = document.getElementById("register-div");
+  
+  const userLoginToken = localStorage.getItem("userLogin_token");
   let userName = null;
   let email = null;
   let loginState = null;
   let password = null;
+  let urlToken = new URLSearchParams(window.location.search).get("token");
  
   const LoginStates = Object.freeze({
     UNKNOWN: "unknown",
@@ -117,11 +126,11 @@ document.addEventListener("access-validated", async () => {
     } else {
       return LoginStates.LOGGED_OUT;
     }
-    console.log("Initial loginState:", loginState);
+    console.log("[user-login] Initial loginState:", loginState);
   };
 
   async function runLoginSequence(newState) {
-    console.log("runLoginSequence() New State:", newState);
+    console.log("[user-login] runLoginSequence() New State:", newState);
     userName = userNameInput.value.trim();
     password = passwordInput.value;
     email = emailInput.value.trim();
@@ -139,7 +148,7 @@ document.addEventListener("access-validated", async () => {
         return LoginStates.LOGGING_OUT;
 
       case LoginStates.REGISTERING:
-        console.log("runLoginSequence() REGISTERING: Em,Un,Pw,Tk", email, userName, password, urlToken);
+        console.log("[user-login] runLoginSequence() REGISTERING: Em,Un,Pw,Tk", email, userName, password, urlToken);
         if (urlToken && email) {
           if (!userName || !password) {
             messageBox.textContent = `Enter your User-Name and Password above then click "Register"`;
@@ -159,7 +168,7 @@ document.addEventListener("access-validated", async () => {
         }
 
       case LoginStates.REGISTER_LINK_REQUESTED:
-        console.log("runLoginSequence() REGISTER_LINK_REQUESTED:", email);
+        console.log("[user-login] runLoginSequence() REGISTER_LINK_REQUESTED:", email);
         if (await requestAccount(email)) {
           messageBox.textContent = `Registration link emailed to ${email}`;
           return LoginStates.REGISTER_LINK_REQUESTED;
@@ -170,7 +179,7 @@ document.addEventListener("access-validated", async () => {
 
       case LoginStates.LOGGING_IN:
 
-        console.log("runLoginSequence() LOGGING_IN:", userName, password);
+        console.log("[user-login] runLoginSequence() LOGGING_IN:", userName, password);
         if (!userName || !password) {
           messageBox.textContent = `Please enter your User Name and Password above and click "Login".`;
           return LoginStates.LOGGED_OUT;
@@ -183,7 +192,7 @@ document.addEventListener("access-validated", async () => {
         return LoginStates.LOGGED_OUT;
 
       case LoginStates.SHOWING_USER:
-        console.log("runLoginSequence() SHOWING_USER:", userName);
+        console.log("[user-login] runLoginSequence() SHOWING_USER:", userName);
         loginDiv.style.display = "none";
         logoutBtn.style.display = "inline-block";
         registerDiv.style.display = "none";
@@ -217,16 +226,16 @@ document.addEventListener("access-validated", async () => {
         return loginState;
 
       default:
-        console.log("Unknown state");
+        console.log("[user-login] Unknown state");
         return loginState;
     }
   }
 
   async function check_UserLoginToken(token) {
-    console.log("check_UserLoginToken:", token);
+    console.log("[user-login] check_UserLoginToken:", token);
 
     try {
-      console.log("Sending check_UserLoginToken request...");
+      console.log("[user-login] Sending check_UserLoginToken request...");
       const resp = await fetch("/.netlify/functions/verifyUser", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -234,24 +243,24 @@ document.addEventListener("access-validated", async () => {
       });
 
       const data = await resp.json();
-      console.log("check_UserLoginToken response:", data);
+      console.log("[user-login] check_UserLoginToken response:", data);
 
       if (data.status === "success") {
         userNameInput.value = data.entry.user_name;
-        console.log("userLoginToken valid for", userNameInput.value);
+        console.log("[user-login] userLoginToken valid for", userNameInput.value);
         return true;
       }
 
-      console.warn("userLoginToken invalid", data.status);
+      console.warn("[user-login] userLoginToken invalid", data.status);
 
     } catch (err) {
-      console.error("check_UserLoginToken failed:", err);
+      console.error("[user-login] check_UserLoginToken failed:", err);
     }
     return false;
   }
 
   async function get_UserLoginToken() {
-    console.log("get_UserLoginToken:", userName, password);
+    console.log("[user-login] get_UserLoginToken:", userName, password);
     if (!userName || !password) {
       return false;
     }
@@ -263,30 +272,30 @@ document.addEventListener("access-validated", async () => {
       });
 
       const data = await resp.json();
-      console.log("Parsed verifyUser response:", data);
+      console.log("[user-login] Parsed verifyUser response:", data);
 
       if (data.status === "success") {
-        console.log("Login successful, saving userLoginToken...");
+        console.log("[user-login] Login successful, saving userLoginToken...");
         localStorage.setItem("userLogin_token", data.userLoginToken);
         localStorage.setItem("user_role", JSON.stringify(data.role));
         return true;
       }
 
-      console.warn("Login not permitted:", data.status);
+      console.warn("[user-login] Login not permitted:", data.status);
       
       /*
       // --- Check superuser ---
-      console.log("Checking superuser credentials...");
+      console.log("[user-login] Checking superuser credentials...");
       const suResp = await fetch("/.netlify/functions/verifyUser", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "checkSuperUser", userName, password })
       });
       const suData = await suResp.json();
-      console.log("Superuser check response:", suData);
+      console.log("[user-login] Superuser check response:", suData);
 
       if (suData.status != "success") {
-        console.warn("Login failed for non-superuser.");
+        console.warn("[user-login] Login failed for non-superuser.");
         registerBtn.style.display = "inline-block";
         resetBtn.style.display = "inline-block";
         //alert("Login failed. Please register or reset your account.");
@@ -294,21 +303,21 @@ document.addEventListener("access-validated", async () => {
       */
 
     } catch (err) {
-      console.error("Login request failed:", err);
-      //alert("Login failed. Check console for details.");
+      console.error("[user-login] Login request failed:", err);
+      //alert("[user-login] Login failed. Check console for details.");
     }
     return false;
   }
 
   function removeLogin_token() {
-    console.log("removeLogin_token() called, clearing loginToken...");
+    console.log("[user-login] removeLogin_token() called, clearing loginToken...");
     localStorage.removeItem("userLogin_token");
     localStorage.removeItem("user_role");
-    console.log("Login-options buttons restored after logout.");
+    console.log("[user-login] Login-options buttons restored after logout.");
   }
 
   async function submit_new_user_login() {
-    console.log("submit_new_user_login() email/UN/PW:",email, userName, password);
+    console.log("[user-login] submit_new_user_login() email/UN/PW:",email, userName, password);
 
     try {
       const resp = await fetch("/.netlify/functions/verifyUser", {
@@ -328,14 +337,14 @@ document.addEventListener("access-validated", async () => {
       }
       return true;
     } catch (err) {
-      console.error("Error adding user login:", err);
-      messageBox.textContent = `Error trying to verify ${email}`;
+      console.error("[user-login] Error adding user login:", err);
+      messageBox.textContent = `[user-login] Error trying to verify ${email}`;
     }
     return false;
   }
 
   async function remove_login_token() {
-    console.log("remove_login_token() Email:", email);
+    console.log("[user-login] remove_login_token() Email:", email);
 
     try {
       const resp = await fetch("/.netlify/functions/verifyUser", {
@@ -347,14 +356,14 @@ document.addEventListener("access-validated", async () => {
         })
       });
       const data = await resp.json();
-      console.log("remove_login_token() data:", data);
+      console.log("[user-login] remove_login_token() data:", data);
       if (data.status !== "success") {
         return false;
       }
       return true;
     } catch (err) {
-      console.error("Error adding user login:", err);
-      messageBox.textContent = `Error trying to delete ${userName}`;
+      console.error("[user-login] Error adding user login:", err);
+      messageBox.textContent = `[user-login] Error trying to delete ${userName}`;
     }
     return false;
   }
@@ -365,7 +374,7 @@ document.addEventListener("access-validated", async () => {
       loginState = newState;
       newState = await runLoginSequence(loginState);
     }
-    console.log("runLoginSequence() Final State:", loginState);
+    console.log("[user-login] runLoginSequence() Final State:", loginState);
   }  
 
   (async () => {
@@ -378,7 +387,7 @@ document.addEventListener("access-validated", async () => {
   registerBtn.addEventListener("click", () => runStateMachine(LoginStates.REGISTERING));
   resetBtn.addEventListener("click", () => runStateMachine(LoginStates.RESETTING));
 
-  console.log("Event listeners attached for login and logout.");
+  //console.log("[user-login] Event listeners attached for login and logout.");
 });
 </script>
 
