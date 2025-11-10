@@ -55,8 +55,14 @@ export async function handler(event) {
   }
 
   // Compute restrictUsers
-  const restrictUsers = Array.isArray(frontMatter.restrict_users) &&
-                        frontMatter.restrict_users.some(r => r && r.toLowerCase() !== "none");
+  const users = Array.isArray(frontMatter.restrict_users)
+  ? frontMatter.restrict_users
+  : frontMatter.restrict_users
+  ? [frontMatter.restrict_users]
+  : [];
+
+  const restrictUsers = users.some(r => r && r.toLowerCase() !== "none");
+  console.log("[gatedForm] Restricted to:", users, "restrictUsers:", restrictUsers);
 
   // Verify token if restricted
   let userStatus = { valid: false, roles: [] };
