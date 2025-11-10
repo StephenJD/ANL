@@ -10,16 +10,16 @@ export async function handler(event) {
 
   try {
     const { token } = JSON.parse(event.body || "{}");
-    console.log("[DEBUG] Incoming finalSubmit request:", { tokenSnippet: token ? token.slice(0, 12) + "..." : null });
+    console.log("[finalSubmit] Incoming request:", { tokenSnippet: token ? token.slice(0, 12) + "..." : null });
 
     if (!token) {
-      console.error("[ERROR] Missing token in request body");
+      console.error("[ERROR finalSubmit] Missing token in request body");
       return { statusCode: 400, body: JSON.stringify({ success: false, error: "Missing token" }) };
     }
 
     const storedFormData = await getSecureItem(process.env.ACCESS_TOKEN_BIN, token);
     if (!storedFormData) {
-      console.error("[ERROR] Invalid or expired token:", token);
+      console.error("[ERROR finalSubmit] Invalid or expired token:", token);
       return { statusCode: 400, body: JSON.stringify({ success: false, error: "Invalid or expired token" }) };
     }
 
@@ -27,7 +27,7 @@ export async function handler(event) {
     const formattedHTML = formData.replace(/{@V}/g, " (verified)").replace(/{@}/g, " (un-verified)");
 
     const adminEmail = process.env.ADMIN_EMAIL || process.env.SMTP_USER || "form@anl.com";
-    console.log("[DEBUG] Sending submission to admin:", adminEmail);
+    console.log("[finalSubmit] Sending submission to admin:", adminEmail);
 
     await sendEmail({
       to: adminEmail,
@@ -36,11 +36,11 @@ export async function handler(event) {
       attachBodyAsFile: true
     });
 
-    console.log("[DEBUG] Final submission processed successfully for token:", token);
+    console.log("[finalSubmit] Final submission processed successfully for token:", token);
     return { statusCode: 200, body: JSON.stringify({ success: true, note: "Submission processed" }) };
 
   } catch (err) {
-    console.error("[ERROR] finalSubmit failed:", { message: err.message, stack: err.stack });
+    console.error("[ERROR finalSubmit] finalSubmit failed:", { message: err.message, stack: err.stack });
     return { statusCode: 500, body: JSON.stringify({ success: false, error: err.message || "Server error" }) };
   }
 }

@@ -1,5 +1,5 @@
 // /static/js/binArrayInterface.js 
-import { getFormRecord, urlize, setInputsFromRecord } from "/js/form_parser.js";
+import { setInputsFromRecord } from "/js/loadFormFromRecord.js";
 
 export function populateForm(form, record) {
   setInputsFromRecord(form, record);
@@ -102,17 +102,18 @@ export async function manageBinArrayForm({ bin_id, sectionKey, listLabel, form }
   let editKeyValue = null;
   let recordsCache = [];
 
-  async function apiCall(action, record = null, keyValue = null) {
-    const body = {action, bin_id: bin_id, section_key: sectionKey };
-    if (record) body.record = record;
-    if (keyValue) body.keyValue = keyValue;
-    const res = await fetch("/.netlify/functions/manageBinArrays", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body)
-    });
-    return res.json();
-  }
+async function apiCall(action, payload = {}, keyValue = null) {
+  const body = { action, bin_id, section_key: sectionKey, ...payload };
+  if (keyValue) body.keyValue = keyValue;
+
+  const res = await fetch("/.netlify/functions/manageBinArrays", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  });
+  return res.json();
+}
+
 
   async function loadRecordsList() {
     const data = await apiCall("list");
@@ -158,20 +159,35 @@ export async function manageBinArrayForm({ bin_id, sectionKey, listLabel, form }
     alignButtons(form);
   });
 
-  saveBtn.addEventListener("click", async () => {
-    if (!form.reportValidity()) return;
-    const record = getFormRecord(form);
+saveBtn.addEventListener("click", async () => {
+  if (!form.reportValidity()) return;
 
-    const keyValue = editKeyValue || Object.values(record)[0];
-    const action = editKeyValue ? "edit" : "add"; // set by edit-button, not from input.
-    console.debug('Save recordSet:', structuredClone(record), "keyValue", keyValue, "Action:", action);
-//return;
-    const data = await apiCall(action, record, keyValue);
-    if (data.success) {
-      clearForm();
-      await loadRecordsList();
+  // Clone the form to avoid modifying the displayed form
+  const clonedForm = form.cloneNode(true);
+  clonedForm.querySelectorAll("input, textarea, select").forEach(input => {
+    if (input.type === "checkbox" || input.type === "radio") {
+      if (input.checked) input.setAttribute("checked", ""); else input.removeAttribute("checked");
+    } else if (input.tagName.toLowerCase() === "textarea") {
+      input.textContent = input.value;
+    } else {
+      input.setAttribute("value", input.value);
     }
   });
+
+  // Remove all <script> tags
+  clonedForm.querySelectorAll('script').forEach(s => s.remove());
+  const formHtml = clonedForm.outerHTML;
+  const keyValue = editKeyValue || Object.values(record)[0];
+  const action = editKeyValue ? "edit" : "add"; // set by edit-button, not from input.
+  console.debug('Save recordSet:', "keyValue", keyValue, "Action:", action);
+  // Send to backend
+  const data = await apiCall(action, { formHtml }, keyValue);
+
+  if (data.success) {
+    clearForm();
+    await loadRecordsList();
+  }
+});
 
   cancelBtn.addEventListener("click", clearForm);
 

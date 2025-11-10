@@ -3,88 +3,78 @@ import fs from "fs";
 import path from "path";
 import { check_userLoginToken } from "./verifyUser.js";
 
-function findFileCaseInsensitive(dir, targetName) {
-  if (!fs.existsSync(dir)) return null;
-  const files = fs.readdirSync(dir);
-  const found = files.find(f => f.toLowerCase() === targetName.toLowerCase());
-  return found ? path.join(dir, found) : null;
+function resolvePathCaseInsensitive(fullPath) {
+  const parts = fullPath.split(path.sep);
+  let current = parts[0] === "" ? path.sep : parts.shift(); // handle absolute paths
+  for (const part of parts) {
+    if (!fs.existsSync(current)) return null;
+    const entries = fs.readdirSync(current);
+    const match = entries.find(f => f.toLowerCase() === part.toLowerCase());
+    if (!match) return null;
+    current = path.join(current, match);
+  }
+  return current;
 }
 
 export async function handler(event) {
+
   if (event.httpMethod !== "GET") {
     return { statusCode: 405, body: "Method Not Allowed" };
   }
 
   const token = event.headers["authorization"]?.replace("Bearer ", "");
-
-const queryformName = event.queryStringParameters?.form;
-const formName = queryformName?.replace(/^\/|\/$/g, ""); // trim slashes
-console.log("[DEBUG gatedForm] Raw query form:", queryformName);
-console.log("[DEBUG gatedForm] Normalized formName:", formName);
-
-// Compute initial paths
-let htmlPath = path.join(process.cwd(), "private_html", `${formName}.html`);
-let metadataPath = path.join(process.cwd(), "private_html", `${formName}.json`);
-console.log("[DEBUG gatedForm] Computed htmlPath:", htmlPath);
-console.log("[DEBUG gatedForm] Computed metadataPath:", metadataPath);
-
-// Case-insensitive resolution
-const resolvedHtmlPath = findFileCaseInsensitive(path.dirname(htmlPath), path.basename(htmlPath));
-const resolvedMetadataPath = findFileCaseInsensitive(path.dirname(metadataPath), path.basename(metadataPath));
-console.log("[DEBUG gatedForm] Resolved HTML file:", resolvedHtmlPath);
-console.log("[DEBUG gatedForm] Resolved metadata file:", resolvedMetadataPath);
-
-// Replace htmlPath / metadataPath with resolved versions
-htmlPath = resolvedHtmlPath || htmlPath;
-metadataPath = resolvedMetadataPath || metadataPath;
-
+  const queryformName = event.queryStringParameters?.form;
+  const formName = queryformName?.replace(/^\/|\/$/g, "");
+  console.log("[gatedForm] formName:", formName);
 
   if (!formName) {
+    console.log("[gatedForm] Missing form name in query");
     return { statusCode: 400, body: "Form name missing" };
   }
 
-  console.log("[DEBUG gatedForm] Incoming request:", event.httpMethod, event.url);
-  console.log("[DEBUG gatedForm] Requested formName:", formName);
-  console.log("[DEBUG gatedForm] Authorization token present:", !!token);
+  // Compute paths
+  let htmlPath = path.join(process.cwd(), "private_html", `${formName}.html`);
+  let metadataPath = path.join(process.cwd(), "private_html", `${formName}.json`);
 
-  const formDir = path.join(process.cwd(), "private_html", path.dirname(formName));
-  const formBase = path.basename(formName);
+  // Case-insensitive resolution
+  htmlPath = resolvePathCaseInsensitive(htmlPath) || htmlPath;
+  metadataPath = resolvePathCaseInsensitive(metadataPath) || metadataPath;
 
-  // 1. Load frontMatter JSON
-  let frontMatter;
+  // Load frontMatter
+  let frontMatter = { restrict_users: [], validation: [] };
   try {
-    if (!metadataPath) {
-      console.warn(`[DEBUG gatedForm] Metadata not found, defaulting to unrestricted`);
-      frontMatter = { restrict_users: [], validation: [] };
-    } else {
-      console.log("[DEBUG gatedForm] Found frontMatter JSON:", metadataPath);
+    if (metadataPath && fs.existsSync(metadataPath)) {
       frontMatter = JSON.parse(fs.readFileSync(metadataPath, "utf-8"));
+      console.log("[gatedForm] Loaded frontMatter:", frontMatter);
+    } else {
+      console.log("[gatedForm] Metadata not found, defaulting to unrestricted");
     }
   } catch (err) {
-    console.error("[DEBUG gatedForm] Failed to read frontMatter:", err);
+    console.error("[gatedForm] Failed to read frontMatter:", err);
     return { statusCode: 500, body: "Server error loading form metadata" };
   }
 
+  // Compute restrictUsers
   const restrictUsers = Array.isArray(frontMatter.restrict_users) &&
                         frontMatter.restrict_users.some(r => r && r.toLowerCase() !== "none");
-  console.log("[DEBUG gatedForm] restrictUsers computed:", restrictUsers);
 
-  // 2. Check token if restricted
+  // Verify token if restricted
   let userStatus = { valid: false, roles: [] };
   if (restrictUsers && token) {
     try {
       const check = await check_userLoginToken(token);
       userStatus.valid = check.status === "success";
-      userStatus.roles = (check.entry?.roles || []).map(r => String(r).toLowerCase());
+      userStatus.roles = (check.entry?.role || []).map(r => String(r).toLowerCase());
+      console.log("[gatedForm] Token valid?", userStatus.valid, "User roles:", userStatus.roles);
     } catch (err) {
-      console.error("[DEBUG gatedForm] check_userLoginToken failed:", err);
+      console.error("[gatedForm] check_userLoginToken failed:", err);
       userStatus = { valid: false, roles: [] };
     }
   }
 
-  // 3. Redirect to login if restricted & invalid
+  // Redirect to login if restricted & invalid token or no token
   if (restrictUsers && !userStatus.valid) {
-    console.log("[DEBUG gatedForm] Redirecting to login: restricted & invalid token");
+    console.log("[gatedForm] Redirecting to login due to missing/invalid token");
     return {
       statusCode: 302,
       headers: { Location: `/user-login?redirect=${encodeURIComponent(`/gatedForm?form=${formName}`)}` },
@@ -92,19 +82,23 @@ metadataPath = resolvedMetadataPath || metadataPath;
     };
   }
 
-  // 4. Role check
+  // Role check
   if (restrictUsers) {
     const allowedRoles = frontMatter.restrict_users
       .filter(r => r && r.toLowerCase() !== "none")
       .map(r => r.toLowerCase());
+    console.log("[gatedForm] Allowed roles for this form:", allowedRoles);
 
-    if (!userStatus.roles.some(r => allowedRoles.includes(r))) {
+    const roleMatch = userStatus.roles.some(r => allowedRoles.includes(r));
+    console.log("[gatedForm] Role match:", roleMatch);
+
+    if (!roleMatch) {
       return {
         statusCode: 403,
         body: `
           <div style="margin:3em auto;max-width:600px;text-align:center;font-family:sans-serif;">
             <h2 style="color:red;">Access Denied</h2>
-            <p>Your role "<strong>${userStatus.roles.join(", ")}</strong>" does not have permission to access this form.</p>
+            <p>Your role "<strong>${userStatus.roles.join(", ") || "None"}</strong>" does not have permission to access this form.</p>
             <p>Allowed roles: <strong>${allowedRoles.join(", ")}</strong></p>
           </div>
         `
@@ -112,14 +106,14 @@ metadataPath = resolvedMetadataPath || metadataPath;
     }
   }
 
-  // 5. Serve HTML
+  // Serve HTML
   try {
-    if (!htmlPath) {
-      console.error("[DEBUG gatedForm] Form not found:", path.join(formDir, `${formBase}.html`));
+    if (!htmlPath || !fs.existsSync(htmlPath)) {
+      console.error("[gatedForm] HTML file not found:", htmlPath);
       return { statusCode: 404, body: "Form not found" };
     }
 
-    console.log("[DEBUG gatedForm] Serving HTML:", htmlPath);
+    console.log("[gatedForm] Serving HTML");
     const html = fs.readFileSync(htmlPath, "utf-8");
     return {
       statusCode: 200,
@@ -127,7 +121,7 @@ metadataPath = resolvedMetadataPath || metadataPath;
       body: html
     };
   } catch (err) {
-    console.error("[DEBUG gatedForm] Error reading HTML:", err);
+    console.error("[gatedForm] Error reading HTML:", err);
     return { statusCode: 500, body: "Server error reading form" };
   }
 }

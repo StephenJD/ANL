@@ -21,6 +21,19 @@ Form Rules
 9. Add "None" default text in all required text fields that ask for additional information.
 ` >}}
 
+
+<div id="form-config" style="display:none">
+  {
+    "save_bin_id": "HELPER_BIN",
+    "save_sectionKey": "TnT-Helpers",
+    "listLabel": "Existing Helpers",
+    "checkList_bin_id": null,
+    "checkList_section_key": null,
+    "checkList_fields": null
+  }
+</div>
+
+
 <label>Name: <input required class="name" type="text" /></label>
 <fieldset><legend>Contact Details</legend>
   <label>Mobile No: <input required type="tel" /></label>
@@ -53,16 +66,3 @@ Form Rules
   <label>Safeguarding Date: <input class="" type="date" /></label>
   <label>Safeguarding Level: <input class="short-input" type="text" /></label>
 </fieldset>
-
-<script type="module">
-  import { manageBinArrayForm } from "/js/binArrayInterface.js";
-  document.addEventListener("access-validated", () => {
-    const form = document.querySelector("form.verified-form");
-    manageBinArrayForm({
-      bin_id: "HELPER_BIN",
-      sectionKey: "TnT-Helpers",
-      listLabel: "Existing Helpers",
-      form
-    });
-  });
-</script>

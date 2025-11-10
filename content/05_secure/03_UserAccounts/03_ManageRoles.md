@@ -8,21 +8,19 @@ restrict_users: [SuperUser]
 validation: [noSend] # options: requestLink, submit, none (default), noSend
 ---
 
+<div id="form-config" style="display:none">
+  {
+    "save_bin_id": "USER_ACCESS_BIN",
+    "save_sectionKey": "Roles",
+    "listLabel": "Existing Roles",
+    "checkList_bin_id": null,
+    "checkList_section_key": null,
+    "checkList_fields": null
+  }
+</div>
+
 <fieldset>
   <legend>Role Details</legend>
   <label>Role<input required class="name" type="text" /></label>
   <label>Description<input required type="text" /></label>
 </fieldset>
-
-<script type="module">
-  import { manageBinArrayForm } from "/js/binArrayInterface.js";
-  document.addEventListener("access-validated", () => {
-    const form = document.querySelector("form.verified-form");
-    manageBinArrayForm({
-      bin_id: "USER_ACCESS_BIN",
-      sectionKey: "Roles",
-      listLabel: "Existing Roles",
-      form
-    });
-  });
-</script>

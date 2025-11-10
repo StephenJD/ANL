@@ -12,8 +12,7 @@ export async function sendEmail({
   html,
   attachBodyAsFile = false
 }) {
-  console.log("[DEBUG] sendEmail invoked");
-  console.log("[DEBUG] Params:", { to, subject, html });
+  console.log("[sendEmail] Params:", { to, subject, html });
 
   if (!to || !subject || !html) {
     console.error("[ERROR] Missing required email parameters", { to, subject, htmlLength: html ? html.length : 0 });
@@ -31,12 +30,10 @@ export async function sendEmail({
     attachments.push({ filename: `${subject}.pdf`, content: pdfBytes });
   }
 
-  console.log("[DEBUG] Attachments set:", attachments.length);
-
   const isLocal = !process.env.SMTP_HOST;
 
   if (isLocal) {
-    console.log("[DEBUG] Local mode - email not sent", {
+    console.log("[sendEmail] Local mode - email not sent", {
       to,
       subject,
       attachBodyAsFile,
@@ -46,7 +43,6 @@ export async function sendEmail({
     return { success: true, debug: true };
   }
 
-  console.log("[DEBUG] Creating Nodemailer", process.env.SMTP_HOST);
   const transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST,
     port: 587,
@@ -64,7 +60,7 @@ export async function sendEmail({
       html,
       attachments
     });
-    console.log("[DEBUG] Email successfully sent");
+    console.log("[sendEmail] Email successfully sent");
     return { success: true };
   } catch (err) {
     console.error("[ERROR] sendEmail failed", {

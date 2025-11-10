@@ -37,12 +37,6 @@ Server-side:
 9. Server handles final submission to Netlify.
 */
 
-// Client-Side: /static/js/form_access_controller.js
-// Loaded by layouts/forms/single.html
-
-// Client-Side: /static/js/form_access_controller.js
-// Loaded by layouts/forms/single.html
-
 export let restrictUsers = false;
 let requireRequestLink = false;
 let requireFinalSubmit = false;
@@ -83,23 +77,12 @@ document.addEventListener("DOMContentLoaded", async () => {
   form?.addEventListener("submit", handleFormSubmission);
 });
 
-document.addEventListener("DOMContentLoaded", () => {
-  const breadcrumbLinks = document.querySelectorAll(".breadcrumb a");
-  console.log("[DEBUG] Found breadcrumb links:", breadcrumbLinks);
-
-  breadcrumbLinks.forEach(a => {
-    a.addEventListener("click", e => {
-      console.log("[DEBUG] Clicked breadcrumb link:", a.href, "default prevented?", e.defaultPrevented);
-    });
-  });
-});
-
 window.requestAccount = async function (email) {
   try {
     requireRequestLink = true;
     restrictUsers = true;
     if (emailInput) emailInput.value = email || "";
-    console.log("requestAccount(): email set to", emailInput?.value);
+    console.log("[form_access_controller] requestAccount(): email set to", emailInput?.value);
     return await handleRequestButtonClick();
   } catch (err) {
     console.error("requestAccount() failed:", err);
@@ -108,7 +91,7 @@ window.requestAccount = async function (email) {
 };
 
 async function loadGatedForm(container, formName) {
-  console.log("[DEBUG] loadGatedForm called with:", { container, formName });
+  console.log("[form_access_controller] loadGatedForm called with:", { container, formName });
 
   if (!container || !formName) {
     console.error("[DEBUG] Missing container or formName");
@@ -118,62 +101,68 @@ async function loadGatedForm(container, formName) {
   try {
     const token = localStorage.getItem("userLogin_token");
     const fetchURL = `/.netlify/functions/gatedForm?form=${encodeURIComponent(formName)}`;
-
-    console.log("[DEBUG] About to fetch gatedForm:", fetchURL, "with token?", !!token);
+    console.log("[form_access_controller] About to fetch gatedForm:", fetchURL, "with token?", !!token);
 
     const res = await fetch(fetchURL, {
       method: "GET",
       headers: token ? { "Authorization": `Bearer ${token}` } : {}
     });
 
-    console.log("[DEBUG] fetch completed. Status:", res.status);
+    console.log("[form_access_controller] fetch completed. Status:", res.status);
 
     if (res.status === 200) {
-  const html = await res.text();
-  container.innerHTML = html;          // first inject HTML
-  //console.log("[DEBUG] container innerHTML after injection:", container.innerHTML);
+      const html = await res.text();
 
-  //rebindBreadcrumbLinks(container);    // now container is a DOM element
-  document.dispatchEvent(new Event("gated-form-loaded"));
-  console.log("[DEBUG] Form loaded successfully into container");
+      // Inject HTML
+      container.innerHTML = html;
+      console.log("[form_access_controller] HTML injected into container");
+
+      // --- Execute external scripts first ---
+      const scripts = Array.from(container.querySelectorAll("script"));
+      for (const oldScript of scripts) {
+        const newScript = document.createElement("script");
+        if (oldScript.type) newScript.type = oldScript.type;
+
+        if (oldScript.src) {
+          newScript.src = oldScript.src;
+          newScript.async = false; // preserve order
+          console.log("[form_access_controller] External script queued:", oldScript.src);
+        } else if (oldScript.type === "module") {
+          newScript.textContent = oldScript.textContent;
+          console.log("[form_access_controller] Inline module script queued");
+        } else {
+          newScript.textContent = oldScript.textContent;
+          console.log("[form_access_controller] Inline classic script queued");
+        }
+
+        oldScript.replaceWith(newScript);
+        // Wait for module scripts to execute before next
+        if (newScript.type === "module" && newScript.src) {
+          await new Promise(resolve => newScript.onload = resolve);
+        }
+      }
+
+      document.dispatchEvent(new Event("gated-form-loaded"));
+      console.log("[form_access_controller] gated-form-loaded dispatched");
 
     } else if (res.status === 302) {
       const location = res.headers.get("Location");
-      console.warn("[DEBUG] Redirecting to:", location);
+      console.warn("[form_access_controller] Redirecting to:", location);
       window.location.href = location;
     } else if (res.status === 403) {
       container.innerHTML = `<div style="color:red;">Access denied</div>`;
-      console.warn("[DEBUG] Access denied for this form");
+      console.warn("[form_access_controller] Access denied for this form");
     } else if (res.status === 404) {
       container.innerHTML = `<div style="color:red;">Form not found</div>`;
-      console.error("[DEBUG] Form not found");
+      console.error("[ERROR form_access_controller] Form not found");
     } else {
       container.innerHTML = `<div style="color:red;">Error loading form</div>`;
-      console.error("[DEBUG] Unexpected status:", res.status);
+      console.error("[ERROR form_access_controller] Unexpected status:", res.status);
     }
   } catch (err) {
-    console.error("[DEBUG] Exception in loadGatedForm fetch:", err);
+    console.error("[ERROR form_access_controller] Exception in loadGatedForm fetch:", err);
   }
 }
-
-window.loadGatedForm = loadGatedForm;
-
-/*
-function rebindBreadcrumbLinks(container) {
-  const links = container.querySelectorAll(".breadcrumb a");
-  console.log("[DEBUG] rebindBreadcrumbLinks called on container:", container);
-  console.log("[DEBUG] Found breadcrumb links:", links);
-
-  links.forEach(a => {
-    console.log("[DEBUG] Binding click to link:", a.href);
-    a.addEventListener("click", e => {
-      e.preventDefault();
-      console.log("[DEBUG] Breadcrumb link clicked:", a.href);
-      window.location.href = a.href;
-    });
-  });
-}
-*/
 
 async function fetchFrontMatter() {
   try {
@@ -186,7 +175,7 @@ async function fetchFrontMatter() {
     if (!fm.success) return null;
     frontMatter = fm;
   } catch (err) {
-    console.error("[DEBUG] fetchFrontMatter() fetch failed:", err);
+    console.error("[form_access_controller] fetchFrontMatter() fetch failed:", err);
     return null;
   }
 
@@ -222,8 +211,6 @@ function setupAccessControls() {
     submitBox.style.display = showSubmit ? "block" : "none";
   }
 }
-
-window.setupAccessControls = setupAccessControls;
 
 async function sendAccessLink(email) {
   const resp = await fetch("/.netlify/functions/sendFormAccessLink", {
@@ -286,7 +273,7 @@ async function verifyFormAccessToken() {
     }
     if (requestBox) requestBox.style.display = "none";
   } catch (err) {
-    console.error("verifyFormAccessToken error:", err);
+    console.error(" form_access_controller verifyFormAccessToken error:", err);
     if (messageBox) messageBox.textContent = "Verification failed.";
   }
 }
@@ -304,10 +291,26 @@ async function handleFormSubmission(e) {
     }
   });
 
-  const formData = `<h2>${cleanTitle}</h2>` + clonedForm.outerHTML;
-  const submittedBy = form.querySelector("#submitted_by")?.value.trim() || "";
-  const optionalEmail = form.querySelector("#optionalEmail input[type='email']")?.value.trim() || "";
-  const payload = { bin: "ACCESS_TOKEN_BIN", formName: cleanTitle, formData, formPath: window.location.pathname };
+  let submittedBy = "";
+  const submittedInput = clonedForm.querySelector("#submitted_by");
+  if (submittedInput) {
+    submittedBy = submittedInput.value.trim();
+    submittedInput.setAttribute("value", `{@S}${submittedBy}{/@}`);
+    console.log("[form_access_controller] submittedInput found.");
+  }
+  
+  let optionalEmail = "";
+  const optionalEmailInput = clonedForm.querySelector("#optionalEmail input[type='email']");
+  if (optionalEmailInput) {
+    optionalEmail = optionalEmailInput.value.trim();
+    console.log("[form_access_controller] optionalEmailInput found.");
+  }
+
+  const formData = clonedForm.outerHTML;
+  console.log("[form_access_controller] handleFormSubmission clone:", formData);
+
+  const payload = { bin: "ACCESS_TOKEN_BIN", formName: cleanTitle, formData, formPath: window.location.pathname }; 
+
   if (!requireRequestLink && submittedBy) payload.submittedBy = submittedBy;
   else if (optionalEmail) payload.optionalEmail = optionalEmail;
   if (urlToken) payload.token = urlToken;
@@ -328,7 +331,7 @@ async function handleFormSubmission(e) {
       alert("Form saved, but no token was returned.");
     }
   } catch (err) {
-    console.error("submitFormController error:", err);
+    console.error("[submitFormController] error:", err);
     alert("Form submission failed: " + (err.message || "unknown error"));
   }
 }
