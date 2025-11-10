@@ -56,13 +56,9 @@ function processFile(filePath) {
       const json = {
         title: frontMatter.title || "",
         summary: frontMatter.summary || "",
-        validation: Array.isArray(frontMatter.validation)
-          ? frontMatter.validation
-          : ["none"],
-        restrict_users: Array.isArray(frontMatter.restrict_users)
-          ? frontMatter.restrict_users
-          : [],
-      };
+        validation: [].concat(frontMatter.validation || []),
+        restrict_users: [].concat(frontMatter.restrict_users || [])      };
+	  
       fs.writeFileSync(outJsonPath, JSON.stringify(json, null, 2));
 
       console.log("[buildForms] Wrote:", outHtmlPath);

@@ -54,14 +54,7 @@ export async function handler(event) {
     return { statusCode: 500, body: "Server error loading form metadata" };
   }
 
-  // Compute restrictUsers
-  const users = Array.isArray(frontMatter.restrict_users)
-  ? frontMatter.restrict_users
-  : frontMatter.restrict_users
-  ? [frontMatter.restrict_users]
-  : [];
-
-  const restrictUsers = users.some(r => r && r.toLowerCase() !== "none");
+  const restrictUsers = frontMatter.restrict_users.some(r => r && r.toLowerCase() !== "none");
   console.log("[gatedForm] Restricted to:", users, "restrictUsers:", restrictUsers);
 
   // Verify token if restricted
