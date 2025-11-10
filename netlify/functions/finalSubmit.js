@@ -26,15 +26,15 @@ export async function handler(event) {
     const { formName, formData } = storedFormData;
     const formattedHTML = formData.replace(/{@V}/g, " (verified)").replace(/{@}/g, " (un-verified)");
 
-    const adminEmail = process.env.ADMIN_EMAIL || process.env.SMTP_USER || "form@anl.com";
-    console.log("[finalSubmit] Sending submission to admin:", adminEmail);
+    // const adminEmail = process.env.ADMIN_EMAIL || process.env.SMTP_USER || "form@anl.com";
+    // console.log("[finalSubmit] Sending submission to admin:", adminEmail);
 
-    await sendEmail({
-      to: adminEmail,
-      subject: `Form Submission: ${formName}`,
-      html: formattedHTML,
-      attachBodyAsFile: true
-    });
+    // await sendEmail({
+      // to: adminEmail,
+      // subject: `Form Submission: ${formName}`,
+      // html: formattedHTML,
+      // attachBodyAsFile: true
+    // });
 
     console.log("[finalSubmit] Final submission processed successfully for token:", token);
     return { statusCode: 200, body: JSON.stringify({ success: true, note: "Submission processed" }) };
