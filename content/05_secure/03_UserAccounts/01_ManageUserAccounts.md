@@ -23,7 +23,8 @@ validation: [noSend] # options: requestLink, submit, none (default), noSend
   <legend>Permitted User</legend>
   <label>Name<input required class="name" type="text" /></label>
   <label>Email<input required type="email" /></label>
-  <label>User name<input class="name" type="text" readonly /></label>
+  <label>User name<input class="name" type="text" disabled/></label>
+  <label hidden>login_token<input type="text" hidden/></label>
 
   <fieldset>
     <legend>Role</legend>

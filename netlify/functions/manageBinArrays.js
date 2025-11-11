@@ -45,6 +45,8 @@ export async function handler(event) {
       } catch (e) {
         return { statusCode: 500, body: JSON.stringify({ success: false, error: "Failed to extract record" }) };
       }
+	
+      //console.log("[manageBinArrays] getFormRecord:", record);
 
       if (action === "add") {
         dataArray.push(record);

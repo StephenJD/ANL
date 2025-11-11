@@ -175,7 +175,8 @@ saveBtn.addEventListener("click", async () => {
     }
   });
   
-  clonedForm.querySelectorAll('[hidden], [style*="display:none"], [style*="display: none"], input[type="hidden"]').forEach(el => el.remove());
+  //console.debug('[binArrayInterface] Save clonedForm:', clonedForm.outerHTML);
+  clonedForm.querySelectorAll('[style*="display:none"], [style*="display: none"]').forEach(el => el.remove());
 
   // Remove all <script> tags
   clonedForm.querySelectorAll('script').forEach(s => s.remove());

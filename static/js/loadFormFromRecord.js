@@ -102,7 +102,7 @@ export function setInputsFromRecord(form, record) {
   let pathIndex = 0;
   let pathPart = urlize(pathPartsArr[pathIndex]);
 
-  console.log("setInputsFromRecord pathPartsArr:", pathPartsArr);
+  //console.log("setInputsFromRecord pathPartsArr:", pathPartsArr);
   
   const allElements = [...form.querySelectorAll('input, label, legend')];
   for (const el of allElements) {

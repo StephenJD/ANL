@@ -211,9 +211,10 @@ async function fetchFrontMatter() {
 
 function setupAccessControls() {
   if (!form) return;
-
-  const allInputs = form.querySelectorAll('input, textarea, select, button[type="submit"]');
-  allInputs.forEach(el => el.disabled = !!requireRequestLink);
+  if (requireRequestLink) {
+    const allInputs = form.querySelectorAll('input, textarea, select, button[type="submit"]');
+    allInputs.forEach(el => el.disabled = true);
+  }
 
   if (requestBox) {
     if (requireRequestLink) {
@@ -282,9 +283,10 @@ async function verifyFormAccessToken() {
       if (messageBox) messageBox.textContent = "This access link is invalid or expired.";
       return;
     }
-
-    form.querySelectorAll('input, textarea, select, button[type="submit"]').forEach(el => el.disabled = false);
-    emailInput?.removeAttribute("required");
+    if (requireRequestLink) {
+      form.querySelectorAll('input, textarea, select, button[type="submit"]').forEach(el => el.disabled = false);
+      emailInput?.removeAttribute("required");
+    }
     const submittedBy = form.querySelector("#submitted_by");
     if (submittedBy) {
       submittedBy.value = decodeURIComponent(data.email);
