@@ -1,0 +1,10 @@
+{
+  "title": "Manage TnT Helpers",
+  "summary": "",
+  "validation": [
+    "noSend"
+  ],
+  "restrict_users": [
+    "Full"
+  ]
+}

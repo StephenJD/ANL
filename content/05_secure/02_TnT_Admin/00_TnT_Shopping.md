@@ -35,8 +35,7 @@ Form Rules
 
 <fieldset>
    <legend>Food Items to Buy</legend>
-   <label><input type="radio">Got Oat-Milk</label>
-   <label><input type="radio">Need Milk</label>
+   <label><input type="checkbox">Milk</label>
    <label><input type="checkbox">Hot Chocolate</label>
    <label><input type="checkbox">Marsh Mallows</label>
    <label><input type="checkbox">Squirty Cream</label>
@@ -66,13 +65,14 @@ Form Rules
 
 <fieldset>
    <legend>Bring from home</legend>
+   <label><input type="checkbox">(Oat) Milk </label>
    <label><input type="checkbox">Squirty Cream</label>
    <label><input type="checkbox">Ice Lollies</label>
    <label><input type="checkbox">Cups</label>
    <label><input type="checkbox">Lids</label>
    <label><input type="checkbox">Kitchen-Roll</label>
    <label><input type="checkbox">Surface Cleaner</label>
-   <label>Other Items:<textarea rows="2"></textarea></label>
+   <label>Other Items/Notes:<textarea rows="2"></textarea></label>
 </fieldset>
 
 <fieldset>

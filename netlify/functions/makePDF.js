@@ -8,12 +8,14 @@ export async function makePDF(htmlText) {
 
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
   const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-
-  const lines = htmlText
+  const decoded = htmlText.replace(/&nbsp;/g, ' ');
+  
+  const lines = decoded
     .replace(/<br\s*\/?>/gi, '\n')
     .replace(/<h1[^>]*>(.*?)<\/h1>/gi, '\n##H1##$1\n')
     .replace(/<h2[^>]*>(.*?)<\/h2>/gi, '\n##H2##$1\n')
     .replace(/<strong[^>]*>(.*?)<\/strong>/gi, '\n##STRONG##$1\n')
+    .replace(/<(s|strike)[^>]*>(.*?)<\/(s|strike)>/gi, '\n##STRIKE##$2\n')
     .replace(/<[^>]+>/g, '')
     .split(/\n+/)
     .map(l => l.trim())
@@ -37,7 +39,7 @@ export async function makePDF(htmlText) {
       lineHeight = 20;
     }
 
-    const clean = line.replace(/^##(H1|H2|STRONG)##/, '');
+    const clean = line.replace(/^##(H1|H2|STRONG|STRIKE)##/, '');
 
     page.drawText(clean, {
       x: 50,
@@ -47,6 +49,17 @@ export async function makePDF(htmlText) {
       color: rgb(0, 0, 0),
       maxWidth: width - 100,
     });
+
+    if (line.startsWith('##STRIKE##')) {
+      const textWidth = drawFont.widthOfTextAtSize(clean, fontSize);
+      const strikeY = y + fontSize * 0.35;
+      page.drawLine({
+        start: { x: 50, y: strikeY },
+        end: { x: 50 + textWidth, y: strikeY },
+        thickness: 1,
+        color: rgb(0, 0, 0),
+      });
+    }
 
     y -= lineHeight;
     if (y < 50) {

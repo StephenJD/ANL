@@ -26,14 +26,14 @@ export async function handler(event) {
     const { formName, formData } = storedFormData;
     const formattedHTML = formData.replace(/{@V}/g, " (verified)").replace(/{@}/g, " (un-verified)");
 
-    const adminemail = process.env.admin_email || process.env.smtp_user || "form@anl.com";
-    console.log("[finalsubmit] sending submission to admin:", adminemail);
+    const adminEmail = process.env.SMTP_USER; // EMAIL_FROM does not work!!!
+    console.log("[finalsubmit] sending submission to admin:", adminEmail, "for", formName);
 
-    await sendemail({
-      to: adminemail,
-      subject: `form submission: ${formname}`,
-      html: formattedhtml,
-      attachbodyasfile: true
+    await sendEmail({
+      to: adminEmail,
+      subject: `form submission: ${formName}`,
+      html: formattedHTML,
+      attachBodyAsFile: true
     });
 
     console.log("[finalSubmit] Final submission processed successfully for token:", token);

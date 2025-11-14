@@ -10,12 +10,12 @@ export async function sendEmail({
   to,
   subject,
   html,
-  attachBodyAsFile = false
+  attachBodyAsFile
 }) {
-  console.log("[sendEmail] Params:", { to, subject, html });
+  console.log("[sendEmail] Params:", { to, subject, html, attachBodyAsFile });
 
   if (!to || !subject || !html) {
-    console.error("[ERROR] Missing required email parameters", { to, subject, htmlLength: html ? html.length : 0 });
+    console.error("[ERROR sendEmail] Missing required email parameters", { to, subject, htmlLength: html ? html.length : 0 });
     throw new Error(`Missing required email parameters: ${JSON.stringify({
       to: !!to,
       subject: !!subject,
@@ -28,19 +28,7 @@ export async function sendEmail({
   if (attachBodyAsFile) {
     const pdfBytes = await makePDF(html);
     attachments.push({ filename: `${subject}.pdf`, content: pdfBytes });
-  }
-
-  const isLocal = !process.env.SMTP_HOST;
-
-  if (isLocal) {
-    console.log("[sendEmail] Local mode - email not sent", {
-      to,
-      subject,
-      attachBodyAsFile,
-      htmlLength: html.length,
-      body: html
-    });
-    return { success: true, debug: true };
+    console.log("[sendEmail] Created pdf-bytes:", pdfBytes);
   }
 
   const transporter = nodemailer.createTransport({
@@ -53,14 +41,14 @@ export async function sendEmail({
   });
 
   try {
-    await transporter.sendMail({
-      from: `"Ascend Next Level" <${process.env.SMTP_USER}>`,
+    const info = await transporter.sendMail({
+      from: `"Ascend Next Level" <${process.env.EMAIL_FROM}>`,
       to,
       subject,
       html,
       attachments
     });
-    console.log("[sendEmail] Email successfully sent");
+    console.log("[sendEmail] Email successfully sent", info);
     return { success: true };
   } catch (err) {
     console.error("[ERROR] sendEmail failed", {
