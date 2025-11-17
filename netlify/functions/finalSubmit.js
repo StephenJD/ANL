@@ -29,12 +29,12 @@ export async function handler(event) {
     const adminEmail = process.env.SMTP_USER; // EMAIL_FROM does not work!!!
     console.log("[finalsubmit] sending submission to admin:", adminEmail, "for", formName);
 
-    await sendEmail({
-      to: adminEmail,
-      subject: `form submission: ${formName}`,
-      html: formattedHTML,
-      attachBodyAsFile: true
-    });
+    // await sendEmail({
+      // to: adminEmail,
+      // subject: `form submission: ${formName}`,
+      // html: formattedHTML,
+      // attachBodyAsFile: true
+    // });
 
     console.log("[finalSubmit] Final submission processed successfully for token:", token);
     return { statusCode: 200, body: JSON.stringify({ success: true, note: "Submission processed" }) };

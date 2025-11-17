@@ -157,21 +157,22 @@ function parseFieldset(fieldset) {
 
   if (hasLegend) {
     const key = urlize(legend.textContent);
+    console.debug('[getRecordFromForm] parseFieldset:', key, items);
     return { [key]: items };
   } else {
-    const labelWithInput = children.find(el => el.tagName === 'LABEL' && el.querySelector('input'));
+    let someInput;
+    const labelWithInput = children.find(el => el.tagName === 'LABEL' && (someInput = getInputOrTextAreaInLabel(el)));
     if (labelWithInput) {
-      const inputEl = labelWithInput.querySelector('input');
       const key = urlize(labelWithInput.textContent);
-      const value = inputEl.getAttribute('value') || '';
+      const value = someInput.getAttribute('value') || '';
       return { [key]: value };
     } else {
       const labelAfterInput = children.find(el => el.tagName === 'LABEL');
       if (labelAfterInput) {
-        const nextInput = labelAfterInput.nextElementSibling;
-        if (nextInput && nextInput.tagName === 'INPUT') {
+        someInput = labelAfterInput.nextElementSibling;
+        if (someInput && someInput.tagName === 'INPUT' || someInput.tagName === 'TEXTAREA') {
           const key = urlize(labelAfterInput.textContent);
-          const value = nextInput.getAttribute('value') || '';
+          const value = someInput.getAttribute('value') || '';
           return { [key]: value };
         }
       }
@@ -181,39 +182,46 @@ function parseFieldset(fieldset) {
 }
 
 function getInputType(input) {
-  return (input?.getAttribute?.('type') || input?.type || 'text').toLowerCase();
+  if (el.tagName === 'TEXTAREA') return 'text';
+  return (input?.getAttribute?.('type') || input?.type || '').toLowerCase();
+}
+
+function getInputOrTextAreaInLabel(labelEl) {
+  return labelEl.querySelector('input, textarea');
 }
 
 function parseElement(el) {
-  //console.debug('[getRecordFromForm] Element:', el.tagName);
+  console.debug('[getRecordFromForm] Element:', el.tagName);
 
   if (el.tagName === 'FIELDSET') {
     return [parseFieldset(el)];
   }
 
   else if (el.tagName === 'LABEL') {
-    const input = el.querySelector('input');
-    if (!input) return [];
 
-    const type = getInputType(input);
+    const someInput = getInputOrTextAreaInLabel(el);
+
+    if (!someInput) return [];
+
+    const type = getInputType(someInput);
     if (['checkbox', 'radio'].includes(type)) {
       const result = parseCheckedInputWithFieldset(el, input);
-      //console.debug('[getRecordFromForm] checkbox processed:', result);
+      console.debug('[getRecordFromForm] checkbox processed:', result);
       return result;
     } else { // text-like input
       const labelText = getLabelText(el);
-      const value = input.getAttribute('value') || '';
-      //console.debug('[getRecordFromForm] Text-like input processed:', { [labelText]: value });
+      const value = someInput.getAttribute('value') || '';
+      console.debug('[getRecordFromForm] Text-like input processed:', { [labelText]: value });
       return [{ [labelText]: value }];
     }
   }
 
-  else if (el.tagName === 'INPUT') {
+  else if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
     const type = getInputType(el);
     if (['checkbox', 'radio'].includes(type)) {
       if (el.hasAttribute('checked')) {
         const labelText = getLabelText(el.closest('label'));
-        //console.debug('[getRecordFromForm] INPUT checked:', labelText);
+        console.debug('[getRecordFromForm] INPUT checked:', labelText);
         return [labelText];
       } else {
         //console.debug('[getRecordFromForm] INPUT not checked:', el.outerHTML);
@@ -221,13 +229,13 @@ function parseElement(el) {
       }
     } else { // text-like input
       const value = el.getAttribute('value') || '';
-      //console.debug('[getRecordFromForm] INPUT text value:', value);
+      console.debug('[getRecordFromForm] INPUT text value:', value);
       return [value];
     }
   }
 
   else if (el.children.length) {
-    //console.debug(`[getRecordFromForm] Nested element ${el.children.length} children:`);
+    console.debug(`[getRecordFromForm] Nested element ${el.children.length} children:`);
     const nestedItems = Array.from(el.children).flatMap(parseElement);
     return nestedItems;
   }
@@ -251,7 +259,7 @@ function parseCheckedInputWithFieldset(labelEl, inputEl) {
   if (fieldsetControlledByCheckedInput) {
     return [{ [labelText]: parseFieldset(fieldsetControlledByCheckedInput) }];
   }
-  //console.debug('[getRecordFromForm] INPUT :', labelText);
+  console.debug('[getRecordFromForm] INPUT :', labelText);
   return [labelText];
 }
 

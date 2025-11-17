@@ -5,6 +5,6 @@
     "noSend"
   ],
   "restrict_users": [
-    "Helper"
+    "SuperUser"
   ]
 }
