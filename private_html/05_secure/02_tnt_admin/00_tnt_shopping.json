@@ -1,6 +1,7 @@
 {
   "title": "TnT Shopping List",
   "summary": "",
+  "type": "form",
   "validation": [
     "none"
   ],

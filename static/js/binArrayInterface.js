@@ -117,33 +117,38 @@ async function apiCall(action, payload = {}, keyValue = null) {
 
   async function loadRecordsList() {
     const data = await apiCall("list");
+    if (!data.success) {
+      console.error("[binArrayInterface] loadRecordsList error:", data.error);
+      return;
+    }
     console.log('[binArrayInterface] loadRecordsList:', JSON.parse(JSON.stringify(data.records)));
-    
-    if (!data.success) return;
     recordsCache = data.records || [];
     loadRecords({ records: recordsCache, listEl: ul, form, editBtnClass: "editBtn" });
   }
 
-  function clearForm() {
-    const allElements = [...form.querySelectorAll('input, label, legend')];
-    for (const el of allElements) {
-      if (el.tagName !== 'INPUT') continue;
-      const type = el.type;
-      if (['text', 'tel', 'email', 'date'].includes(type)) {
-        el.value = '';
-      } else if (type === 'checkbox' || type === 'radio') {
-        el.checked = false;
-      }
-    }
-    console.log('[binArrayInterface] all inputs cleared');
+function clearForm() {
+  // Select all visible input and textarea elements
+  const allControls = [...form.querySelectorAll('input, textarea')]
+    .filter(el => el.type !== 'hidden');
 
-    editKeyValue = null;
-    cancelBtn.style.display = "none";
-    deleteBtn.style.display = "none";
-    saveBtn.textContent = "Add";  
-    alignButtons(form);
-    autofillToday();
-  }
+  allControls.forEach(el => {
+    if (el.tagName === 'TEXTAREA' || ['text', 'tel', 'email', 'date'].includes(el.type)) {
+      el.value = '';
+    } else if (el.type === 'checkbox' || el.type === 'radio') {
+      el.checked = false;
+    }
+  });
+
+  console.log('[binArrayInterface] all inputs cleared');
+
+  editKeyValue = null;
+  cancelBtn.style.display = "none";
+  deleteBtn.style.display = "none";
+  saveBtn.textContent = "Add";  
+  alignButtons(form);
+  autofillToday();
+}
+
 
   ul.addEventListener("click", e => {
     if (!e.target.classList.contains("editBtn")) return;
@@ -180,8 +185,18 @@ saveBtn.addEventListener("click", async () => {
 
   // Remove all <script> tags
   clonedForm.querySelectorAll('script').forEach(s => s.remove());
-  const formHtml = clonedForm.outerHTML;
-  const keyValue = editKeyValue || Object.values(record)[0];
+  const formHtml = clonedForm.outerHTML
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "\'");
+
+
+  const firstVisibleInput = Array.from(form.querySelectorAll("input, textarea, select"))
+  .find(el => el.type !== "hidden" && el.offsetParent !== null);
+
+  const keyValue = editKeyValue || firstVisibleInput?.getAttribute("value") || "";
   const action = editKeyValue ? "edit" : "add"; // set by edit-button, not from input.
   //console.debug('[binArrayInterface] Save formHtml:', formHtml);
   console.debug('[binArrayInterface] Save recordSet:', "keyValue", keyValue, "Action:", action);

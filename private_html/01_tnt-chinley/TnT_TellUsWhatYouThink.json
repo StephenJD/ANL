@@ -1,6 +1,7 @@
 {
   "title": "TnT Feedback",
   "summary": "Tell us what you think...",
+  "type": "form",
   "validation": [
     "none"
   ],

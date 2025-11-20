@@ -1,10 +1,11 @@
 {
-  "title": "Test Form",
+  "title": "Manage TnT Helpers",
   "summary": "",
+  "type": "form",
   "validation": [
     "noSend"
   ],
   "restrict_users": [
-    "Helper"
+    "Full"
   ]
 }

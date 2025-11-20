@@ -104,9 +104,9 @@ export function setInputsFromRecord(form, record) {
 
   //console.log("setInputsFromRecord pathPartsArr:", pathPartsArr);
   
-  const allElements = [...form.querySelectorAll('input, label, legend')];
+  const allElements = [...form.querySelectorAll('input, textarea, label, legend')];
   for (const el of allElements) {
-    if (lastRecordKey && (el.tagName !== 'INPUT')) {
+    if (lastRecordKey && (el.tagName !== 'INPUT' && el.tagName !== 'TEXTAREA')) {
       //console.log("Next El: lastRecordKey:", lastRecordKey, "GetNextPath");
       ++pathIndex;
       pathPart = pathIndex < pathPartsArr.length ? urlize(pathPartsArr[pathIndex]) : null;
@@ -114,7 +114,7 @@ export function setInputsFromRecord(form, record) {
     //console.log("next el:", el, "lastRecordKey", lastRecordKey,...(pathPart ? [`pathPart: ${pathPart}`] : []),...(el.name ? [`el.name: ${el.name}`] : []));
 
     const tag = el.tagName;
-    if (tag !== 'INPUT') {
+    if (tag !== 'INPUT' && tag !== 'TEXTAREA') {
       const clone = el.cloneNode(true);
       clone.querySelectorAll('input, select, textarea').forEach(n => n.remove());
       // Skip elements that have no *own* text (i.e., only nested tags)
@@ -130,7 +130,7 @@ export function setInputsFromRecord(form, record) {
       }
     } else if (lastRecordKey) {
       const type = el.type;
-      if (['text', 'tel', 'email', 'date'].includes(type)) {
+      if (el.tagName === 'TEXTAREA' || ['text', 'tel', 'email', 'date'].includes(type)) {
 	  ++pathIndex;	
         //console.log(`text set '${pathPartsArr[pathIndex]}'`);
         el.value = pathPartsArr[pathIndex];

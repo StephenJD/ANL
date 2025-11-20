@@ -1,6 +1,7 @@
 {
   "title": "Login",
   "summary": "User Login",
+  "type": "form",
   "validation": [
     "noSend"
   ],

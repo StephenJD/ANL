@@ -8,7 +8,6 @@ non-validated forms may be anonymous and have an optionalEmail field. All other 
 1. Obtain validation mode from server:getFormFrontMatter.js:
    - requireRequestLink
    - requireFinalSubmit
-   - 
 
 2. If requireRequestLink:
    a) Display the form but disable all inputs except the form-request-box.
@@ -37,6 +36,8 @@ Server-side:
 9. Server handles final submission to Netlify.
 */
 
+import { loadGatedPage } from './gated_page_loader.js';
+
 export let restrictUsers = false;
 let requireRequestLink = false;
 let requireFinalSubmit = false;
@@ -55,21 +56,20 @@ let messageBox = null;
 const urlToken = new URLSearchParams(window.location.search).get("token");
 
 document.addEventListener("DOMContentLoaded", async () => {
-  const container = document.querySelector("#gated-form-placeholder");
+  const container = document.querySelector("#gated_page_placeholder");
   const formPath = window.location.pathname;
+  messageBox = document.querySelector(".page_access_message");
 
-  await loadGatedForm(container, formPath);
+  await loadGatedPage(container, formPath, messageBox);
 
   // Assign elements after form injection
   form = document.querySelector("form.verified-form");
   requestBox = document.querySelector(".form-request-box");
   submitBox = document.querySelector(".form-submit-box");
-  messageBox = requestBox?.querySelector(".form-link-message");
-  requestBtn = requestBox?.querySelector(".request-form-link-btn");
-  emailInput = requestBox?.querySelector(".request-form-link-email");
+  emailInput = document.querySelector(".request-form-link-email");
+  requestBtn = document.querySelector(".request-form-link-btn");
   
   await fetchFrontMatter();
-
   setupAccessControls();
   await verifyFormAccessToken();
   document.dispatchEvent(new Event("access-validated"));
@@ -89,100 +89,6 @@ window.requestAccount = async function (email) {
     return false;
   }
 };
-
-async function loadGatedForm(container, formName) {
-  console.log("[form_access_controller] loadGatedForm called with:", { container, formName });
-
-  if (!container || !formName) {
-    console.error("[form_access_controller] Missing container or formName");
-    return;
-  }
-
-  try {
-    const token = localStorage.getItem("userLogin_token");
-    const fetchURL = `/.netlify/functions/gatedForm?form=${encodeURIComponent(formName)}`;
-
-    const res = await fetch(fetchURL, {
-      method: "GET",
-      headers: token ? { "Authorization": `Bearer ${token}` } : {}
-    });
-
-    const contentType = res.headers.get("Content-Type") || "";
-    if (contentType.includes("application/json")) {
-      const data = await res.json();
-      console.log("[form_access_controller] gatedForm action:", data.action);
-
-      switch (data.action) {
-        case "redirect":
-          console.log("[form_access_controller] Redirecting to:", data.location);
-          window.location.href = data.location;
-          return;
-
-        case "accessDenied":
-          container.innerHTML = `<div style="color:red;">Access denied</div>`;
-          console.log("[form_access_controller] Access denied for this form");
-          return;
-
-        case "notFound":
-          container.innerHTML = `<div style="color:red;">Form not found</div>`;
-          console.error("[ERROR form_access_controller] Form not found");
-          return;
-
-        case "error":
-          container.innerHTML = `<div style="color:red;">Error loading form</div>`;
-          console.error("[ERROR form_access_controller] ${data.message || 'Unknown error'}");
-          return;
-
-        case "formNameMissing":
-          container.innerHTML = `<div style="color:red;">Form name missing</div>`;
-          console.error("[ERROR form_access_controller] Form name missing in request");
-          return;
-
-        case "methodNotAllowed":
-          container.innerHTML = `<div style="color:red;">Method not allowed</div>`;
-          console.error("[ERROR form_access_controller] Method not allowed");
-          return;
-
-        default:
-          container.innerHTML = `<div style="color:red;">Unexpected response</div>`;
-          console.error("[ERROR form_access_controller] Unexpected action:", data.action);
-          return;
-      }
-    }
-
-    if (res.status === 200) {
-      const html = await res.text();
-
-      container.innerHTML = html;
-
-      const scripts = Array.from(container.querySelectorAll("script"));
-      for (const oldScript of scripts) {
-        const newScript = document.createElement("script");
-        if (oldScript.type) newScript.type = oldScript.type;
-
-        if (oldScript.src) {
-          newScript.src = oldScript.src;
-          newScript.async = false;
-        } else {
-          newScript.textContent = oldScript.textContent;
-        }
-
-        oldScript.replaceWith(newScript);
-
-        if (newScript.type === "module" && newScript.src) {
-          await new Promise(resolve => newScript.onload = resolve);
-        }
-      }
-
-      document.dispatchEvent(new Event("gated-form-loaded"));
-    } else {
-      container.innerHTML = `<div style="color:red;">Unexpected status: ${res.status}</div>`;
-      console.error("[ERROR form_access_controller] Unexpected status:", res.status);
-    }
-  } catch (err) {
-    console.error("[ERROR form_access_controller] Exception in loadGatedForm fetch:", err);
-  }
-}
 
 async function fetchFrontMatter() {
   try {
@@ -328,7 +234,13 @@ async function handleFormSubmission(e) {
     console.log("[form_access_controller] optionalEmailInput found.");
   }
 
-  const formData = clonedForm.outerHTML;
+const formData = clonedForm.outerHTML
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "\'");
+
   //console.log("[form_access_controller] handleFormSubmission clone:", formData);
 
   const payload = { bin: "ACCESS_TOKEN_BIN", formName: cleanTitle, formData, formPath: window.location.pathname }; 

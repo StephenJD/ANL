@@ -1,7 +1,7 @@
 // \static\js/form-init.js
 import { manageBinArrayForm } from "/js/binArrayInterface.js";
 
-document.addEventListener("gated-form-loaded", async () => {
+document.addEventListener("gated-page-loaded", async () => {
 
   const form = document.querySelector("form.verified-form");
   if (!form) return console.warn("No verified form found in DOM");

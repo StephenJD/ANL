@@ -1,0 +1,31 @@
+{{/* layouts/secure_page/single.html */}}
+{{ define "main" }}
+  {{ $current_page := . }}
+  {{ $breadcrumb_page_types := site.Params.breadcrumb.page_types | default dict }}
+  {{ $show_breadcrumb := index $breadcrumb_page_types .Type | default false }}
+
+  <link rel="stylesheet" href="{{ "css/forms.css" | relURL }}">
+
+  <div class="page-container">
+    <div class="no-print">
+      {{ if $show_breadcrumb }}
+        {{ partial "breadcrumb" $current_page }}
+      {{ end }}
+    </div>    
+    <h1>{{ .Title }}</h1>
+    {{ partial "page_access_message.html" . }}
+    <!-- Placeholder for gatedPage to load content into -->
+    <div id="gated_page_placeholder">Loading secure page…</div>
+  </div>
+  
+<script type="module">
+import { loadGatedPage } from "{{ "js/gated_page_loader.js" | relURL }}";
+
+const container = document.getElementById('gated_page_placeholder');
+const msgBox = document.querySelector('.page_access_message');
+const pagePath = window.location.pathname;
+
+loadGatedPage(container, pagePath, msgBox);
+</script>
+
+{{ end }}

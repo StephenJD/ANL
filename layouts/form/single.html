@@ -15,10 +15,11 @@
     <h1>{{ .Title }}</h1>
     {{ partial "qr_code.html" . }}
     {{ partial "form_request.html" . }}
+    {{ partial "page_access_message.html" . }}
 
     <form name="{{ .Title | urlize }}" autocomplete="off" class="verified-form" data-netlify="true" netlify>
       <!-- Placeholder for gatedForms to load content into -->
-      <div id="gated-form-placeholder">Loading form…</div>
+      <div id="gated_page_placeholder">Loading form…</div>
       {{ partial "form_submit_button.html" . }}
     </form>
   </div>

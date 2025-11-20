@@ -1,6 +1,7 @@
 {
   "title": "Manage Stored Records",
   "summary": "",
+  "type": "form",
   "validation": [
     "noSend"
   ],

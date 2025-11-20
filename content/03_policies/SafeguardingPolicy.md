@@ -2,14 +2,14 @@
 title: Safeguarding Policy
 active: true
 headless: true  # This file represents a page section.
-type: document
+type: secure_page
 geometry: [margin=2cm, a4paper]
 share: true
 summary: Keeping all those involved with us safe from harm
 last_reviewed: 2025-10-18
 review_period: 1y
 reviewed_by: Cheryl Cross
-
+restrict_users: Helper
 ---
 
 # ANL Safeguarding Policy

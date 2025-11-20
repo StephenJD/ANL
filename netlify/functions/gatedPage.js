@@ -1,4 +1,4 @@
-// \netlify\functions\gatedForm.js
+// \netlify\functions\gatedPage.js
 import fs from "fs";
 import path from "path";
 import { check_userLoginToken } from "./verifyUser.js";
@@ -30,14 +30,14 @@ export async function handler(event) {
   if (event.httpMethod !== "GET") return jsonResponse("methodNotAllowed");
 
   const token = event.headers["authorization"]?.replace("Bearer ", "");
-  const queryformName = event.queryStringParameters?.form;
-  const formName = queryformName?.replace(/^\/|\/$/g, "").toLowerCase();
-  console.log("[gatedForm] formName:", formName);
+  const queryPageName = event.queryStringParameters?.page;
+  const pageName = queryPageName?.replace(/^\/|\/$/g, "").toLowerCase();
+  console.log("[gatedPage] pageName:", pageName);
 
-  if (!formName) return jsonResponse("formNameMissing");
+  if (!pageName) return jsonResponse("pageNameMissing");
 
-  let htmlPath = path.join(process.cwd(), "private_html", `${formName}.html`);
-  let metadataPath = path.join(process.cwd(), "private_html", `${formName}.json`);
+  let htmlPath = path.join(process.cwd(), "private_html", `${pageName}.html`);
+  let metadataPath = path.join(process.cwd(), "private_html", `${pageName}.json`);
 
   htmlPath = resolvePathCaseInsensitive(htmlPath) || htmlPath;
   metadataPath = resolvePathCaseInsensitive(metadataPath) || metadataPath;
@@ -46,18 +46,18 @@ export async function handler(event) {
   try {
     if (metadataPath && fs.existsSync(metadataPath)) {
       frontMatter = JSON.parse(fs.readFileSync(metadataPath, "utf-8"));
-      console.log("[gatedForm] Loaded frontMatter:", frontMatter);
+      console.log("[gatedPage] Loaded frontMatter:", frontMatter);
     } else {
-      console.log("[gatedForm] Metadata not found, defaulting to unrestricted");
+      console.log("[gatedPage] Metadata not found, defaulting to unrestricted");
     }
   } catch (err) {
-    console.error("[gatedForm] Failed to read frontMatter:", err);
-    return jsonResponse("error", { message: "Server error loading form metadata" });
+    console.error("[gatedPage] Failed to read frontMatter:", err);
+    return jsonResponse("error", { message: "Server error loading page metadata" });
   }
 
   const users = frontMatter.restrict_users;
   const restrictUsers = users.some(r => r && r.toLowerCase() !== "none");
-  console.log("[gatedForm] Restricted to:", users, "restrictUsers:", restrictUsers);
+  console.log("[gatedPage] Restricted to:", users, "restrictUsers:", restrictUsers);
 
   let userStatus = { valid: false, roles: [] };
   if (restrictUsers && token) {
@@ -65,35 +65,35 @@ export async function handler(event) {
       const check = await check_userLoginToken(token);
       userStatus.valid = check.status === "success";
       userStatus.roles = (check.entry?.role || []).map(r => String(r).toLowerCase());
-      console.log("[gatedForm] Token valid?", userStatus.valid, "User roles:", userStatus.roles);
+      console.log("[gatedPage] Token valid?", userStatus.valid, "User roles:", userStatus.roles);
     } catch (err) {
-      console.error("[gatedForm] check_userLoginToken failed:", err);
+      console.error("[gatedPage] check_userLoginToken failed:", err);
       userStatus = { valid: false, roles: [] };
     }
   }
 
   if (restrictUsers && !userStatus.valid) {
-    console.log("[gatedForm] Redirecting to login due to missing/invalid token");
-    return jsonResponse("redirect", { location: `/user-login?redirect=${encodeURIComponent(`/${formName}/`)}` });
+    console.log("[gatedPage] Redirecting to login due to missing/invalid token");
+    return jsonResponse("redirect", { location: `/user-login?redirect=${encodeURIComponent(`/${pageName}/`)}` });
   }
 
   if (restrictUsers) {
     const allowedRoles = users.filter(r => r && r.toLowerCase() !== "none").map(r => r.toLowerCase());
-    console.log("[gatedForm] Allowed roles for this form:", allowedRoles);
+    console.log("[gatedPage] Allowed roles for this page:", allowedRoles);
 
     const roleMatch = userStatus.roles.some(r => allowedRoles.includes(r));
-    console.log("[gatedForm] Role match:", roleMatch);
+    console.log("[gatedPage] Role match:", roleMatch);
 
     if (!roleMatch) return jsonResponse("accessDenied", { roles: userStatus.roles, allowedRoles });
   }
 
   try {
     if (!htmlPath || !fs.existsSync(htmlPath)) {
-      console.error("[gatedForm] HTML file not found:", htmlPath);
+      console.error("[gatedPage] HTML file not found:", htmlPath);
       return jsonResponse("notFound");
     }
 
-    console.log("[gatedForm] Serving HTML");
+    console.log("[gatedPage] Serving HTML");
     const html = fs.readFileSync(htmlPath, "utf-8");
     return {
       statusCode: 200,
@@ -101,7 +101,7 @@ export async function handler(event) {
       body: html
     };
   } catch (err) {
-    console.error("[gatedForm] Error reading HTML:", err);
-    return jsonResponse("error", { message: "Server error reading form" });
+    console.error("[gatedPage] Error reading HTML:", err);
+    return jsonResponse("error", { message: "Server error reading page" });
   }
 }

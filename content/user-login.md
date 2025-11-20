@@ -52,7 +52,7 @@ If a user clicks "Reset Password":
 <fieldset>
   <legend>Log-In</legend>
   <div id="login_div">
-   <label>User name<input required class="name" type="text" data-lpignore="true"></label>
+   <label>User name<input required class="name" type="text" data-lpignore="true" placeholder="Sammy"></label>
    <label>Password<input required type="password" autocomplete="current-password" data-lpignore="true"></label>
    <button type="button" id="login_btn">Login</button>
   </div>
@@ -61,7 +61,7 @@ If a user clicks "Reset Password":
   <br><span id="login_message" style="color:red;margin-top:0.5em;"></span><br>
 
   <div id="register_div">
-   <label id="email_lbl">Email<input id="submitted_by" type="email" data-lpignore="true"></label><br>
+   <label id="email_lbl">Email<input id="submitted_by" type="email" data-lpignore="true" placeholder="Samantha@mail.com"></label><br>
    <button type="button" id="register_btn">Register</button>
    <button type="button" id="reset_btn">Reset Password</button>
   </div>

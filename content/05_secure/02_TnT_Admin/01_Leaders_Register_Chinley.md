@@ -20,19 +20,22 @@ Text-like inputs are always value and may occur inside or outside fieldsets.
 <div id="form-config" style="display:none">
   {
     "save_bin_id": "TNT_SESSIONS_BIN",
-    "save_sectionKey": "TnT-Sessions",
+    "save_sectionKey": "TnT_Sessions",
     "listLabel": "Previous Sessions",
     "checkList_bin_id": "HELPER_BIN",
-    "checkList_section_key": "TnT-Helpers",
-    "checkList_fields": ["name"]
+    "checkList_section_key": "TnT_Helpers",
+    "checkList_fields": ["Name:"]
   }
 </div>
 
-<label>Date: <input required type="date" class="autofill-today" /></label>
+<fieldset>
+<legend>TnT Session</legend>
+  <label>Date: <input required type="date" class="autofill-today" /></label>
   <fieldset>
     <legend>Helpers</legend>
     <div class="check-list-container"></div>
   </fieldset>
+</fieldset>
   
 <ul id="weeklyRecordsList"></ul>
 

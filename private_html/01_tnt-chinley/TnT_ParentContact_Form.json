@@ -1,6 +1,7 @@
 {
   "title": "TnT Parental Contact Form",
   "summary": "TnT Parental Contact Form",
+  "type": "form",
   "validation": [
     "submit"
   ],

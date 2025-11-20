@@ -17,6 +17,6 @@
     "cpx": "^1.5.0"
   },
   "scripts": {
-    "build": "node build_scripts/generate_qr.js && node build_scripts/buildForms.js && hugo"
+    "build": "node build_scripts/generate_qr.js && node build_scripts/buildSecureContent.js && hugo"
   }
 }

@@ -1,6 +1,7 @@
 {
   "title": "Volunteer Reference Form",
   "summary": "Reference form for volunteers working with children or vulnerable adults",
+  "type": "form",
   "validation": [
     "submit"
   ],
