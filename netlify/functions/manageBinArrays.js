@@ -123,7 +123,7 @@ export async function handler(event) {
         if (editIdx === -1) return replyMsg(404, "Edit Record not found");
         dataArray[editIdx] = record;   
       }
-      //await setSecureItem(BIN_KEY, section_key, dataArray);
+      await setSecureItem(BIN_KEY, section_key, dataArray);
       return replyMsg(200, {});
 
     case "delete":
