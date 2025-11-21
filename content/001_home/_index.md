@@ -1,9 +1,7 @@
 ---
 title: "Home"
-type: "home"
-headless: false
-url: "/" 
+headless: false  # List as a page.
+type: document-folder
 hero_logo: "anl_logo_transparent_1024.png"
 hero_background: "pagewash.jpg"
-layout: home
 ---
