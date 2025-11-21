@@ -1,5 +1,5 @@
 ---
-#title: ANL Vision
+title: ANL Vision
 active: true
 headless: true  # This file represents a page section.
 geometry: [margin=2cm, a4paper]
