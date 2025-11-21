@@ -2,11 +2,11 @@
 # title: Basis of Faith
 active: true
 headless: true  # This file represents a page section.
-type: document
 geometry: [margin=2cm, a4paper]
 share: true
 summary: What we Believe
-weight: 30
+type: secure_page
+restrict_users: Full
 ---
 
 # Ascend Next Level – Basis of Faith

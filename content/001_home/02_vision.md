@@ -2,11 +2,11 @@
 #title: ANL Vision
 active: true
 headless: true  # This file represents a page section.
-type: document
 geometry: [margin=2cm, a4paper]
 share: true
 summary: What we aim to achieve...
-weight: 10
+type: secure_page
+restrict_users: Full
 ---
 
 # Ascend Next Level’s Vision

@@ -2,10 +2,11 @@
 # title: About ANL
 active: true
 headless: true  # This file represents a page section.
-type: document
 geometry: [margin=2cm, a4paper]
 share: true
 summary: Who we are...
+type: secure_page
+restrict_users: Full
 ---
 
 # About ANL
