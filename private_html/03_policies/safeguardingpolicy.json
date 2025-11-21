@@ -4,6 +4,6 @@
   "type": "secure_page",
   "validation": [],
   "restrict_users": [
-    "Helper"
+    "Full"
   ]
 }

@@ -14,7 +14,7 @@ validation: [noSend] # options: requestLink, submit, none (default), noSend
     "save_sectionKey": "permitted_users",
     "listLabel": "Existing Permitted Users",
     "checkList_bin_id": "USER_ACCESS_BIN",
-    "checkList_section_key": "Roles",
+    "checkList_section_key": "Role_Details",
     "checkList_fields": ["Role"]
   }
 </div>

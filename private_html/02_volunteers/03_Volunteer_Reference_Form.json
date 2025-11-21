@@ -5,5 +5,7 @@
   "validation": [
     "submit"
   ],
-  "restrict_users": []
+  "restrict_users": [
+    "Full"
+  ]
 }

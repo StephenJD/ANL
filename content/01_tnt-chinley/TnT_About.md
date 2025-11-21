@@ -1,11 +1,11 @@
 ---
 title: Where & When
 headless: true  # This file represents a page section.
-type: document
 geometry: [margin=2cm, a4paper]
 share: true
 summary: After School Drop-In
-weight: 20
+type: secure_page
+restrict_users: Full
 ---
 # Secondary School After School Drop-In
 

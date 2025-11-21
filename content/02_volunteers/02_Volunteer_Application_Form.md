@@ -5,7 +5,7 @@ last_reviewed: 2025-09-28
 review_period: 1y
 reviewed_by: Cheryl Cross
 type: form
-restrict_users: false
+restrict_users: Full
 #include_unselected_options: false # options: "true", "false" (default)
 validation: [requestLink, submit] # options: requestLink, submit, none (default)
 ---

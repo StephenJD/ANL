@@ -116,7 +116,8 @@ export async function handler(event) {
         dataArray.push(record);
       } else { // edit
         if (!firstField) return replyMsg(400, "No records to edit");
-	  console.log("[manageBinArrays] dataArray keys:", firstField);
+	  console.log("[manageBinArrays] section_key:", section_key,  );
+	  console.log("[manageBinArrays] dataArray keys:", firstField );
 	  dataArray.forEach(r => console.log(r[firstField]));
         const editIdx = dataArray.findIndex(r => r[firstField] === keyValue);
         if (editIdx === -1) return replyMsg(404, "Edit Record not found");

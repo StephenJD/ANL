@@ -105,8 +105,6 @@ Produces:
 */
 
 import { parseHTML } from "linkedom";
-let firstInputSeen = false;
-let topKey = null;
   
 export function getFormRecord(rawHTML) {
   const { document } = parseHTML(rawHTML);
@@ -184,6 +182,17 @@ function getGroupKey(container) {
   return null;
 }
 
+function isControlledFieldset(fs) {
+  // If its parent label has a checked input → this FS is already processed
+  const parent = fs.previousElementSibling;
+
+  if (parent && parent.tagName === 'LABEL') {
+    const nested = parent.querySelector('input[type="checkbox"], input[type="radio"]');
+    if (nested && nested.hasAttribute('checked')) return true;
+  }
+  return false;
+}
+
 function parseFieldset(fieldset) {
   const rawLegend = fieldset.querySelector('legend');
   let groupKey = rawLegend ? rawLegend.textContent.trim() : '';
@@ -191,12 +200,34 @@ function parseFieldset(fieldset) {
   const hasLegend = !!groupKey;
 
   const children = Array.from(fieldset.children)
-    .filter(el => el.nodeType === 1 && el.tagName !== 'LEGEND');
-
-  //console.debug('[getRecordFromForm] FIELDSET found', hasLegend ? groupKey : '(no legend)');
+  .filter(el => 
+       el.nodeType === 1 &&
+       el.tagName !== 'LEGEND' &&
+       !isControlledFieldset(el)
+  );
+  console.debug('[getRecordFromForm] FIELDSET ', fieldset.id  ? fieldset.id : (hasLegend ? groupKey : '(no legend)'));
 
   // parse all children first
   const valueArray = children.flatMap(parseElement);
+  // let valueArray = [];
+  // for (const child of children) {
+    // const parsed = parseElement(child);
+    // console.debug(
+      // '[parseFieldset] FLATTEN: child <%s> ',
+      // child.tagName,
+	// child.id,
+      // JSON.stringify(parsed)
+    // );
+  
+    // // Correct flatMap equivalence
+    // if (Array.isArray(parsed)) {
+      // valueArray.push(...parsed);
+    // } else if (parsed !== undefined && parsed !== null) {
+      // valueArray.push(parsed);
+    // }
+  // }
+  // console.debug('[parseFieldset] FLATTEN RESULT:', JSON.stringify(valueArray));
+
 
   if (hasLegend) {
     //console.debug('[getRecordFromForm] FIELDSET parsed with legend:', groupKey, valueArray);
@@ -209,33 +240,33 @@ function parseFieldset(fieldset) {
 
 function parseElement(el) {
   //console.debug('[getRecordFromForm] Element:', el.tagName);
-  // if (el.tagName === 'P') {
-    // return Array.from(el.children).flatMap(parseElement);
-  // }
-  let kv_pair = [];
+
+  let valueArr = [];
   if (el.tagName === 'LABEL') {
     const nestedInput = getInputOrTextAreaInLabel(el);
     if (nestedInput) {
-	kv_pair = parseInputOrControl(el, nestedInput);
+      console.debug('[getRecordFromForm] parseElement nested-input...');
+	valueArr = parseInputOrControl(el, nestedInput);
     } else if (el.parentElement?.tagName === 'FIELDSET' && el === el.parentElement.firstElementChild) {
       ; // This <label> has no input and is the first element child inside its parent <fieldset>, therefore it has no legend. It acts as the legend.
     } else {
       // No nested input → check for input-after-label
       const nextEl = el.nextElementSibling;
       if (nextEl && (nextEl.tagName === 'INPUT' || nextEl.tagName === 'TEXTAREA')) {
-        kv_pair = parseInputOrControl(el, nextEl);
+        console.debug('[getRecordFromForm] parseElement input-after-label...');
+        valueArr = parseInputOrControl(el, nextEl);
       }
     }
   } else if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
-    kv_pair = parseInputOrControl(el, el);
+    valueArr = parseInputOrControl(el, el);
   } else if (el.tagName === 'FIELDSET') { // FIELDSETs create groups (Rule 2)
-    kv_pair = parseFieldset(el);
+    valueArr = parseFieldset(el);
   } else if (el.children.length) {
-    // Recurse into the children and return the flattened results.
-    kv_pair = Array.from(el.children).flatMap(parseElement);
+    console.debug('[getRecordFromForm] parseElement children:', el.children.length);
+    valueArr = Array.from(el.children).flatMap(parseElement);
   }
-  if (kv_pair.length > 0) console.debug('[getRecordFromForm] KV found:', kv_pair);
-  return kv_pair;
+  //if (valueArr.length > 0) console.debug('[getRecordFromForm] parseElement valueArr returned:', valueArr);
+  return valueArr;
 }
 
 
@@ -261,7 +292,7 @@ function parseInputOrControl(labelEl, inputEl) {
   // checkbox / radio
   if (['checkbox', 'radio'].includes(type)) {
     const result = parseCheckedInputWithFieldset(labelEl, inputEl);
-    console.debug('[getRecordFromForm] checkbox/radio processed:', result);
+    console.debug('[getRecordFromForm] parseInputOrControl: checkbox/radio processed:', result);
     return result;
   }
 
@@ -273,7 +304,7 @@ function parseInputOrControl(labelEl, inputEl) {
   } else {
     value = (inputEl.getAttribute('value').trim() || '');
   }
-  console.debug('[getRecordFromForm] Text-like input processed:', { [key]: value });
+  console.debug('[getRecordFromForm] parseInputOrControl: Text-like input processed:', { [key]: value });
   return value ? [{ [key]: value }] : [];
 }
 
@@ -292,9 +323,10 @@ function parseCheckedInputWithFieldset(labelEl, inputEl) {
 
   const labelText = getLabelText(labelEl);
   if (fieldsetControlledByCheckedInput) {
+    console.debug('[getRecordFromForm] fieldsetControlledByCheckedInput :', labelText);
     return [{ [labelText]: parseFieldset(fieldsetControlledByCheckedInput) }];
   }
-  console.debug('[getRecordFromForm] INPUT :', labelText);
+  console.debug('[getRecordFromForm] Checkbox not controlling a fieldset :', labelText);
   return [labelText];
 }
 

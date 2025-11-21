@@ -2,14 +2,14 @@
 title: GDPR Policy
 active: true
 headless: true  # This file represents a page section.
-type: document
 geometry: [margin=2cm, a4paper]
 share: true
 summary: Data Protection Policy
 last_reviewed: 2025-10-18
 review_period: 1y
 reviewed_by: Stephen Dolley
-
+type: secure_page
+restrict_users: Full
 ---
 
 # ANL GDPR Data Protection Policy

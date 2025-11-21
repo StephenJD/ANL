@@ -1,0 +1,9 @@
+{
+  "title": "Where & When",
+  "summary": "After School Drop-In",
+  "type": "secure_page",
+  "validation": [],
+  "restrict_users": [
+    "Full"
+  ]
+}

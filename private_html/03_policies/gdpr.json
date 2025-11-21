@@ -1,0 +1,9 @@
+{
+  "title": "GDPR Policy",
+  "summary": "Data Protection Policy",
+  "type": "secure_page",
+  "validation": [],
+  "restrict_users": [
+    "Full"
+  ]
+}

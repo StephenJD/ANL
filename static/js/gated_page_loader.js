@@ -26,7 +26,7 @@ export async function loadGatedPage(container, pagePath, msgBox) {
         case "accessDenied": showMessage("Access denied"); return;
         case "notFound": showMessage("Page not found"); return;
         case "error": showMessage("Error loading page"); return;
-        case "pageNameMissing": showMessage("Page Name missing"); return;
+        case "pageNameMissing": showMessage("Access denied"); return;
         case "methodNotAllowed": showMessage("Method not allowed"); return;
         default: showMessage("Unexpected response"); return;
       }

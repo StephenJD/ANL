@@ -1,0 +1,9 @@
+{
+  "title": "Home",
+  "summary": "",
+  "type": "secure_page",
+  "validation": [],
+  "restrict_users": [
+    "Full"
+  ]
+}
