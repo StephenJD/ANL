@@ -50,14 +50,20 @@ export async function addUserLogin(email, userName, password) {
 // --- 3) Get a userlogin token  ---
 export async function get_UserLoginToken(userName, password) {
   try {
-    console.log("[verifyUser] get_UserLoginToken:", userName, password); 
+    console.log("[verifyUser] get_UserLoginToken:", userName); 
     const loginToken = generateUserToken(userName, password);
     const usersArray = await getSecureItem(USER_ACCESS_BIN, PERMITTED_USERS_KEY) || [];
 
-    const currentUser = usersArray.find(u => u.login_token === loginToken);
+    let currentUser = usersArray.find(u => u.login_token === loginToken);
     if (!currentUser) {
-      console.log("[verifyUser] get_UserLoginToken no login_token for:", userName, password, loginToken, usersArray, );  
-      return { status: "Not Registered" };
+	currentUser = usersArray.find(u => u["User name"] === userName);
+      if (currentUser) {	
+		console.log("[verifyUser] get_UserLoginToken invalid login_token for:", userName, loginToken, usersArray );
+		return { status: "Invalid login_token" };
+	} else {
+		console.log("[verifyUser] get_UserLoginToken Not Registered:", userName, usersArray );	
+		return { status: "Not Registered" };
+	}
     }
 
     const userLoginToken = generateTempAccessToken(loginToken);

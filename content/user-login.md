@@ -24,8 +24,8 @@ Form Rules
 
 {{< comment `
 Login Sequence:
-User tries to access a restricted page.
-If it does:
+User tries to access a restricted page:
+/gatedPage.js does:
   1. If there is a userLoginToken and the role matches the page-role then the page is served.
   2. If there is a userLoginToken and the role does NOT match the page-role then "No-Access" message shown.
   3. If there is NO userLoginToken they are redirected to /user-login
@@ -145,7 +145,7 @@ document.addEventListener("access-validated", async () => {
         return LoginStates.LOGGING_OUT;
 
       case LoginStates.REGISTERING:
-        console.log("[user-login] runLoginSequence() REGISTERING: Em,Un,Pw,Tk", email, userName, password, urlToken);
+        console.log("[user-login] runLoginSequence() REGISTERING: Em,Un,Tk", email, userName, urlToken);
         if (urlToken && email) {
           if (!userName || !password) {
             messageBox.textContent = `Enter your User-Name and Password above then click "Register"`;
@@ -176,15 +176,30 @@ document.addEventListener("access-validated", async () => {
 
       case LoginStates.LOGGING_IN:
 
-        console.log("[user-login] runLoginSequence() LOGGING_IN:", userName, password);
+        console.log("[user-login] runLoginSequence() LOGGING_IN:", userName);
         if (!userName || !password) {
           messageBox.textContent = loginMsg;
           return LoginStates.LOGGED_OUT;
         }
-        if (await get_UserLoginToken()) {
-          return LoginStates.SHOWING_USER;
-        } else if (userName) {
-          messageBox.textContent = `User Name ${userName} not found. Please enter your email below and click "Register".`;
+	  
+	  const result = await requestUserLoginToken(userName, password);
+	  if (result.status === "success") {
+	    return LoginStates.SHOWING_USER;
+	  }
+	  
+	  if (result.status === "Invalid login_token") {
+	    messageBox.textContent = "Invalid password. Reset Password if necessary.";
+	    return LoginStates.LOGGED_OUT;
+	  }
+	  
+	  if (result.status === "Not Registered") {
+	    messageBox.textContent =
+	      `User Name ${userName} not found. Please enter your email below and click "Register".`;
+	    return LoginStates.LOGGED_OUT;
+        }
+        if (result.status === "error") {
+          messageBox.textContent = "Your browser failed to get a response. You may have a network problem.";
+          return LoginStates.LOGGED_OUT;
         }
         return LoginStates.LOGGED_OUT;
 
@@ -198,7 +213,7 @@ document.addEventListener("access-validated", async () => {
       
       case LoginStates.RESETTING:
         if (email) {
-          if (await remove_login_token()) {
+          if (await removeLogin_token()) {
             return LoginStates.LOGGING_OUT;
           } else {
             messageBox.textContent = `Acount for ${email} not found`;
@@ -220,7 +235,7 @@ document.addEventListener("access-validated", async () => {
 
       case LoginStates.LOGGED_OUT:
         //messageBox.textContent = loginMsg;
-        return loginState;
+        return LoginStates.LOGGED_OUT;
 
       default:
         console.log("[user-login] Unknown state");
@@ -256,54 +271,34 @@ document.addEventListener("access-validated", async () => {
     return false;
   }
 
-  async function get_UserLoginToken() {
-    console.log("[user-login] get_UserLoginToken:", userName, password);
-    if (!userName || !password) {
-      return false;
-    }
+  async function requestUserLoginToken(userName, password) {
+    console.log("[user-login] requestUserLoginToken:", userName);
+  
     try {
       const resp = await fetch("/.netlify/functions/verifyUser", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "get_UserLoginToken", userName, password })
+        body: JSON.stringify({
+          action: "get_UserLoginToken",
+          userName,
+          password
+        })
       });
-
+  
       const data = await resp.json();
-      console.log("[user-login] Parsed verifyUser response:", data);
-
+      console.log("[user-login] verifyUser response:", data);
+  
       if (data.status === "success") {
-        console.log("[user-login] Login successful, saving userLoginToken...");
         localStorage.setItem("userLogin_token", data.userLoginToken);
         localStorage.setItem("user_role", JSON.stringify(data.role));
-        return true;
       }
-
-      console.warn("[user-login] Login not permitted:", data.status);
-      
-      /*
-      // --- Check superuser ---
-      console.log("[user-login] Checking superuser credentials...");
-      const suResp = await fetch("/.netlify/functions/verifyUser", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "checkSuperUser", userName, password })
-      });
-      const suData = await suResp.json();
-      console.log("[user-login] Superuser check response:", suData);
-
-      if (suData.status != "success") {
-        console.warn("[user-login] Login failed for non-superuser.");
-        registerBtn.style.display = "inline-block";
-        resetBtn.style.display = "inline-block";
-        //alert("Login failed. Please register or reset your account.");
-      }
-      */
-
+  
+      return data;
+  
     } catch (err) {
-      console.error("[user-login] Login request failed:", err);
-      //alert("[user-login] Login failed. Check console for details.");
+      console.error("[user-login] requestUserLoginToken failed:", err);
+      return { status: "error", error: err.message };
     }
-    return false;
   }
 
   function removeLogin_token() {
@@ -314,7 +309,7 @@ document.addEventListener("access-validated", async () => {
   }
 
   async function submit_new_user_login() {
-    console.log("[user-login] submit_new_user_login() email/UN/PW:",email, userName, password);
+    console.log("[user-login] submit_new_user_login() email/UN:",email, userName);
 
     try {
       const resp = await fetch("/.netlify/functions/verifyUser", {
