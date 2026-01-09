@@ -283,7 +283,7 @@ function getInputType(element) {
 function getLabelText(labelEl) {
   if (!labelEl) return '';
   const clone = labelEl.cloneNode(true);
-  clone.querySelector('input, textarea').remove?.();
+  clone.querySelector('input, textarea')?.remove();
   return clone.textContent.trim();
 }
 
