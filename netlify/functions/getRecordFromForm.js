@@ -125,11 +125,32 @@ const snapshotCleaned = JSON.parse(JSON.stringify(cleaned));
 //console.debug('[getRecordFromForm] Cleaned:', JSON.stringify(snapshotCleaned, null, 2));
 
 // merge cleaned array into object
-const merged = Object.assign({}, ...(Array.isArray(cleaned[0]) ? cleaned[0] : cleaned));
+const merged = mergeArrays(cleaned); //Object.assign({}, ...(Array.isArray(cleaned[0]) ? cleaned[0] : cleaned));
 const snapshotMerged = JSON.parse(JSON.stringify(merged));
 console.debug('[getRecordFromForm] Merged:', JSON.stringify(snapshotMerged, null, 2));
 
 return merged;
+}
+
+function mergeArrays(cleaned) {
+	const merged = {};
+
+	for (const entry of cleaned) {
+	  for (const [key, value] of Object.entries(entry)) {
+	    if (!(key in merged)) {
+		merged[key] = value;
+	    } else if (Array.isArray(merged[key]) && Array.isArray(value)) {
+		merged[key].push(...value);
+	    } else if (Array.isArray(merged[key])) {
+		merged[key].push(value);
+	    } else if (Array.isArray(value)) {
+		merged[key] = [merged[key], ...value];
+	    } else {
+		merged[key] = [merged[key], value];
+	    }
+	  }
+	}
+	return merged;
 }
 
 function removeEmptyArrays(data) {
@@ -203,31 +224,12 @@ function parseFieldset(fieldset) {
   .filter(el => 
        el.nodeType === 1 &&
        el.tagName !== 'LEGEND' &&
-       !isControlledFieldset(el)
+	 !(el.tagName === 'FIELDSET' && isControlledFieldset(el))
   );
   console.debug('[getRecordFromForm] FIELDSET ', fieldset.id  ? fieldset.id : (hasLegend ? groupKey : '(no legend)'));
 
   // parse all children first
   const valueArray = children.flatMap(parseElement);
-  // let valueArray = [];
-  // for (const child of children) {
-    // const parsed = parseElement(child);
-    // console.debug(
-      // '[parseFieldset] FLATTEN: child <%s> ',
-      // child.tagName,
-	// child.id,
-      // JSON.stringify(parsed)
-    // );
-  
-    // // Correct flatMap equivalence
-    // if (Array.isArray(parsed)) {
-      // valueArray.push(...parsed);
-    // } else if (parsed !== undefined && parsed !== null) {
-      // valueArray.push(parsed);
-    // }
-  // }
-  // console.debug('[parseFieldset] FLATTEN RESULT:', JSON.stringify(valueArray));
-
 
   if (hasLegend) {
     //console.debug('[getRecordFromForm] FIELDSET parsed with legend:', groupKey, valueArray);
@@ -309,7 +311,11 @@ function parseInputOrControl(labelEl, inputEl) {
 }
 
 function parseCheckedInputWithFieldset(labelEl, inputEl) {
-  if (!inputEl.hasAttribute('checked')) return [];
+  //if (!inputEl.hasAttribute('checked')) return []; // None are reported checked
+  //if (!inputEl.checked) return [];  // None are reported checked
+  //if (!inputEl.defaultChecked) return []; // None are reported checked
+	const isChecked = inputEl.getAttribute('checked') !== null || /\bchecked\b/i.test(inputEl.outerHTML);
+	if (!isChecked) return [];
 
   const childFieldset = Array.from(labelEl.children)
     .find(c => c.tagName === 'FIELDSET');

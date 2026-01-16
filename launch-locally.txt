@@ -1,0 +1,1 @@
+ npx concurrently "powershell -Command Remove-Item -Recurse -Force public,.netlify -ErrorAction SilentlyContinue; node build_scripts/buildSecureContent.js && node build_scripts/generate_qr.js && hugo --watch --baseURL=http://localhost:8888/" "netlify dev"
