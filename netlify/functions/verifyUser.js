@@ -10,7 +10,7 @@ const USER_ACCESS_BIN = process.env.USER_ACCESS_BIN;
 const ACCESS_TOKEN_BIN = process.env.ACCESS_TOKEN_BIN;
 const PERMITTED_USERS_KEY = process.env.PERMITTED_USERS_KEY;
 const ADMIN_SUPERUSER_HASH = process.env.ADMIN_SUPERUSER_HASH;
-const USER_ACCESS_TIMEOUT_HRS = process.env.USER_ACCESS_TIMEOUT_HRS;
+const USER_ACCESS_TIMEOUT_S = process.env.USER_ACCESS_TIMEOUT_HRS * 60 * 60;
 
 // --- 1) Check if email is in permitted_users ---
 export async function checkIsPermittedUser(email) {
@@ -72,7 +72,7 @@ export async function get_UserLoginToken(userName, password) {
       ACCESS_TOKEN_BIN,
       userLoginToken,
       { user_name: currentUser["User name"], role: currentUser["Role"] },
-      USER_ACCESS_TIMEOUT_HRS
+      USER_ACCESS_TIMEOUT_S
     );
 
     return { status: "success", userLoginToken, role: currentUser["Role"] };
@@ -96,7 +96,7 @@ export async function check_userLoginToken(userLogin_token) {
           user_name: entry.user_name,
           role: entry.role
         },
-        USER_ACCESS_TIMEOUT_HRS
+        USER_ACCESS_TIMEOUT_S
       );
       return { status: "success", entry };
     } else {
