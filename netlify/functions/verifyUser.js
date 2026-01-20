@@ -10,7 +10,7 @@ const USER_ACCESS_BIN = process.env.USER_ACCESS_BIN;
 const ACCESS_TOKEN_BIN = process.env.ACCESS_TOKEN_BIN;
 const PERMITTED_USERS_KEY = process.env.PERMITTED_USERS_KEY;
 const ADMIN_SUPERUSER_HASH = process.env.ADMIN_SUPERUSER_HASH;
-const USER_ACCESS_TIMEOUT_S = process.env.USER_ACCESS_TIMEOUT_HRS * 60 * 60;
+const USER_ACCESS_TIMEOUT_mS = process.env.USER_ACCESS_TIMEOUT_HRS * 60 * 60 * 1000;
 
 // --- 1) Check if email is in permitted_users ---
 export async function checkIsPermittedUser(email) {
@@ -39,7 +39,7 @@ export async function addUserLogin(email, userName, password) {
 
     const loginToken = generateUserToken(userName, password);
     userEntry.login_token = loginToken;
-    userEntry["User Name"] = userName;
+    userEntry["User name"] = userName;
     await setSecureItem(USER_ACCESS_BIN, PERMITTED_USERS_KEY, permittedUsers);
     return { status: "success", loginToken, role: userEntry["Role"] };
   } catch (err) {
@@ -58,11 +58,16 @@ export async function get_UserLoginToken(userName, password) {
     let currentUser = usersArray.find(u => u.login_token === loginToken);
     if (!currentUser) {
 	currentUser = usersArray.find(u => u["User name"] === userName);
-      if (currentUser) {	
-		console.log("[verifyUser] get_UserLoginToken invalid login_token for:", userName, loginToken, usersArray );
+      if (currentUser) {
+        if (currentUser.login_token) {
+		console.log("[verifyUser] get_UserLoginToken invalid login_token for:", userName );
 		return { status: "Invalid login_token" };
+        } else {
+		console.log("[verifyUser] get_UserLoginToken No login_token for:", userName );
+		return { status: "Missing login_token" };
+	  }
 	} else {
-		console.log("[verifyUser] get_UserLoginToken Not Registered:", userName, usersArray );	
+		console.log("[verifyUser] get_UserLoginToken Not Registered:", userName );	
 		return { status: "Not Registered" };
 	}
     }
@@ -72,7 +77,7 @@ export async function get_UserLoginToken(userName, password) {
       ACCESS_TOKEN_BIN,
       userLoginToken,
       { user_name: currentUser["User name"], role: currentUser["Role"] },
-      USER_ACCESS_TIMEOUT_S
+      USER_ACCESS_TIMEOUT_mS
     );
 
     return { status: "success", userLoginToken, role: currentUser["Role"] };
@@ -96,7 +101,7 @@ export async function check_userLoginToken(userLogin_token) {
           user_name: entry.user_name,
           role: entry.role
         },
-        USER_ACCESS_TIMEOUT_S
+        USER_ACCESS_TIMEOUT_mS
       );
       return { status: "success", entry };
     } else {
@@ -116,7 +121,6 @@ export async function deleteUserLogin(email) {
     if (!userEntry) return { status: "Not found" };
 
     userEntry.login_token = null;
-    userEntry["User Name"] = null;
     await setSecureItem(USER_ACCESS_BIN, PERMITTED_USERS_KEY, permittedUsers);
     return { status: "success" };
   } catch (err) {

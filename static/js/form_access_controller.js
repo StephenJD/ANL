@@ -77,19 +77,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   form?.addEventListener("submit", handleFormSubmission);
 });
 
-window.requestAccount = async function (email) {
-  try {
-    requireRequestLink = true;
-    restrictUsers = true;
-    if (emailInput) emailInput.value = email || "";
-    console.log("[form_access_controller] requestAccount(): email set to", emailInput?.value);
-    return await handleRequestButtonClick();
-  } catch (err) {
-    console.error("[form_access_controller] requestAccount() failed:", err);
-    return false;
-  }
-};
-
 async function fetchFrontMatter() {
   try {
     const res = await fetch("/.netlify/functions/getFormFrontMatter", {
@@ -167,13 +154,28 @@ async function handleRequestButtonClick() {
     if (messageBox) {
       messageBox.textContent = "This email is not authorized to request access for this form.";
     }
+    console.log("[form_access_controller] email is not authorized", email);
     return false;
   }
 
   const result = await sendAccessLink(email);
-  alert(result.success ? "Check your email for the link." : "Error sending link: " + (result.error || "unknown"));
+  console.log("[form_access_controller] email sent");
+  //alert(result.success ? "Check your email for the link." : "Error sending link: " + (result.error || "unknown"));
   return true;
 }
+
+  async function requestAccount(email) {
+    try {
+      if (emailInput) emailInput.value = email || "";
+      console.log("[user-login] requestAccount(): email set to", emailInput?.value);
+      return await handleRequestButtonClick();
+    } catch (err) {
+      console.error("[user-login] requestAccount() failed:", err);
+      return false;
+    }
+  }
+  
+window.requestAccount = requestAccount;
 
 async function verifyFormAccessToken() {
   if (!urlToken) return;
@@ -234,7 +236,7 @@ async function handleFormSubmission(e) {
     console.log("[form_access_controller] optionalEmailInput found.");
   }
 
-const formData = clonedForm.outerHTML
+  const formData = clonedForm.outerHTML
     .replace(/&amp;/g, '&')
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
@@ -262,7 +264,7 @@ const formData = clonedForm.outerHTML
     } else if (data.token) {
       window.location.href = `/send_submission_page.html?token=${encodeURIComponent(data.token)}`;
     } else {
-      alert("Form saved, but no token was returned.");
+      alert("Form saved, but no token was returned. Please notify website administrator.");
     }
   } catch (err) {
     console.error("[form_access_controller] error:", err);

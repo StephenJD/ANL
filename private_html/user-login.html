@@ -1,6 +1,6 @@
 <fieldset>
   <legend>Log-In</legend>
-  <div id="login_div">
+  <div id="login_div" style="display:none;">
    <label>User name<input required class="name" type="text" data-lpignore="true" placeholder="Sammy"></label>
    <label>Password<input required type="password" autocomplete="current-password" data-lpignore="true"></label>
    <button type="button" id="login_btn">Login</button>
@@ -8,10 +8,10 @@
   
 <p>  <button type="button" id="logout_btn" style="display:none;">Logout</button>
   <br><span id="login_message" style="color:red;margin-top:0.5em;"></span><br></p>
-  <div id="register_div">
+  <div id="register_div" style="display:none;">
    <label id="email_lbl">Email<input id="submitted_by" type="email" data-lpignore="true" placeholder="Samantha@mail.com"></label><br>
    <button type="button" id="register_btn">Register</button>
-   <button type="button" id="reset_btn">Reset Password</button>
+   <button type="button" id="reset_btn">Reset Account</button>
   </div>
 </fieldset>
 
@@ -48,6 +48,7 @@ document.addEventListener("access-validated", async () => {
  
   const LoginStates = Object.freeze({
     UNKNOWN: "unknown",
+    DISPLAY_LOGIN: "show login controls",
     LOGGING_OUT: "logging_out",
     LOGGED_OUT: "logged_out",
     CHECK_USER_LOGIN_TOKEN: "checking_user_login_token",
@@ -68,12 +69,18 @@ document.addEventListener("access-validated", async () => {
     } else if (redirect) {
       iniState =  LoginStates.LOGGING_IN;
     } else {
-      iniState =  LoginStates.LOGGED_OUT;
+      iniState =  LoginStates.LOGGING_OUT;
     }
     messageBox.textContent = loginMsg;
     console.log("[user-login] Initial loginState:", iniState);
     return iniState;
   };
+
+  async function hideUI() {
+  	  logoutBtn.style.display = "none";
+  	  loginDiv.style.display = "none";
+  	  registerDiv.style.display = "none";
+  }
 
   async function runLoginSequence(newState) {
     userName = userNameInput.value.trim();
@@ -87,6 +94,8 @@ document.addEventListener("access-validated", async () => {
         return LoginStates.LOGGED_IN;
   
       case LoginStates.CHECK_USER_LOGIN_TOKEN:
+        await hideUI();
+        messageBox.textContent = "Checking log-in details...";
         if (await check_UserLoginToken(userLoginToken)) {
           return LoginStates.SHOWING_USER;
         }
@@ -94,62 +103,77 @@ document.addEventListener("access-validated", async () => {
 
       case LoginStates.REGISTERING:
         console.log("[user-login] runLoginSequence() REGISTERING: Em,Un,Tk", email, userName, urlToken);
-        if (urlToken && email) {
+        logoutBtn.style.display = "none";
+        loginDiv.style.display = "block";
+        registerDiv.style.display = "block";
+
+	  if (urlToken && email) {
           if (!userName || !password) {
             messageBox.textContent = `Enter your User-Name and Password above then click "Register"`;
             loginBtn.style.display = "none";
             return LoginStates.REGISTERING;
           }
+	    
+          await hideUI();
+          messageBox.textContent = "Checking log-in details...";
+
           if (await submit_new_user_login()) return LoginStates.LOGGING_IN;
           else {
             messageBox.textContent = `${email} not allowed to register. Contact admin at ANL.`;
-            return LoginStates.LOGGED_OUT;
+            return LoginStates.DISPLAY_LOGIN;
           }
         } else if (email) {
-          messageBox.textContent = `Register UN/PW for ${email}`;
+          messageBox.textContent = `Preparing registration for ${email}`;
           return LoginStates.REGISTER_LINK_REQUESTED;
         } else {
-          return LoginStates.LOGGED_OUT;
+	    messageBox.textContent = "Please enter your email address then click 'Register'";
+          return LoginStates.DISPLAY_LOGIN;
         }
 
       case LoginStates.REGISTER_LINK_REQUESTED:
         console.log("[user-login] runLoginSequence() REGISTER_LINK_REQUESTED:", email);
+	  await hideUI();
         if (await requestAccount(email)) {
           messageBox.textContent = `Registration link emailed to ${email}`;
           return LoginStates.REGISTER_LINK_REQUESTED;
         } else {
           messageBox.textContent = "This email is not authorized to request an account.";
-          return LoginStates.LOGGED_OUT;
+	    registerDiv.style.display = "block";
+	    return LoginStates.LOGGED_OUT;
         }
 
       case LoginStates.LOGGING_IN:
-
         console.log("[user-login] runLoginSequence() LOGGING_IN:", userName);
         if (!userName || !password) {
           messageBox.textContent = loginMsg;
-          return LoginStates.LOGGED_OUT;
+          return LoginStates.DISPLAY_LOGIN;
         }
-	  
+	  messageBox.textContent = "Checking log-in details...";
+        await hideUI();
 	  const result = await requestUserLoginToken(userName, password);
 	  if (result.status === "success") {
 	    return LoginStates.SHOWING_USER;
 	  }
 	  
 	  if (result.status === "Invalid login_token") {
-	    messageBox.textContent = "Invalid password. Reset Password if necessary.";
+	    messageBox.textContent = "Invalid Password. Reset Account if necessary.";
+	    return LoginStates.DISPLAY_LOGIN;
+	  }
+	  if (result.status === "Missing login_token") {
+	    messageBox.textContent = "You need to re-register. Please enter your email below and click 'Register'";
+	    registerDiv.style.display = "block";
 	    return LoginStates.LOGGED_OUT;
 	  }
-	  
 	  if (result.status === "Not Registered") {
 	    messageBox.textContent =
-	      `User Name ${userName} not found. Please enter your email below and click "Register".`;
-	    return LoginStates.LOGGED_OUT;
+	      `User name ${userName} not found. Please correct, or enter your email below and click "Register".`;
+	    return LoginStates.DISPLAY_LOGIN;
         }
         if (result.status === "error") {
           messageBox.textContent = "Your browser failed to get a response. You may have a network problem.";
-          return LoginStates.LOGGED_OUT;
+          return LoginStates.DISPLAY_LOGIN;
         }
-        return LoginStates.LOGGED_OUT;
+        return LoginStates.DISPLAY_LOGIN;
 
       case LoginStates.SHOWING_USER:
         console.log("[user-login] runLoginSequence() SHOWING_USER:", userName);
@@ -161,30 +185,35 @@ document.addEventListener("access-validated", async () => {
       
       case LoginStates.RESETTING:
         if (email) {
-          if (await removeLogin_token()) {
-            return LoginStates.LOGGING_OUT;
+	    messageBox.textContent = "Checking for registered email...";
+          await hideUI();
+          if (await remove_login_token()) {
+	      messageBox.textContent = "Account Reset. Please Re-Register.";
           } else {
             messageBox.textContent = `Acount for ${email} not found`;
           }
-        }
-        return LoginStates.LOGGED_OUT
+        } else {
+	      messageBox.textContent = "Please enter your email address, then click 'Reset Account'";
+	  }
+        return LoginStates.DISPLAY_LOGIN
   
       case LoginStates.LOGGING_OUT:
-        await removeLogin_token();
-        logoutBtn.style.display = "none";
-        loginDiv.style.display = "block";
-        registerDiv.style.display = "block";
+        await removeSession_Login_token();
         messageBox.textContent = "To Register or Reset your account, enter your email below";
         emailInput.value = "";
         userNameInput.value = "";
         passwordInput.value = "";
         urlToken = null;
+        return LoginStates.DISPLAY_LOGIN;
+
+      case LoginStates.DISPLAY_LOGIN:
+        logoutBtn.style.display = "none";
+        loginDiv.style.display = "block";
+        registerDiv.style.display = "block";
         return LoginStates.LOGGED_OUT;
 
       case LoginStates.LOGGED_OUT:
-        //messageBox.textContent = loginMsg;
         return LoginStates.LOGGED_OUT;
-
       default:
         console.log("[user-login] Unknown state");
         return loginState;
@@ -249,8 +278,8 @@ document.addEventListener("access-validated", async () => {
     }
   }
 
-  function removeLogin_token() {
-    console.log("[user-login] removeLogin_token() called, clearing loginToken...");
+  function removeSession_Login_token() {
+    console.log("[user-login] removeSession_Login_token() called, clearing session_loginToken...");
     localStorage.removeItem("userLogin_token");
     localStorage.removeItem("user_role");
     console.log("[user-login] Login-options buttons restored after logout.");
