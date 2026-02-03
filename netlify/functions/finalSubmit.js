@@ -30,10 +30,10 @@ export async function handler(event) {
     console.log("[finalsubmit] sending submission to admin:", adminEmail, "for", formName);
 
     await sendEmail({
-      to: adminemail,
-      subject: `form submission: ${formname}`,
-      html: formattedhtml,
-      attachbodyasfile: true
+      to: adminEmail,
+      subject: `Form Submission: ${formName}`,
+      html: formattedHTML,
+      attachBodyAsFile: true
     });
 
     console.log("[finalSubmit] Final submission processed successfully for token:", token);
