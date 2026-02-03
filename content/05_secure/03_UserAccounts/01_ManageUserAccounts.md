@@ -31,5 +31,3 @@ validation: [noSend] # options: requestLink, submit, none (default), noSend
     <div class="check-list-container"></div>
   </fieldset>
 </fieldset>
-
-<ul id="Permitted Users"></ul>
