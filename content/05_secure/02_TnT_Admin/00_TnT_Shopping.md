@@ -54,7 +54,7 @@ Form Rules
    <label><input type="checkbox">Caramel</label>
    <label><input type="checkbox">Chocolate</label>
    <label><input type="checkbox">Honey</label>
-   <label>Other Sources:<textarea rows="2"></textarea></label>
+   <label>Other Sauces:<textarea rows="2"></textarea></label>
 </fieldset>
 
 <fieldset>
