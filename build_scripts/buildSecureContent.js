@@ -51,7 +51,7 @@ function processFile(filePath) {
     const md = fs.readFileSync(filePath, "utf-8");
     const { data: frontMatter, content: rawContent } = matter(md);
     const t = (frontMatter.type || "").toLowerCase();
-    if (t !== "form" && t !== "secure_page") return;
+    if (t !== "form" && t !== "secure_page" && t !== "auth") return;
 
     const cleanContent = stripShortcodes(rawContent);
     const html = marked.parse(cleanContent);

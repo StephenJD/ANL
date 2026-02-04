@@ -1,0 +1,20 @@
+{{/* layouts/auth/single.html */}}
+{{ define "main" }}
+  <link rel="stylesheet" href="{{ "css/forms.css" | relURL }}">
+
+  <div class="form-container">
+    <h1>{{ .Title }}</h1>
+
+    {{ partial "page_access_message.html" . }}
+
+    <!-- IMPORTANT: no data-netlify, no netlify -->
+    <form name="{{ .Title | urlize }}" autocomplete="off" class="verified-form">
+      {{ partial "form_request.html" . }}
+      <div id="gated_page_placeholder">Loading…</div>
+    </form>
+  </div>
+
+  <script type="module" src="{{ "js/form_access_controller.js" | relURL }}" defer></script>
+{{ end }}
+
+

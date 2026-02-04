@@ -4,7 +4,7 @@ summary: "User Login"
 last_reviewed: 2025-09-28
 review_period: 1y
 reviewed_by: Stephen Dolley
-type: form
+type: auth
 restrict_users: [none]
 validation: [noSend]
 ---
@@ -139,7 +139,12 @@ document.addEventListener("access-validated", async () => {
     password = passwordInput.value;
     email = emailInput.value.trim();
     console.log("[user-login] runLoginSequence() New State:", newState, "userName:", userName );
- 
+    if (userName.includes("@")) {
+     messageBox.textContent =
+       "User name must NOT be an email address. Choose a short user name (e.g. sam, sammy, samH).";
+     return LoginStates.DISPLAY_LOGIN;
+    }
+
     switch (newState) {
       case LoginStates.LOGGED_IN:
         if (redirect) window.location.href = redirect;
@@ -259,6 +264,7 @@ document.addEventListener("access-validated", async () => {
         return LoginStates.DISPLAY_LOGIN;
 
       case LoginStates.DISPLAY_LOGIN:
+	  console.log("[user-login] DISPLAY_LOGIN");
         logoutBtn.style.display = "none";
         loginDiv.style.display = "block";
         registerDiv.style.display = "block";
