@@ -185,7 +185,7 @@ function getGroupKey(container) {
   if (!container || !container.tagName) return null;
   // FIELDSET with legend
   if (container.tagName === 'FIELDSET') {
-    const legend = container.querySelector('legend');
+    const legend = Array.from(container.children).find(el => el.tagName === 'LEGEND');
     if (legend) return legend.textContent.trim()
   }
 
@@ -205,7 +205,10 @@ function getGroupKey(container) {
 
 function isControlledFieldset(fs) {
   // If its parent label has a checked input → this FS is already processed
-  const parent = fs.previousElementSibling;
+  let parent = fs.previousSibling;
+  while (parent && parent.nodeType !== 1) {
+    parent = parent.previousSibling;
+  }
 
   if (parent && parent.tagName === 'LABEL') {
     const nested = parent.querySelector('input[type="checkbox"], input[type="radio"]');
@@ -215,7 +218,7 @@ function isControlledFieldset(fs) {
 }
 
 function parseFieldset(fieldset) {
-  const rawLegend = fieldset.querySelector('legend');
+  const rawLegend = Array.from(fieldset.children).find(el => el.tagName === 'LEGEND');
   let groupKey = rawLegend ? rawLegend.textContent.trim() : '';
   if (!groupKey) groupKey = getGroupKey(fieldset);
   const hasLegend = !!groupKey;
@@ -271,7 +274,6 @@ function parseElement(el) {
   return valueArr;
 }
 
-
 function getInputOrTextAreaInLabel(labelEl) {
   return labelEl.querySelector('input, textarea');
 }
@@ -279,6 +281,7 @@ function getInputOrTextAreaInLabel(labelEl) {
 function getInputType(element) {
   if (!element) return '';
   if (element.tagName === 'TEXTAREA') return 'text';
+  
   return (element.getAttribute('type') || element.type || 'text').toLowerCase();
 }
 
@@ -314,18 +317,39 @@ function parseCheckedInputWithFieldset(labelEl, inputEl) {
   //if (!inputEl.hasAttribute('checked')) return []; // None are reported checked
   //if (!inputEl.checked) return [];  // None are reported checked
   //if (!inputEl.defaultChecked) return []; // None are reported checked
-	const isChecked = inputEl.getAttribute('checked') !== null || /\bchecked\b/i.test(inputEl.outerHTML);
-	if (!isChecked) return [];
+  const isChecked = inputEl.getAttribute('checked') !== null || /\bchecked\b/i.test(inputEl.outerHTML);
+  if (!isChecked) return [];
 
-  const childFieldset = Array.from(labelEl.children)
-    .find(c => c.tagName === 'FIELDSET');
-
+  // Find first FIELDSET either inside the label or immediately after it
   let fieldsetControlledByCheckedInput = null;
-  if (childFieldset) {
-    fieldsetControlledByCheckedInput = childFieldset;
-  } else if (labelEl.nextElementSibling?.tagName === 'FIELDSET') {
-    fieldsetControlledByCheckedInput = labelEl.nextElementSibling;
+  // 1. Look for direct child FIELDSET inside label
+  for (const child of labelEl.children) {
+    if (child.tagName === 'FIELDSET') {
+      fieldsetControlledByCheckedInput = child;
+      break;
+    }
   }
+
+  // 2. If not found, walk forward to next ELEMENT sibling
+  if (!fieldsetControlledByCheckedInput) {
+    let next = labelEl.nextSibling;
+
+    while (next && next.nodeType !== 1) {
+      next = next.nextSibling;
+    }
+
+    if (next && next.tagName === 'FIELDSET') {
+      fieldsetControlledByCheckedInput = next;
+    }
+  }  
+  // const childFieldset = Array.from(labelEl.children)
+    // .find(c => c.tagName === 'FIELDSET');
+
+  // if (childFieldset) {
+    // fieldsetControlledByCheckedInput = childFieldset;
+  // } else if (labelEl.nextElementSibling?.tagName === 'FIELDSET') {
+    // fieldsetControlledByCheckedInput = labelEl.nextElementSibling;
+  // }
 
   const labelText = getLabelText(labelEl);
   if (fieldsetControlledByCheckedInput) {
@@ -335,4 +359,3 @@ function parseCheckedInputWithFieldset(labelEl, inputEl) {
   console.debug('[getRecordFromForm] Checkbox not controlling a fieldset :', labelText);
   return [labelText];
 }
-

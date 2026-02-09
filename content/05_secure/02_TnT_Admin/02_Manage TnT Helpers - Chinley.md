@@ -33,38 +33,41 @@ Form Rules
   }
 </div>
 
-<fieldset><legend>TnT Helper</legend>
-<label>Name: <input required class="name" type="text" /></label>
-<fieldset><legend>Contact Details</legend>
+<fieldset>
+ <legend>TnT Helper</legend>
+ <label>Name: <input required class="name" type="text" /></label>
+ <fieldset>
+  <legend>Contact Details</legend>
   <label>Mobile No: <input required type="tel" /></label>
   <label>Email: <input required type="email" /></label>
-</fieldset>
+ </fieldset>
 
-<fieldset><legend>Role</legend>
+ <fieldset>
+  <legend>Role</legend>
   <fieldset>
    <label><input type="checkbox">Chinley</label>
    <fieldset>
-   <label><input required type="radio"> Leader</label>
-   <label><input required type="radio"> Helper</label>
+    <label><input required type="radio"> Leader</label>
+    <label><input required type="radio"> Helper</label>
    </fieldset>
   </fieldset>
   <fieldset>
    <label><input type="checkbox">Whaley Bridge</label>
    <fieldset>
-   <label><input required type="radio"> Leader</label>
-   <label><input required type="radio"> Helper</label>
+    <label><input required type="radio"> Leader</label>
+    <label><input required type="radio"> Helper</label>
    </fieldset>
   </fieldset>
-</fieldset>
+ </fieldset>
 
-<fieldset><legend>DBS</legend>
+ <fieldset><legend>DBS</legend>
   <label>DBS Number: <input class="short-input" type="text" /></label>
   <label>DBS Date: <input class="" type="date" /></label>
-</fieldset>
+ </fieldset>
 
-<fieldset><legend>Safeguarding</legend>
+ <fieldset>
+  <legend>Safeguarding</legend>
   <label>Safeguarding Date: <input class="" type="date" /></label>
   <label>Safeguarding Level: <input class="short-input" type="text" /></label>
-</fieldset>
-
+ </fieldset>
 </fieldset>
