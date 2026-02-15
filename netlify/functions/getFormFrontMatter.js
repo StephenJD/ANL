@@ -36,16 +36,16 @@ export async function getFormFrontMatter({ formPath }) {
     metadata.validation = ["none"];
   }
   
-  // Ensure restrict_users is always an array
-  if (Array.isArray(metadata.restrict_users)) {
-    metadata.restrict_users = metadata.restrict_users.map(String).filter(Boolean);
-  } else if (typeof metadata.restrict_users === "string") {
-    metadata.restrict_users = [metadata.restrict_users.trim()];
+  // Ensure access is always an array
+  if (Array.isArray(metadata.access)) {
+    metadata.access = metadata.access.map(String).filter(Boolean);
+  } else if (typeof metadata.access === "string") {
+    metadata.access = [metadata.access.trim()];
   } else {
-    metadata.restrict_users = [];
+    metadata.access = [];
   }
   
-  return metadata; // return everything, with validation and restrict_users normalized
+  return metadata; // return everything, with validation and access normalized
 }
 
 export async function handler(event) {

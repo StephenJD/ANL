@@ -5,7 +5,7 @@ review_period: 1y
 reviewed_by: Stephen Dolley
 type: form
 include_unselected_options: false
-restrict_users: helper
+access: helper
 validation: [none] # options: requestLink, submit, none (default)
 qrCode: false
 ---

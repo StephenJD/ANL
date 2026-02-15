@@ -60,7 +60,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   const formPath = window.location.pathname;
   messageBox = document.querySelector(".page_access_message");
 
-  await loadGatedPage(container, formPath, messageBox);
+  if (container && pagePath && frontMatter?.access?.some(a => a.toLowerCase() !== "public")) {
+    await loadGatedPage(container, pagePath, messageBox);
+  }
 
   // Assign elements after form injection
   form = document.querySelector("form.verified-form");
@@ -93,8 +95,8 @@ async function fetchFrontMatter() {
   }
 
   cleanTitle = frontMatter?.title?.trim() || form?.name || "Untitled Form";
-  restrictUsers = Array.isArray(frontMatter?.restrict_users) &&
-                  frontMatter.restrict_users.some(r => r && r.toLowerCase() !== "none");
+  restrictUsers = Array.isArray(frontMatter?.access) &&
+                  frontMatter.access.some(r => r && r.toLowerCase() !== "none");
 
   const validation = Array.isArray(frontMatter?.validation) ? frontMatter.validation : ["none"];
   requireRequestLink = validation.includes("requestLink");

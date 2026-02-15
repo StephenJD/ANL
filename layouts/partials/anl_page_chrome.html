@@ -1,0 +1,30 @@
+{{/* layouts/partials/anl_page_chrome.html */}}
+
+{{ $current_page := . }}
+
+{{ $background_image := $current_page.Params.background_image }}
+{{ $logo_image := $current_page.Params.logo_image }}
+{{ $breadcrumb_page_types := site.Params.breadcrumb.page_types | default dict }}
+{{ $show_breadcrumb := index $breadcrumb_page_types $current_page.Type | default false }}
+
+<link rel="stylesheet" href="{{ "css/anl_chrome.css" | relURL }}">
+
+<div class="page-container" style="{{ if $background_image }}background-image: url('{{ $background_image }}');{{ end }}">
+  <div class="no-print">
+    {{ if and $show_breadcrumb (not $current_page.IsHome) }}
+      <div class="container">
+        {{ partial "breadcrumb.html" $current_page }}
+      </div>    
+    {{ end }}
+  </div>
+  
+  {{ with $logo_image }}
+     <div class="page-logo">
+       <img src="{{ . }}" alt="Logo">
+     </div>
+  {{ end }}
+
+  {{ partial "qr_code.html" $current_page }}
+    
+{{/* </div> Must be closed in another parial */}}
+

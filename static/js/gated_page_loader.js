@@ -1,6 +1,6 @@
-// Client-side: /static/js/gated_page_loader.js
-
 export async function loadGatedPage(container, pagePath, msgBox) {
+	console.log("[loadGatedPage] pagePath:", pagePath, "container:", container, "msgBox:", msgBox);
+
   if (!container) return console.error("Missing container");
   if (!pagePath) return console.error("Missing pagePath");
 
@@ -10,18 +10,37 @@ export async function loadGatedPage(container, pagePath, msgBox) {
     msgBox.style.display = "block";
   }
 
+  async function injectHtml(html) {
+    container.innerHTML = html;
+    const scripts = Array.from(container.querySelectorAll("script"));
+    for (const oldScript of scripts) {
+      const newScript = document.createElement("script");
+      if (oldScript.type) newScript.type = oldScript.type;
+      if (oldScript.src) {
+        newScript.src = oldScript.src;
+        newScript.async = false;
+      } else {
+        newScript.textContent = oldScript.textContent;
+      }
+      oldScript.replaceWith(newScript);
+      if (newScript.type === "module" && newScript.src) await new Promise(r => newScript.onload = r);
+    }
+    document.dispatchEvent(new Event("gated-page-loaded"));
+  }
+
   try {
     const token = localStorage.getItem("userLogin_token");
     const res = await fetch(`/.netlify/functions/gatedPage?page=${encodeURIComponent(pagePath)}`, {
       method: "GET",
       headers: token ? { "Authorization": `Bearer ${token}` } : {}
     });
-    
-    container.innerHTML = "";
+
     const contentType = res.headers.get("Content-Type") || "";
+
     if (contentType.includes("application/json")) {
       const data = await res.json();
       switch (data.action) {
+        case "public": showMessage("Public page should not be gate-loaded!"); return;
         case "redirect": return window.location.href = data.location;
         case "accessDenied": showMessage("Access denied"); return;
         case "notFound": showMessage("Page not found"); return;
@@ -34,23 +53,7 @@ export async function loadGatedPage(container, pagePath, msgBox) {
 
     if (res.status === 200) {
       const html = await res.text();
-      container.innerHTML = html;
-
-      const scripts = Array.from(container.querySelectorAll("script"));
-      for (const oldScript of scripts) {
-        const newScript = document.createElement("script");
-        if (oldScript.type) newScript.type = oldScript.type;
-        if (oldScript.src) {
-          newScript.src = oldScript.src;
-          newScript.async = false;
-        } else {
-          newScript.textContent = oldScript.textContent;
-        }
-        oldScript.replaceWith(newScript);
-        if (newScript.type === "module" && newScript.src) await new Promise(r => newScript.onload = r);
-      }
-
-      document.dispatchEvent(new Event("gated-page-loaded"));
+      await injectHtml(html);
     } else {
       showMessage(`Unexpected status: ${res.status}`);
     }

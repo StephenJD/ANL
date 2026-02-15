@@ -15,8 +15,9 @@ baseurl = "https://ascendnextlevel.org.uk/"
 copyright = "S.J.Dolley"
 
 # Use \home as the home leaf-page bundle.
-[frontmatter]
-  home = "00_home/index.md"
+
+home = "home"
+
   
 [params]
   home = "00_home/index.md"

@@ -1,4 +1,4 @@
-{{/* layouts/auth/single.html */}}
+{{/* layouts/login/single.html */}}
 {{ define "main" }}
   <link rel="stylesheet" href="{{ "css/forms.css" | relURL }}">
 
@@ -10,11 +10,9 @@
     <!-- IMPORTANT: no data-netlify, no netlify -->
     <form name="{{ .Title | urlize }}" autocomplete="off" class="verified-form">
       {{ partial "form_request.html" . }}
-      <div id="gated_page_placeholder">Loading…</div>
+      {{ .Content }}
     </form>
   </div>
 
   <script type="module" src="{{ "js/form_access_controller.js" | relURL }}" defer></script>
 {{ end }}
-
-

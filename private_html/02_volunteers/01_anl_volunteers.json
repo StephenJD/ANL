@@ -1,9 +1,8 @@
 {
   "title": "ANL Volunteers Page",
   "summary": "",
-  "type": "secure_page",
-  "validation": [],
-  "restrict_users": [
-    "Full"
+  "type": "document",
+  "access": [
+    "admin"
   ]
 }

@@ -2,10 +2,7 @@
   "title": "Manage Roles",
   "summary": "",
   "type": "form",
-  "validation": [
-    "noSend"
-  ],
-  "restrict_users": [
-    "SuperUser"
+  "access": [
+    "superuser"
   ]
 }

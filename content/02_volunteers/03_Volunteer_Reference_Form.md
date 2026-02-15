@@ -6,7 +6,7 @@ review_period: 1y
 reviewed_by: Cheryl Cross
 type: form
 include_unselected_options: true
-restrict_users: Full
+access: Admin
 validation: [submit] # options: requestLink, submit, none (default)
 ---
 

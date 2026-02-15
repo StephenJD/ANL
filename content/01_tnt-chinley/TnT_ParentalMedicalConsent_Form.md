@@ -6,7 +6,7 @@ review_period: 1y
 reviewed_by: Cheryl Cross
 type: form
 include_unselected_options: false
-restrict_users: false
+access: public
 validation: [submit] # options: requestLink, submit, none (default)
 qrCode: true
 ---

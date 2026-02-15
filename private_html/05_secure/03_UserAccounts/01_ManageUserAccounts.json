@@ -2,10 +2,7 @@
   "title": "Manage Permitted Users",
   "summary": "",
   "type": "form",
-  "validation": [
-    "noSend"
-  ],
-  "restrict_users": [
-    "Full"
+  "access": [
+    "admin"
   ]
 }

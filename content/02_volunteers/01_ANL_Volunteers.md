@@ -1,9 +1,9 @@
 ---
 title: ANL Volunteers Page
-geometry: [margin=2cm, a4paper]
-share: true
-type: secure_page
-restrict_users: Full
+logo_image: "/images/shared/anl_logo_transparent_1024.png"
+background_image: "/images/shared/pagewash.jpg"
+type: document
+access: Admin
 ---
 
 # Ascend Next Level Volunteers page

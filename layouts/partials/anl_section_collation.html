@@ -1,0 +1,115 @@
+{{/* layouts/partials/anl_section_collation.html */}}
+
+{{ $current_page := . }}
+{{ $rawAccess := $current_page.Params.access | default "public" }}
+{{ $content := $current_page.Content }}
+
+{{ $access := slice }}
+{{ range (split (printf "%v" $rawAccess) ",") }}
+  {{ $clean := trim . " " }}
+  {{ if $clean }}
+    {{ $access = $access | append (lower $clean) }}
+  {{ end }}
+{{ end }}
+
+<div style="background:#000;color:#0f0;padding:6px;font-size:12px;">
+  DEBUG: partials\anl_section_collation.html is running
+  | Type={{ $current_page.Type }}
+  | Section={{ $current_page.Section }}
+  | Layout={{ $current_page.Layout }}
+  | RawAccess={{ $rawAccess }}
+  | Params.access={{ $current_page.Params.access | default "not set" }}
+  | .Content length={{ len $current_page.Content }}
+</div>
+
+<link rel="stylesheet" href="{{ "css/documents.css" | relURL }}">
+
+  {{/* <div> Opened in this parial */}}
+  {{ partial "anl_page_chrome.html" . }} 
+  
+  <section id="main-content" class="document-content">
+    {{ if not (in $access "public") }}
+
+      {{ $raw := $current_page.File.Path }}
+      {{ $slashPath := replace $raw "\\" "/" }}
+      {{ $path := replace $slashPath ".md" "" -1 }}
+
+      <div class="gated-page-placeholder" data-path="{{ $path }}">
+        <div class="page_access_message">Loading page…</div>
+      </div>
+
+    {{ else }}
+      {{ if $content }}
+        {{ $content | safeHTML }}
+      {{ end }}
+
+    {{ end }}
+  </section>
+
+  {{ $sections := slice }}
+  {{ $matches := $current_page.Resources.Match "*.md" }}
+  {{ if $matches }}
+    {{ $sections = sort $matches "File.BaseFileName" }}
+  {{ end }}
+
+  {{ range $sections }}
+    {{ if ne .File.Path $current_page.File.Path }}
+
+      <section id="{{ .File.BaseFileName }}" class="document-content">
+        <h2>{{ .Title }}</h2>
+
+        {{ $sectionAccess := .Params.access | default (slice "public") }}
+
+        {{ if not (in $sectionAccess "public") }}
+
+          {{ $raw := .File.Path }}
+          {{ $slashPath := replace $raw "\\" "/" }}
+          {{ $path := replace $slashPath ".md" "" -1 }}
+
+          <div class="gated-page-placeholder" data-path="{{ $path }}">
+            <div class="page_access_message">Loading page…</div>
+          </div>
+
+        {{ else }}
+          {{ if .Content }}
+            {{ .Content | safeHTML }}
+          {{ else }}
+            {{ .Render "main" }}
+          {{ end }}
+        {{ end }}
+      </section>
+
+    {{ end }}
+  {{ end }}
+
+</div>
+
+<script type="module">
+import { loadGatedPage } from "{{ "js/gated_page_loader.js" | relURL }}";
+
+document.addEventListener("DOMContentLoaded", () => {
+  const token = localStorage.getItem("userLogin_token");
+  const placeholders = document.querySelectorAll(".gated-page-placeholder");
+
+  placeholders.forEach(p => {
+    const pagePath = p.dataset.path;
+
+    if (p.closest("#main-content")) {
+      loadGatedPage(p, pagePath, p.querySelector(".page_access_message"));
+      console.log("DEBUG: loading gated main page:", pagePath);
+    } else {
+      if (token) {
+        loadGatedPage(p, pagePath, p.querySelector(".page_access_message"));
+        console.log("DEBUG: loading gated nested section:", pagePath);
+      } else {
+        console.log("DEBUG: gated section skipped (not logged in):", pagePath);
+        const msgBox = p.querySelector(".page_access_message");
+        if (msgBox) {
+          msgBox.textContent = "Log in to see this content";
+          msgBox.style.display = "block";
+        }
+      }
+    }
+  });
+});
+</script>

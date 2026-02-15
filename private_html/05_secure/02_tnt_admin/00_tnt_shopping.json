@@ -2,10 +2,7 @@
   "title": "TnT Shopping List",
   "summary": "",
   "type": "form",
-  "validation": [
-    "none"
-  ],
-  "restrict_users": [
+  "access": [
     "helper"
   ]
 }

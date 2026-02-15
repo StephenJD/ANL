@@ -1,11 +1,11 @@
 ---
 title: Where & When
-headless: true  # This file represents a page section.
-geometry: [margin=2cm, a4paper]
-share: true
 summary: After School Drop-In
-type: secure_page
-restrict_users: Full
+share: true
+type: document
+access: Admin
+logo_image: "/images/shared/anl_logo_transparent_1024.png"
+background_image: "/images/shared/pagewash.jpg"
 ---
 # Secondary School After School Drop-In
 

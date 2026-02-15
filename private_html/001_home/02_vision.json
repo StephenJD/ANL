@@ -1,9 +1,0 @@
-{
-  "title": "ANL Vision",
-  "summary": "What we aim to achieve...",
-  "type": "secure_page",
-  "validation": [],
-  "restrict_users": [
-    "Full"
-  ]
-}

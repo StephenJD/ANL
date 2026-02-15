@@ -1,0 +1,23 @@
+{{/* layouts/shortcodes/anl_sibling_links.html */}}
+
+<link rel="stylesheet" href="{{ "css/documents.css" | relURL }}">
+
+{{ $current := .Page }}
+{{ $currentDir := $current.File.Dir | strings.TrimSuffix "/" }}
+
+<ul class="sibling-links">
+{{ range $section := sort site.Sections ".File.Dir" }}
+  {{ $sectionDir := $section.File.Dir | strings.TrimSuffix "/" }}
+  {{ if ne $sectionDir $currentDir }}
+    <li><a href="{{ $section.RelPermalink }}">{{ $section.Title }}</a></li>
+  {{ end }}
+{{ end }}
+</ul>
+
+
+
+
+
+
+
+

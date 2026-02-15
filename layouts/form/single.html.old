@@ -1,0 +1,47 @@
+{{/* layouts/forms/single.html */}}
+{{ define "main" }}
+  {{ $current_page := . }}
+  {{ $breadcrumb_page_types := site.Params.breadcrumb.page_types | default dict }}
+  {{ $show_breadcrumb := index $breadcrumb_page_types .Type | default false }}
+  
+  {{ $rawAccess := .Params.access | default "public" }}
+  {{ $access := slice }}
+  
+  {{ if $rawAccess }}
+    {{ range (split (printf "%v" $rawAccess) ",") }}
+      {{ $clean := trim . " " }}
+      {{ if $clean }}
+        {{ $access = $access | append (lower $clean) }}
+      {{ end }}
+    {{ end }}
+  {{ else }}
+    {{ $access = slice "public" }}
+  {{ end }}  
+  
+  <link rel="stylesheet" href="{{ "css/forms.css" | relURL }}">
+
+  <div class="form-container">
+    <div class="no-print">
+      {{ if $show_breadcrumb }}
+        {{ partial "breadcrumb" $current_page }}
+      {{ end }}
+    </div>    
+    <h1>{{ .Title }}</h1>
+    {{ partial "qr_code.html" . }}
+    {{ partial "form_request.html" . }}
+    {{ partial "page_access_message.html" . }}
+
+    <form name="{{ .Title | urlize }}" autocomplete="off" class="verified-form" data-netlify="true" netlify>
+      {{ if not (in $access "public") }}
+        <div id="gated_page_placeholder">Loading…</div>
+      {{ else }}
+        {{ .Content }}
+      {{ end }}
+  </form>
+  </div>
+
+<script type="module" src="{{ "js/form_access_controller.js" | relURL }}" defer></script>
+<script type="module" src="{{ "js/form-init.js" | relURL }}" defer></script>
+
+
+{{ end }}

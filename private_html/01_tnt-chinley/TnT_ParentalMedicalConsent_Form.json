@@ -1,9 +1,0 @@
-{
-  "title": "TnT Parental Medical Consent Form",
-  "summary": "TnT Parental Medical Consent Form",
-  "type": "form",
-  "validation": [
-    "submit"
-  ],
-  "restrict_users": []
-}

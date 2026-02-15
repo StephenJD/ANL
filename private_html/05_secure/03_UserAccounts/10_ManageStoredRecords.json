@@ -2,10 +2,7 @@
   "title": "Manage Stored Records",
   "summary": "",
   "type": "form",
-  "validation": [
-    "noSend"
-  ],
-  "restrict_users": [
-    "SuperUser"
+  "access": [
+    "superuser"
   ]
 }

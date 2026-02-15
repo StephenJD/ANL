@@ -4,9 +4,9 @@ summary: "User Login"
 last_reviewed: 2025-09-28
 review_period: 1y
 reviewed_by: Stephen Dolley
-type: auth
-restrict_users: [none]
-validation: [noSend]
+type: login
+access: public
+validation: [noSend] # options: requestLink, submit, none (default), noSend
 ---
 
 {{< comment `

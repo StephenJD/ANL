@@ -2,11 +2,7 @@
   "title": "Volunteer Application Form",
   "summary": "To be completed by all staff and volunteers of ANL",
   "type": "form",
-  "validation": [
-    "requestLink",
-    "submit"
-  ],
-  "restrict_users": [
-    "Full"
+  "access": [
+    "admin"
   ]
 }

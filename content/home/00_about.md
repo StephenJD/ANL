@@ -1,12 +1,8 @@
 ---
-title: About ANL
-active: true
-headless: true  # This file represents a page section.
-geometry: [margin=2cm, a4paper]
-share: true
+title: ""
 summary: Who we are...
-type: secure_page
-restrict_users: Full
+type: document
+access: admin
 ---
 
 # About ANL

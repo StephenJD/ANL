@@ -2,10 +2,7 @@
   "title": "Manage TnT Helpers",
   "summary": "",
   "type": "form",
-  "validation": [
-    "noSend"
-  ],
-  "restrict_users": [
-    "Full"
+  "access": [
+    "admin"
   ]
 }

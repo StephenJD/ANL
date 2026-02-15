@@ -1,0 +1,38 @@
+{{/* layouts/shortcodes/visit_stats.html */}}
+
+<p>Visitors who are not logged in:</p>
+<div id="visit-stats-container">Loading...</div>
+
+<script>
+async function loadVisitStats() {
+  const container = document.getElementById("visit-stats-container");
+  try {
+    const res = await fetch("/.netlify/functions/getVisitStats");
+    if (!res.ok) throw new Error(res.status + " " + res.statusText);
+
+    const data = await res.json();
+    if (!data?.visits || Object.keys(data.visits).length === 0) {
+      container.innerHTML = "No visit data available.";
+      return;
+    }
+
+    let html = "<h2>Daily Counts</h2><ul>";
+    Object.keys(data.visits)
+      .sort((a,b) => b.localeCompare(a))
+      .forEach(day => html += `<li>${day}: ${data.visits[day]}</li>`);
+    html += "</ul>";
+
+    const last7Days = Object.keys(data.visits)
+      .sort()
+      .slice(-7)
+      .reduce((sum, day) => sum + data.visits[day], 0);
+
+    html += `<h2>Last 7 Days Total: ${last7Days}</h2>`;
+    container.innerHTML = html;
+  } catch (err) {
+    container.innerHTML = "Error loading visit stats: " + err.message;
+  }
+}
+
+loadVisitStats();
+</script>

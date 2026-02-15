@@ -2,10 +2,7 @@
   "title": "TnT Leader Weekly Register - Chinley",
   "summary": "",
   "type": "form",
-  "validation": [
-    "noSend"
-  ],
-  "restrict_users": [
-    "Helper"
+  "access": [
+    "helper"
   ]
 }

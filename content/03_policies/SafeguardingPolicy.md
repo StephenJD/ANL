@@ -8,8 +8,8 @@ summary: Keeping all those involved with us safe from harm
 last_reviewed: 2025-10-18
 review_period: 1y
 reviewed_by: Cheryl Cross
-type: secure_page
-restrict_users: Full
+type: document
+access: Admin
 ---
 
 # ANL Safeguarding Policy
