@@ -1,3 +1,6 @@
+// \static\js\gated_page_loader.js
+import { urlizePath } from "/js/urlize.js";
+
 export async function loadGatedPage(container, pagePath, msgBox) {
 	console.log("[loadGatedPage] pagePath:", pagePath, "container:", container, "msgBox:", msgBox);
 
@@ -30,7 +33,9 @@ export async function loadGatedPage(container, pagePath, msgBox) {
 
   try {
     const token = localStorage.getItem("userLogin_token");
-    const res = await fetch(`/.netlify/functions/gatedPage?page=${encodeURIComponent(pagePath)}`, {
+    const normalizedPath = urlizePath(pagePath);
+
+    const res = await fetch(`/.netlify/functions/gatedPage?page=${encodeURIComponent(normalizedPath)}`, {
       method: "GET",
       headers: token ? { "Authorization": `Bearer ${token}` } : {}
     });

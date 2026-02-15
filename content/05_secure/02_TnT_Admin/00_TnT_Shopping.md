@@ -7,7 +7,6 @@ type: form
 include_unselected_options: false
 access: helper
 validation: [none] # options: requestLink, submit, none (default)
-qrCode: false
 ---
 
 {{< comment `

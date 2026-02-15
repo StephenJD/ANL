@@ -9,6 +9,7 @@
   "last_reviewed": {{ .Params.last_reviewed | default "" | jsonify }},
   "review_period": {{ .Params.review_period | default "" | jsonify }},
   "reviewed_by": {{ .Params.reviewed_by | default "" | jsonify }},
-  "type": {{ .Params.type | default "form" | jsonify }}
+  "type": {{ .Params.type | default "form" | jsonify }},
+  "access": {{ .Params.access | default "public" | jsonify }}
 }
 

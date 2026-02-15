@@ -3,6 +3,7 @@ import fs from "fs";
 import path from "path";
 import { marked } from "marked";
 import matter from "gray-matter";
+import { urlize } from "../lib/urlize.js";
 
 const contentDir = path.join(process.cwd(), "content");
 const outputDir = path.join(process.cwd(), "private_html");
@@ -19,18 +20,6 @@ function stripShortcodes(content) {
   return content
     .replace(/{{<[\s\S]+?>}}/g, "")
     .replace(/{{%[\s\S]+?%}}/g, "");
-}
-
-// Convert string to URL-friendly path
-function urlize(str) {
-  return str
-    .trim()
-    .normalize("NFKD").replace(/[\u0300-\u036f]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/[^a-zA-Z0-9_.-]/g, "")
-    .replace(/-+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .toLowerCase();
 }
 
 function processDir(dir) {
@@ -75,6 +64,7 @@ function processFile(filePath) {
 
     const outHtmlPath = path.join(outputDir, relPath);
     const outJsonPath = outHtmlPath.replace(/\.html$/, ".json");
+
 
     fs.mkdirSync(path.dirname(outHtmlPath), { recursive: true });
     fs.writeFileSync(outHtmlPath, html);

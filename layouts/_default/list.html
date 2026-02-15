@@ -1,5 +1,54 @@
 {{/* \layouts\_default\list.html */}}
 {{- define "main" -}}
-  {{ partial "list_folder_layout.html" . }}
+
+<link rel="stylesheet" href="{{ "css/documents.css" | relURL }}">
+
+{{ $current_page := . }}
+{{ $rawAccess := $current_page.Params.access | default "public" }}
+{{ $content := $current_page.Content }}
+
+{{ $access := slice }}
+{{ range (split (printf "%v" $rawAccess) ",") }}
+  {{ $clean := trim . " " }}
+  {{ if $clean }}
+    {{ $access = $access | append (lower $clean) }}
+  {{ end }}
+{{ end }}
+
+
+  {{/* <div> Opened in this parial */}}
+  {{ partial "anl_page_chrome.html" . }}
+
+  {{ if not (in $access "public") }}
+    <div class="gated_page_placeholder">
+      <div class="page_access_message">Loading page…</div>
+    </div>
+  {{ else }}
+    {{ .Content }}
+  {{ end }}
+
+</div>  
+
+<script type="module">
+  import { loadGatedPage } from "{{ "js/gated_page_loader.js" | relURL }}";
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const placeholder = document.querySelector(".gated-page-placeholder");
+    console.log("[DEBUG] placeholder path:", placeholder.dataset.path);
+
+    if (!placeholder) return; // safeguard
+
+    let msgBox = placeholder.querySelector(".page_access_message");
+    if (!msgBox) {
+      msgBox = document.createElement("div");
+      msgBox.className = "page_access_message";
+      msgBox.style.display = "none";
+      placeholder.prepend(msgBox);
+    }
+
+    loadGatedPage(placeholder, placeholder.dataset.path, msgBox);
+  });
+</script>
+
 {{- end -}}
 

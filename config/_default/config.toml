@@ -21,8 +21,6 @@ home = "home"
   
 [params]
   home = "00_home/index.md"
-  [params.breadcrumb]
-    page_types = { document = true, document_folder = true, form = true}
   [params.auto_summary]
     document = false
     document_folder = false

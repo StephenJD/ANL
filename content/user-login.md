@@ -5,6 +5,8 @@ last_reviewed: 2025-09-28
 review_period: 1y
 reviewed_by: Stephen Dolley
 type: login
+logo_image: "/images/shared/anl_logo_transparent_1024.png"
+background_image: "/images/shared/pagewash.jpg"
 access: public
 validation: [noSend] # options: requestLink, submit, none (default), noSend
 ---

@@ -2,21 +2,8 @@
 import fs from "fs";
 import path from "path";
 import { check_userLoginToken } from "./verifyUser.js";
+import { urlizePath } from "../../lib/urlize.js";
 
-function resolvePathCaseInsensitive(fullPath) {
-  const parts = fullPath.split(path.sep);
-  let current = parts[0] === "" ? path.sep : parts.shift();
-  for (const part of parts) {
-    if (!fs.existsSync(current)) return null;
-    const entries = fs.readdirSync(current);
-    const match = entries.find(f => f.toLowerCase() === part.toLowerCase());
-    if (!match) return null;
-    current = path.join(current, match);
-  }
-  return current;
-}
-
-// DRY JSON response helper
 function jsonResponse(action, extra = {}) {
   return {
     statusCode: 200,
@@ -32,7 +19,7 @@ export async function handler(event) {
 
   const token = event.headers["authorization"]?.replace("Bearer ", "");
   const queryPageName = event.queryStringParameters?.page;
-  const pageName = queryPageName?.replace(/^\/|\/$/g, "").toLowerCase();
+  const pageName = urlizePath(queryPageName);
 
   if (!pageName) {
     return jsonResponse("pageNameMissing");
@@ -41,8 +28,8 @@ export async function handler(event) {
   let htmlPath = path.join(process.cwd(), "private_html", `${pageName}.html`);
   let metadataPath = path.join(process.cwd(), "private_html", `${pageName}.json`);
 
-  htmlPath = resolvePathCaseInsensitive(htmlPath) || htmlPath;
-  metadataPath = resolvePathCaseInsensitive(metadataPath) || metadataPath;
+console.log("[gatedPage] Looking for HTML:", htmlPath);
+console.log("[gatedPage] Exists?", fs.existsSync(htmlPath));
 
   let frontMatter = { access: "public" };
 

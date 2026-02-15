@@ -1,18 +1,22 @@
 {{/* layouts/login/single.html */}}
 {{ define "main" }}
+<div class="debug-message">
+  DEBUG: layouts/login/single.html is running
+</div>
   <link rel="stylesheet" href="{{ "css/forms.css" | relURL }}">
+  {{/* <div> Opened in this parial */}}
+  {{ partial "anl_page_chrome.html" . }}
 
-  <div class="form-container">
-    <h1>{{ .Title }}</h1>
+  <form name="{{ .Title | urlize }}" autocomplete="off" class="verified-form">
+    {{ partial "form_request.html" . }}
+    {{ .Content }}
+  </form>
 
-    {{ partial "page_access_message.html" . }}
+</div>
 
-    <!-- IMPORTANT: no data-netlify, no netlify -->
-    <form name="{{ .Title | urlize }}" autocomplete="off" class="verified-form">
-      {{ partial "form_request.html" . }}
-      {{ .Content }}
-    </form>
-  </div>
+<script>
+  const pagePath = "{{ .File.Path }}";
+</script>
 
-  <script type="module" src="{{ "js/form_access_controller.js" | relURL }}" defer></script>
+<script type="module" src="{{ "js/form_access_controller.js" | relURL }}" defer></script>
 {{ end }}

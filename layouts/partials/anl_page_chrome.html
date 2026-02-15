@@ -4,14 +4,24 @@
 
 {{ $background_image := $current_page.Params.background_image }}
 {{ $logo_image := $current_page.Params.logo_image }}
-{{ $breadcrumb_page_types := site.Params.breadcrumb.page_types | default dict }}
-{{ $show_breadcrumb := index $breadcrumb_page_types $current_page.Type | default false }}
 
-<link rel="stylesheet" href="{{ "css/anl_chrome.css" | relURL }}">
+{{ $show_breadcrumb := true }}
+{{ if isset .Params "show_breadcrumb" }}
+  {{ $show_breadcrumb = .Params.show_breadcrumb }}
+{{ end }}
+{{ if eq .Type "home" }}
+  {{ $show_breadcrumb = false }}
+{{ end }}
 
+<link rel="stylesheet" href="{{ "css/anl_chrome.css" | absURL  }}">
+<div class="debug-message">
+  DEBUG: partials\anl_page_chrome.html is running
+  DEBUG: $current_page.IsHome={{ $current_page.IsHome }}
+  | Frontmatter show_breadcrumb={{ index $current_page.Params "show_breadcrumb" | default "not set" }}
+</div>
 <div class="page-container" style="{{ if $background_image }}background-image: url('{{ $background_image }}');{{ end }}">
   <div class="no-print">
-    {{ if and $show_breadcrumb (not $current_page.IsHome) }}
+    {{ if $show_breadcrumb }}
       <div class="container">
         {{ partial "breadcrumb.html" $current_page }}
       </div>    

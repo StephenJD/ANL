@@ -18,6 +18,15 @@
   
   <link rel="stylesheet" href="{{ "css/forms.css" | relURL }}">
   
+  
+  <div class="debug-message">
+  DEBUG: forms/single.html is running
+  | Type={{ $current_page.Type }}
+  | Section={{ $current_page.Section }}
+  | Params.access={{ $current_page.Params.access | default "not set" }}
+  | Page={{ $current_page }}
+</div>
+
   {{/* <div> Opened in this parial */}}
   {{ partial "anl_page_chrome.html" $current_page }}
   
@@ -28,7 +37,9 @@
 
     <form name="{{ .Title | urlize }}" autocomplete="off" class="verified-form" data-netlify="true" netlify>
       {{ if not (in $access "public") }}
-        <div id="gated_page_placeholder">Loading…</div>
+        <div class="gated_page_placeholder">
+	     <div class="page_access_message">Loading page…</div>
+        </div>
       {{ else }}
         {{ .Content }}
       {{ end }}
@@ -36,6 +47,10 @@
     </form>
   </div>
 </div>
+
+<script>
+    const pagePath = "{{ .File.Path }}"
+</script>
 
 <script type="module" src="{{ "js/form_access_controller.js" | relURL }}" defer></script>
 <script type="module" src="{{ "js/form-init.js" | relURL }}" defer></script>

@@ -56,9 +56,21 @@ let messageBox = null;
 const urlToken = new URLSearchParams(window.location.search).get("token");
 
 document.addEventListener("DOMContentLoaded", async () => {
-  const container = document.querySelector("#gated_page_placeholder");
-  const formPath = window.location.pathname;
+  const container = document.querySelector(".gated_page_placeholder");
+  if (typeof pagePath === "undefined") {
+    var pagePath = window.location.pathname;
+  }
   messageBox = document.querySelector(".page_access_message");
+  console.log("[DEBUG] container:", container);
+  console.log("[DEBUG] pagePath:", pagePath);
+
+  if (!pagePath) {
+    console.error("[DEBUG] Missing pagePath");
+    return;
+  }
+  
+  await fetchFrontMatter();
+  console.table(frontMatter);
 
   if (container && pagePath && frontMatter?.access?.some(a => a.toLowerCase() !== "public")) {
     await loadGatedPage(container, pagePath, messageBox);
@@ -71,7 +83,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   emailInput = document.querySelector(".request-form-link-email");
   requestBtn = document.querySelector(".request-form-link-btn");
   
-  await fetchFrontMatter();
   setupAccessControls();
   await verifyFormAccessToken();
   document.dispatchEvent(new Event("access-validated"));

@@ -1,4 +1,5 @@
 ---
+# \content\home\index.md
 title: "Home"
 type: home
 url: "/" 
