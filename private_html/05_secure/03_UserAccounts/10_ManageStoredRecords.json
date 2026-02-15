@@ -1,8 +1,0 @@
-{
-  "title": "Manage Stored Records",
-  "summary": "",
-  "type": "form",
-  "access": [
-    "superuser"
-  ]
-}

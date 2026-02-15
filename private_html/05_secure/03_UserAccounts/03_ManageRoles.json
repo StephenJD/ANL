@@ -1,8 +1,0 @@
-{
-  "title": "Manage Roles",
-  "summary": "",
-  "type": "form",
-  "access": [
-    "superuser"
-  ]
-}

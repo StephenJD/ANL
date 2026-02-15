@@ -1,8 +1,0 @@
-{
-  "title": "Manage Permitted Users",
-  "summary": "",
-  "type": "form",
-  "access": [
-    "admin"
-  ]
-}
