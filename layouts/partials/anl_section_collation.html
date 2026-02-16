@@ -20,6 +20,7 @@
   | RawAccess={{ $rawAccess }}
   | Params.access={{ $current_page.Params.access | default "not set" }}
   | .Content length={{ len $current_page.Content }}
+  | File.Path={{ .File.Path }}
 </div>
 
 <link rel="stylesheet" href="{{ "css/documents.css" | relURL }}">
@@ -45,41 +46,54 @@
 
     {{ end }}
   </section>
-
-  {{ $sections := slice }}
-  {{ $matches := $current_page.Resources.Match "*.md" }}
-  {{ if $matches }}
-    {{ $sections = sort $matches "File.BaseFileName" }}
+  
+{{ $currentDir := $current_page.File.Dir }}
+{{ $all := where site.RegularPages "File.Dir" $currentDir }}
+{{ $sections := slice }}
+{{ range $all }}
+  {{ if ne .File.Path $current_page.File.Path }}
+    {{ $sections = $sections | append . }}
   {{ end }}
+{{ end }}
+{{ $sections = sort $sections "File.BaseFileName" }}
+
+<div class="debug-message">
+  DEBUG: $current_page.Path={{ printf "%q" $current_page.File.Path }} |
+         Dir={{ printf "%q" $currentDir }} |
+         Section={{ printf "%q" $current_page.Section }} |
+         Kind={{ printf "%q" $current_page.Kind }}
+  DEBUG: sections count = {{ len $sections }}
+  {{ range $sections }}
+    {{ printf "  [SORTED] %q\n" .File.Path }}
+  {{ end }}
+</div>
 
   {{ range $sections }}
-    {{ if ne .File.Path $current_page.File.Path }}
-
-      <section id="{{ .File.BaseFileName }}" class="document-content">
-        <h2>{{ .Title }}</h2>
-
-        {{ $sectionAccess := .Params.access | default (slice "public") }}
-
-        {{ if not (in $sectionAccess "public") }}
-
-          {{ $raw := .File.Path }}
-          {{ $slashPath := replace $raw "\\" "/" }}
-          {{ $path := replace $slashPath ".md" "" -1 }}
-
-          <div class="gated-page-placeholder" data-path="{{ $path }}">
-            <div class="page_access_message">Loading page…</div>
-          </div>
-
+    <section id="{{ .File.BaseFileName }}" class="document-content">
+      <h2>{{ .Title }}</h2>
+  
+      {{/* Clean access frontmatter into lowercase slice */}}
+      {{ $sectionAccess := slice }}
+      {{ range (split (printf "%v" (.Params.access | default "public")) ",") }}
+        {{ $clean := trim . " " }}
+        {{ if $clean }}{{ $sectionAccess = $sectionAccess | append (lower $clean) }}{{ end }}
+      {{ end }}
+  
+      {{ if not (in $sectionAccess "public") }}
+        {{ $raw := .File.Path }}
+        {{ $slashPath := replace $raw "\\" "/" }}
+        {{ $path := replace $slashPath ".md" "" -1 }}
+        <div class="gated-page-placeholder" data-path="{{ $path }}">
+          <div class="page_access_message">Loading page…</div>
+        </div>
+      {{ else }}
+        {{ if .Content }}
+          {{ .Content | safeHTML }}
         {{ else }}
-          {{ if .Content }}
-            {{ .Content | safeHTML }}
-          {{ else }}
-            {{ .Render "main" }}
-          {{ end }}
+          {{ .Render "main" }}
         {{ end }}
-      </section>
-
-    {{ end }}
+      {{ end }}
+    </section>
   {{ end }}
 
 </div>
