@@ -2,7 +2,7 @@
 title: ""
 summary: What we aim to achieve...
 type: document
-access: admin
+access: public
 ---
 
 # Ascend Next Level’s Vision

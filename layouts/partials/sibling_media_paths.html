@@ -1,0 +1,39 @@
+{{/* layouts/partials/sibling_media_paths.html
+     Rewrites <img src="..."> for true sibling media.
+     Manual line-by-line replacement.
+*/}}
+
+<div class="debug-message">
+DEBUG: sibling_media_paths.html running
+</div>
+
+{{ $page := . }}
+{{ $lines := split $page.Content "\n" }}
+{{ $folder := $page.File.Dir }}
+{{ $newLines := slice }}
+
+{{ range $lines }}
+  {{ $line := . }}
+
+  {{ if in $line "<img src=" }}
+    {{ $newLine := $line }}
+    {{ $parts := split $line "src=\"" }}
+    {{ $srcParts := split (index $parts 1) "\"" }}
+    {{ $src := index $srcParts 0 }}
+
+    {{ if not (or (strings.HasPrefix $src "http") (strings.HasPrefix $src "/")) }}
+      {{ $newSrc := printf "%s/%s" $folder $src | relURL }}
+      {{ $newLine = replace $line (printf "src=\"%s\"" $src) (printf "src=\"%s\"" $newSrc) }}
+
+      <div class="debug-message">
+        DEBUG: Image rewritten: '{{ $src }}' → '{{ $newSrc }}'
+      </div>
+    {{ end }}
+
+    {{ $newLines = $newLines | append $newLine }}
+  {{ else }}
+    {{ $newLines = $newLines | append $line }}
+  {{ end }}
+{{ end }}
+
+{{ delimit $newLines "\n" | safeHTML }}

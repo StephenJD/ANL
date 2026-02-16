@@ -1,5 +1,8 @@
 {{/* \layouts\document\single.html */}}
 {{ define "main" }}
-  {{ partial "anl_section_collation.html" . }}
+  <div class="debug-message">
+    DEBUG: layouts\document\single.html is running
+  </div>
+  {{ partial "anl_single_page.html" . }}
 {{ end }}
 

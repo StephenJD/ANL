@@ -18,6 +18,7 @@
   DEBUG: partials\anl_page_chrome.html is running
   DEBUG: $current_page.IsHome={{ $current_page.IsHome }}
   | Frontmatter show_breadcrumb={{ index $current_page.Params "show_breadcrumb" | default "not set" }}
+  | show_breadcrumb={{ $show_breadcrumb }}
 </div>
 <div class="page-container" style="{{ if $background_image }}background-image: url('{{ $background_image }}');{{ end }}">
   <div class="no-print">

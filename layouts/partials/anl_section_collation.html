@@ -25,8 +25,8 @@
 
 <link rel="stylesheet" href="{{ "css/documents.css" | relURL }}">
 
-  {{/* <div> Opened in this parial */}}
-  {{ partial "anl_page_chrome.html" . }} 
+{{/* <div> Opened in this parial */}}
+{{ partial "anl_page_chrome.html" . }} 
   
   <section id="main-content" class="document-content">
     {{ if not (in $access "public") }}
@@ -47,31 +47,30 @@
     {{ end }}
   </section>
   
-{{ $currentDir := $current_page.File.Dir }}
-{{ $all := where site.RegularPages "File.Dir" $currentDir }}
-{{ $sections := slice }}
-{{ range $all }}
-  {{ if ne .File.Path $current_page.File.Path }}
-    {{ $sections = $sections | append . }}
+  {{ $currentDir := $current_page.File.Dir }}
+  {{ $all := where site.RegularPages "File.Dir" $currentDir }}
+  {{ $sections := slice }}
+  {{ range $all }}
+    {{ if ne .File.Path $current_page.File.Path }}
+      {{ $sections = $sections | append . }}
+    {{ end }}
   {{ end }}
-{{ end }}
-{{ $sections = sort $sections "File.BaseFileName" }}
-
-<div class="debug-message">
-  DEBUG: $current_page.Path={{ printf "%q" $current_page.File.Path }} |
-         Dir={{ printf "%q" $currentDir }} |
-         Section={{ printf "%q" $current_page.Section }} |
-         Kind={{ printf "%q" $current_page.Kind }}
-  DEBUG: sections count = {{ len $sections }}
-  {{ range $sections }}
-    {{ printf "  [SORTED] %q\n" .File.Path }}
-  {{ end }}
-</div>
+  {{ $sections = sort $sections "File.BaseFileName" }}
+  
+  <div class="debug-message">
+    DEBUG: $current_page.Path={{ printf "%q" $current_page.File.Path }} |
+           Dir={{ printf "%q" $currentDir }} |
+           Section={{ printf "%q" $current_page.Section }} |
+           Kind={{ printf "%q" $current_page.Kind }}
+    DEBUG: sections count = {{ len $sections }}
+    {{ range $sections }}
+      {{ printf "  [SORTED] %q\n" .File.Path }}
+    {{ end }}
+  </div>
 
   {{ range $sections }}
     <section id="{{ .File.BaseFileName }}" class="document-content">
       <h2>{{ .Title }}</h2>
-  
       {{/* Clean access frontmatter into lowercase slice */}}
       {{ $sectionAccess := slice }}
       {{ range (split (printf "%v" (.Params.access | default "public")) ",") }}
@@ -95,7 +94,6 @@
       {{ end }}
     </section>
   {{ end }}
-
 </div>
 
 <script type="module">

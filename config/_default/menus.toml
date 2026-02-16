@@ -1,7 +1,7 @@
 # Navigation Links
 # ALL LINKS MUST BE LOWER_CASE
-#   To link a homepage widget, specify the URL as a hash `#` followed by the filename of the
-#     desired widget in your `content/home/` folder.
+#   To link a homepage section, specify the URL as a hash `#` followed by the filename of the
+#     desired section in `content/home/` folder.
 #   The weight parameter defines the order that the links will appear in.
 # This is the default-language menu
 # Specific values needing translation must be provided in languages.toml
@@ -12,32 +12,39 @@ url = "/"          # Home page top
 weight = 10
 
 [[main]]
-name = "TnT-Chinley"
-url = "01_tnt-chinley"
+name = "What's On"
+url = "/01_whats_on"
 weight = 20
 
 [[main]]
-name = "Volunteers"
-url = "02_volunteers"
+name = "About Us"
+url = "/02_about_anl"
 weight = 30
 
 [[main]]
-name = "About ANL"
-url = "/#00_about"      # Section on home page
+name = "Safeguarding"
+url = "/03_safeguarding"
+weight = 30
+
+[[main]]
+name = "Pray"
+url = "/04_pray" 
 weight = 40
 
 [[main]]
-name = "Contact Us"
-url = "/#04_contact"    # Section on home page
+name = "Give"
+url = "/05_give" 
 weight = 50
-
-[[main]]
-name = "Secure"
-url = "05_secure"
-weight = 60
 
 [[main]]
 name = "Login"
 url = "user-login"
 weight = 100
+
+[[main]]
+name = "Secure"
+url = "/06_secure"
+weight = 110
+
+
   
