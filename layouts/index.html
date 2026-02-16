@@ -1,4 +1,3 @@
-{{/* \layouts\index.html */}}
-{{ define "main" }}
-  {{ partial "anl_section_collation.html" . }}
-{{ end }}
+{{/* Load the home section bundle into the homepage */}}
+{{ $home := site.GetPage "home" }}
+{{ partial "anl_section_collation.html" $home }}
