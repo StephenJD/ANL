@@ -1,5 +1,5 @@
 // \netlify\functions\visitTracker.js
-import { getSecureItem } from "./multiSecureStore.js";
+import { getSecureItem } from "../multiSecureStore.js";
 
 const BIN_ID = process.env.VISITS_BIN;
 

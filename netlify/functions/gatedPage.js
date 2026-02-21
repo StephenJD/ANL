@@ -1,9 +1,9 @@
 // \netlify\functions\gatedPage.js
 import fs from "fs";
 import path from "path";
-import { pathToFileURL } from "url";
 import { check_userLoginToken } from "./verifyUser.js";
 import { urlizePath } from "../../lib/urlize.js";
+import { dynamicRuntimes } from "./dynamic_generators/generator_imports.js";
 
 function jsonResponse(action, extra = {}) {
   return {
@@ -128,12 +128,7 @@ console.log("[gatedPage] Exists?", fs.existsSync(htmlPath));
     let html;
 
     if (runtimeName) {
-      // Dynamically import and invoke the runtime function
-      const modulePath = path.join(process.cwd(), "netlify", "functions", `${runtimeName}.js`);
-      const moduleURL = pathToFileURL(modulePath).href;
-      console.log("[gatedPage] Importing runtime module:", moduleURL);
-      const module = await import(moduleURL);
-      const runtimeFn = module.default || module[runtimeName];
+      const runtimeFn = dynamicRuntimes[runtimeName];
       if (!runtimeFn || typeof runtimeFn !== "function") {
         console.error("[gatedPage] Runtime function not found or not callable:", runtimeName);
         return jsonResponse("notFound");
