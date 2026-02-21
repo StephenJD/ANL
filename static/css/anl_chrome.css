@@ -2,13 +2,13 @@
   display: none !important;
 }
 
-/* .debug-message { */
-  /* display: block !important; */
-  /* background: #000; */
-  /* color: #0f0; */
-  /* padding: 6px; */
-  /* font-size: 12px; */
-/* } */
+/* .debug-message {
+  display: block !important;
+  background: #000;
+  color: #0f0;
+  padding: 6px;
+  font-size: 12px;
+} */
 
 .page-logo {
   display: flex;
