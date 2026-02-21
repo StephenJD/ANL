@@ -30,15 +30,9 @@
   
   <section id="main-content" class="document-content">
     {{ if not (in $access "public") }}
-
-      {{ $raw := $current_page.File.Path }}
-      {{ $slashPath := replace $raw "\\" "/" }}
-      {{ $path := replace $slashPath ".md" "" -1 }}
-
-      <div class="gated-page-placeholder" data-path="{{ $path }}">
+      <div class="gated_page_placeholder" data-path="{{ .File.Path }}">
         <div class="page_access_message">Loading page…</div>
       </div>
-
     {{ else }}
       {{ if $content }}
         {{ $content | safeHTML }}
@@ -79,10 +73,7 @@
       {{ end }}
   
       {{ if not (in $sectionAccess "public") }}
-        {{ $raw := .File.Path }}
-        {{ $slashPath := replace $raw "\\" "/" }}
-        {{ $path := replace $slashPath ".md" "" -1 }}
-        <div class="gated-page-placeholder" data-path="{{ $path }}">
+        <div class="gated_page_placeholder" data-path="{{ .File.Path }}">
           <div class="page_access_message">Loading page…</div>
         </div>
       {{ else }}
@@ -101,7 +92,7 @@ import { loadGatedPage } from "{{ "js/gated_page_loader.js" | relURL }}";
 
 document.addEventListener("DOMContentLoaded", () => {
   const token = localStorage.getItem("userLogin_token");
-  const placeholders = document.querySelectorAll(".gated-page-placeholder");
+  const placeholders = document.querySelectorAll(".gated_page_placeholder");
 
   placeholders.forEach(p => {
     const pagePath = p.dataset.path;

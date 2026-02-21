@@ -1,4 +1,4 @@
-// /.netlify/functions/getFormFrontMatter.js
+// /netlify/functions/getFormFrontMatter.js
 import process from "process";
 import path from "path";
 

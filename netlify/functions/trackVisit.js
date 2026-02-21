@@ -9,7 +9,7 @@ export async function handler() {
     const today = new Date().toISOString().slice(0, 10);
 
     current_counts[today] = (current_counts[today] || 0) + 1;
-    await setSecureItem(BIN_ID, "visit_current_counts", current_counts);
+    await setSecureItem(BIN_ID, "visit_counts", current_counts);
 
     return {
       statusCode: 200,

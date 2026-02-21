@@ -1,6 +1,7 @@
 // \netlify\functions\gatedPage.js
 import fs from "fs";
 import path from "path";
+import { pathToFileURL } from "url";
 import { check_userLoginToken } from "./verifyUser.js";
 import { urlizePath } from "../../lib/urlize.js";
 
@@ -12,6 +13,16 @@ function jsonResponse(action, extra = {}) {
   };
 }
 
+function branchPathToPageUrl(pagePath) {
+  const normalizedPath = String(pagePath || "").replace(/^\/+|\/+$/g, "");
+  if (!normalizedPath) return "/";
+  if (normalizedPath === "_index") return "/";
+  if (normalizedPath.endsWith("/_index")) {
+    return `/${normalizedPath.slice(0, -"/_index".length)}/`;
+  }
+  return `/${normalizedPath}/`;
+}
+
 export async function handler(event) {
   if (event.httpMethod !== "GET") {
     return jsonResponse("methodNotAllowed");
@@ -19,14 +30,15 @@ export async function handler(event) {
 
   const token = event.headers["authorization"]?.replace("Bearer ", "");
   const queryPageName = event.queryStringParameters?.page;
-  const pageName = urlizePath(queryPageName);
+  const pagePath = urlizePath(queryPageName);
+  const pageUrl = branchPathToPageUrl(pagePath);
 
-  if (!pageName) {
+  if (!pagePath) {
     return jsonResponse("pageNameMissing");
   }
 
-  let htmlPath = path.join(process.cwd(), "private_html", `${pageName}.html`);
-  let metadataPath = path.join(process.cwd(), "private_html", `${pageName}.json`);
+  const htmlPath = path.join(process.cwd(), "private_html", `${pagePath}.html`);
+  const metadataPath = path.join(process.cwd(), "private_html", `${pagePath}.json`);
 
 console.log("[gatedPage] Looking for HTML:", htmlPath);
 console.log("[gatedPage] Exists?", fs.existsSync(htmlPath));
@@ -56,7 +68,7 @@ console.log("[gatedPage] Exists?", fs.existsSync(htmlPath));
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         action: "public",
-        url: `/${pageName}`   // return clean public URL
+        url: pageUrl
       })
     };
   }
@@ -65,7 +77,7 @@ console.log("[gatedPage] Exists?", fs.existsSync(htmlPath));
   // Private page → must have token
   if (!token) {
     return jsonResponse("redirect", {
-      location: `/user-login?redirect=${encodeURIComponent(`/${pageName}/`)}`
+      location: `/user-login?redirect=${encodeURIComponent(pageUrl)}`
     });
   }
 
@@ -76,7 +88,7 @@ console.log("[gatedPage] Exists?", fs.existsSync(htmlPath));
 
     if (check.status !== "success") {
       return jsonResponse("redirect", {
-        location: `/user-login?redirect=${encodeURIComponent(`/${pageName}/`)}`
+        location: `/user-login?redirect=${encodeURIComponent(pageUrl)}`
       });
     }
 
@@ -86,7 +98,7 @@ console.log("[gatedPage] Exists?", fs.existsSync(htmlPath));
   } catch (err) {
     console.error("[gatedPage] Token verification failed:", err);
     return jsonResponse("redirect", {
-      location: `/user-login?redirect=${encodeURIComponent(`/${pageName}/`)}`
+      location: `/user-login?redirect=${encodeURIComponent(pageUrl)}`
     });
   }
 
@@ -100,21 +112,51 @@ console.log("[gatedPage] Exists?", fs.existsSync(htmlPath));
     });
   }
 
-  // Serve the HTML for authorized users
+  // Extract runtime name from type field
+  let runtimeName = null;
+  if (frontMatter.type) {
+    const parts = String(frontMatter.type).trim().split(/\s+/);
+    if (parts[0] === "dynamic" && parts[1]) {
+      runtimeName = parts.slice(1).join(" ");
+    }
+  }
+
+  console.log("[gatedPage] gatedPage:", pagePath, "runtimeName:", runtimeName);
+
+  // Serve runtime-generated or static HTML
   try {
-    if (!fs.existsSync(htmlPath)) {
-      console.error("[gatedPage] HTML file not found:", htmlPath);
-      return jsonResponse("notFound");
+    let html;
+
+    if (runtimeName) {
+      // Dynamically import and invoke the runtime function
+      const modulePath = path.join(process.cwd(), "netlify", "functions", `${runtimeName}.js`);
+      const moduleURL = pathToFileURL(modulePath).href;
+      console.log("[gatedPage] Importing runtime module:", moduleURL);
+      const module = await import(moduleURL);
+      const runtimeFn = module.default || module[runtimeName];
+      if (!runtimeFn || typeof runtimeFn !== "function") {
+        console.error("[gatedPage] Runtime function not found or not callable:", runtimeName);
+        return jsonResponse("notFound");
+      }
+      console.log("[gatedPage] Invoking runtime:", runtimeName);
+      html = await runtimeFn();
+    } else {
+      // Serve static HTML
+      console.log("[gatedPage] pre-built Page:", pagePath);
+      if (!fs.existsSync(htmlPath)) {
+        console.error("[gatedPage] HTML file not found:", htmlPath);
+        return jsonResponse("notFound");
+      }
+      html = fs.readFileSync(htmlPath, "utf-8");
     }
 
-    const html = fs.readFileSync(htmlPath, "utf-8");
     return {
       statusCode: 200,
       headers: { "Content-Type": "text/html" },
       body: html
     };
   } catch (err) {
-    console.error("[gatedPage] Error reading HTML:", err);
-    return jsonResponse("error", { message: "Server error reading page" });
+    console.error("[gatedPage] Error:", err);
+    return jsonResponse("error", { message: "Server error" });
   }
 }

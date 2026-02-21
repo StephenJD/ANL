@@ -1,42 +1,78 @@
 {{/* layouts/partials/list_folder_layout.html */}}
+  <div class="debug-message">
+    DEBUG: layouts/partials/list_folder_layout.html is running
+  </div> 
+  
+<link rel="stylesheet" href="{{ "css/documents.css" | relURL }}">
 
 {{ $current_page := . }}
+{{ $rawAccess := $current_page.Params.access | default "public" }}
+
+{{ $access := slice }}
+{{ range (split (printf "%v" $rawAccess) ",") }}
+  {{ $clean := trim . " " }}
+  {{ if $clean }}
+    {{ $access = $access | append (lower $clean) }}
+  {{ end }}
+{{ end }}
 
 {{/* <div> Opened in this parial */}}
 {{ partial "anl_page_chrome.html" $current_page }}
-
-<div class="container">
-  <main class="docs-content">
-    <h1>{{ .Title }}</h1>
-
-    <div class="directory-style">
-      {{ range .Sections }}
-        <p><a href="{{ .Permalink }}">{{ .Title }}/</a></p>
-      {{ end }}
-
-      {{ range .Pages }}
-        {{ if and (eq .Type "document-folder") (not .IsSection) }}
+  <section class="document-content">
+    {{ if not (in $access "public") }}
+      <div class="gated_page_placeholder" data-path="{{ .File.Path }}">
+        <div class="page_access_message">Loading page…</div>
+      </div>
+    {{ else }}
+      <h1>{{ .Title }}</h1>
+   
+      <div class="directory-style">
+        {{ range .Sections }}
           <p><a href="{{ .Permalink }}">{{ .Title }}/</a></p>
         {{ end }}
-      {{ end }}
-    </div>
-
-    {{ range .Pages }}
-      {{ if or (eq .Type "document") (eq .Type "form") (eq .Type "secure_page") }}
-        {{ $auto_summary_types := site.Params.auto_summary | default dict }}
-        {{ $auto_summary := index $auto_summary_types .Type | default false }}
-        <div class="summary-style">		
-          <p><a href="{{ .Permalink }}">{{ .Title }}</a></p>
-          {{ if .Params.summary }}
-            {{ .Params.summary | plainify | emojify }}
-          {{ else if .Params.abstract }}
-            {{ .Params.abstract | plainify | emojify | truncate 250 }}
-          {{ else if and .Summary $auto_summary }}
-            {{ .Summary | plainify | emojify }}
+   
+        {{ range .Pages }}
+          {{ if and (eq .Type "document-folder") (not .IsSection) }}
+            <p><a href="{{ .Permalink }}">{{ .Title }}/</a></p>
           {{ end }}
-        </div>
+        {{ end }}
+      </div>
+   
+      {{ range .Pages }}
+        {{ if or (eq .Type "document") (eq .Type "form") (eq .Type "secure_page") }}
+          {{ $auto_summary_types := site.Params.auto_summary | default dict }}
+          {{ $auto_summary := index $auto_summary_types .Type | default false }}
+          <div class="summary-style">		
+            <p><a href="{{ .Permalink }}">{{ .Title }}</a></p>
+            {{ if .Params.summary }}
+              {{ .Params.summary | plainify | emojify }}
+            {{ else if .Params.abstract }}
+              {{ .Params.abstract | plainify | emojify | truncate 250 }}
+            {{ else if and .Summary $auto_summary }}
+              {{ .Summary | plainify | emojify }}
+            {{ end }}
+          </div>
+        {{ end }}
       {{ end }}
     {{ end }}
-  </main>
+  </section>
 </div>
-</div>
+
+<script type="module">
+  import { loadGatedPage } from "{{ "js/gated_page_loader.js" | relURL }}";
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const placeholder = document.querySelector(".gated_page_placeholder");
+    if (!placeholder) return;
+
+    let msgBox = placeholder.querySelector(".page_access_message");
+    if (!msgBox) {
+      msgBox = document.createElement("div");
+      msgBox.className = "page_access_message";
+      msgBox.style.display = "none";
+      placeholder.prepend(msgBox);
+    }
+
+    loadGatedPage(placeholder, placeholder.dataset.path, msgBox);
+  });
+</script>

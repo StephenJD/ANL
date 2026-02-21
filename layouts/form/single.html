@@ -37,7 +37,7 @@
 
     <form name="{{ .Title | urlize }}" autocomplete="off" class="verified-form" data-netlify="true" netlify>
       {{ if not (in $access "public") }}
-        <div class="gated_page_placeholder">
+        <div class="gated_page_placeholder" data-path="{{ .File.Path }}">
 	     <div class="page_access_message">Loading page…</div>
         </div>
       {{ else }}
@@ -47,10 +47,6 @@
     </form>
   </div>
 </div>
-
-<script>
-    const pagePath = "{{ .File.Path }}"
-</script>
 
 <script type="module" src="{{ "js/form_access_controller.js" | relURL }}" defer></script>
 <script type="module" src="{{ "js/form-init.js" | relURL }}" defer></script>

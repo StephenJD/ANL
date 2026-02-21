@@ -1,8 +1,6 @@
 ---
-# \content\05_secure\01_reviews\_index.md
+# \content\06_secure\01_reviews\_index.md
 title: ANL Document Review
-type: reviews
-access: public
+type: dynamic generate_document_review
+access: admin
 ---
-
-{{< review_documents >}}

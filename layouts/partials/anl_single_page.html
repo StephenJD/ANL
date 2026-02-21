@@ -24,7 +24,7 @@
 {{ partial "anl_page_chrome.html" . }}
   <section class="document-content">
     {{ if not (in $access "public") }}
-      <div class="gated_page_placeholder">
+      <div class="gated_page_placeholder" data-path="{{ .File.Path }}">
         <div class="page_access_message">Loading page…</div>
       </div>
     {{ else }}
@@ -37,7 +37,7 @@
   import { loadGatedPage } from "{{ "js/gated_page_loader.js" | relURL }}";
 
   document.addEventListener("DOMContentLoaded", () => {
-    const placeholder = document.querySelector(".gated-page-placeholder");
+    const placeholder = document.querySelector(".gated_page_placeholder");
     console.log("[DEBUG] placeholder path:", placeholder.dataset.path);
 
     if (!placeholder) return; // safeguard

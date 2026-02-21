@@ -2,6 +2,7 @@
 import { urlizePath } from "/js/urlize.js";
 
 export async function loadGatedPage(container, pagePath, msgBox) {
+  // pagePath can be raw .File.Path
 	console.log("[loadGatedPage] pagePath:", pagePath, "container:", container, "msgBox:", msgBox);
 
   if (!container) return console.error("Missing container");
