@@ -123,3 +123,21 @@
   overflow-x: auto;
   padding: 1rem;
 }
+
+/* Wider layout for generated dashboard-like pages */
+.document-content .wide-content {
+  width: min(1400px, 96vw);
+  margin-left: 50%;
+  transform: translateX(-50%);
+}
+
+.document-content .wide-content table {
+  font-size: 0.95rem;
+}
+
+/* Keep stats page comfortably wide too */
+.document-content .visit-stats {
+  width: min(1200px, 96vw);
+  margin-left: 50%;
+  transform: translateX(-50%);
+}

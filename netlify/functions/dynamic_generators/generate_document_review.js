@@ -1,6 +1,47 @@
 // \netlify\functions\generate_document_review.js
 import fs from "fs";
 import path from "path";
+import { urlize } from "../../../lib/urlize.js";
+
+function resolveContentPathFromPrivatePath(privatePathNoExt) {
+  const contentRoot = path.join(process.cwd(), "content");
+  const segments = String(privatePathNoExt || "")
+    .replace(/^\/+|\/+$/g, "")
+    .split("/")
+    .filter(Boolean);
+
+  if (!segments.length) return null;
+
+  let currentDir = contentRoot;
+  const resolvedParts = ["content"];
+
+  for (let i = 0; i < segments.length; i += 1) {
+    const segment = segments[i];
+    const isLast = i === segments.length - 1;
+    const entries = fs.readdirSync(currentDir, { withFileTypes: true });
+
+    if (!isLast) {
+      const matchDir = entries.find(
+        (e) => e.isDirectory() && urlize(e.name) === segment
+      );
+      if (!matchDir) return null;
+      resolvedParts.push(matchDir.name);
+      currentDir = path.join(currentDir, matchDir.name);
+      continue;
+    }
+
+    const matchFile = entries.find((e) => {
+      if (!e.isFile() || !e.name.toLowerCase().endsWith(".md")) return false;
+      const base = e.name.replace(/\.md$/i, "");
+      return urlize(base) === segment || urlize(e.name) === `${segment}.md`;
+    });
+
+    if (!matchFile) return null;
+    resolvedParts.push(matchFile.name);
+  }
+
+  return resolvedParts.join("/");
+}
 
 export default async function generate_document_review() {
   // Load all metadata JSON files from private_html to find pages with review params
@@ -41,7 +82,7 @@ export default async function generate_document_review() {
   const today = new Date();
 
   // Build HTML table
-  let html = `<h1>Form Review Status</h1>
+  let html = `<div class="wide-content"><h1>Form Review Status</h1>
 <table>
   <thead>
     <tr>
@@ -80,7 +121,9 @@ export default async function generate_document_review() {
     const status = isOverdue ? " (Overdue)" : isUpcoming ? " (Upcoming)" : "";
     const color = isOverdue ? "red" : isUpcoming ? "orange" : "green";
 
-    const editPath = `content${doc.path}.md`.replace(/\//g, "/");
+    const contentPath =
+      resolveContentPathFromPrivatePath(doc.path) ||
+      `content${doc.path}.md`.replace(/\//g, "/");
 
     html += `
     <tr style="${bgColor}">
@@ -92,8 +135,8 @@ export default async function generate_document_review() {
         <span style="color:${color};">${dueStr}${status}</span>
       </td>
       <td>
-        <a href="https://github.com/StephenJD/ANL/edit/main/content${doc.path}.md" target="_blank">
-          ✏ Edit
+        <a href="https://github.com/StephenJD/ANL/blob/main/${contentPath}" target="_blank">
+          Edit
         </a>
       </td>
     </tr>`;
@@ -101,7 +144,7 @@ export default async function generate_document_review() {
 
   html += `
   </tbody>
-</table>`;
+</table></div>`;
 
   return html;
 }

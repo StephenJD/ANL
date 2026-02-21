@@ -126,8 +126,8 @@ console.log("[gatedPage] Exists?", fs.existsSync(htmlPath));
   // Serve runtime-generated or static HTML
   try {
     let html;
-console.log("[gatedPage] runtime keys:", Object.keys(dynamicRuntimes || {}));
-console.log("[gatedPage] runtimeName raw:", JSON.stringify(runtimeName));
+//console.log("[gatedPage] runtime keys:", Object.keys(dynamicRuntimes || {}));
+//console.log("[gatedPage] runtimeName raw:", JSON.stringify(runtimeName));
 
     if (runtimeName) {
       const runtimeEntry = dynamicRuntimes[runtimeName];
