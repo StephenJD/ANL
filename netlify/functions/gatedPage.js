@@ -130,9 +130,20 @@ console.log("[gatedPage] runtime keys:", Object.keys(dynamicRuntimes || {}));
 console.log("[gatedPage] runtimeName raw:", JSON.stringify(runtimeName));
 
     if (runtimeName) {
-      const runtimeFn = dynamicRuntimes[runtimeName];
+      const runtimeEntry = dynamicRuntimes[runtimeName];
+      const runtimeFn =
+        typeof runtimeEntry === "function"
+          ? runtimeEntry
+          : runtimeEntry && typeof runtimeEntry.default === "function"
+            ? runtimeEntry.default
+            : null;
       if (!runtimeFn || typeof runtimeFn !== "function") {
-        console.error("[gatedPage] Runtime function not found or not callable:", runtimeName);
+        console.error(
+          "[gatedPage] Runtime function not found or not callable:",
+          runtimeName,
+          "entryType:",
+          typeof runtimeEntry
+        );
         return jsonResponse("notFound");
       }
       console.log("[gatedPage] Invoking runtime:", runtimeName);
