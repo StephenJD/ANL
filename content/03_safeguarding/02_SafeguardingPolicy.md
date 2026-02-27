@@ -9,7 +9,7 @@ last_reviewed: 2025-10-18
 review_period: 1y
 reviewed_by: Cheryl Cross
 type: document
-access: Admin
+access: public
 ---
 
 # ANL Safeguarding Policy

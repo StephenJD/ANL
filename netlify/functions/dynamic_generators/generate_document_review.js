@@ -44,7 +44,7 @@ function resolveContentPathFromPrivatePath(privatePathNoExt) {
 }
 
 export default async function generate_document_review() {
-  // Load all metadata JSON files from private_html to find pages with review params
+  // Load all metadata JSON files from private_html to list all docs
   const privateHtmlDir = path.join(process.cwd(), "private_html");
   const reviewDocs = [];
 
@@ -58,15 +58,13 @@ export default async function generate_document_review() {
         } else if (entry.name.endsWith(".json")) {
           try {
             const meta = JSON.parse(fs.readFileSync(fullPath, "utf-8"));
-            if (meta.last_reviewed && meta.review_period) {
-              reviewDocs.push({
-                path: fullPath.replace(privateHtmlDir, "").replace(/\.json$/, "").replace(/\\/g, "/"),
-                last_reviewed: meta.last_reviewed,
-                review_period: meta.review_period,
-                reviewed_by: meta.reviewed_by || "unknown",
-                title: meta.title || ""
-              });
-            }
+            reviewDocs.push({
+              path: fullPath.replace(privateHtmlDir, "").replace(/\.json$/, "").replace(/\\/g, "/"),
+              last_reviewed: meta.last_reviewed || "",
+              review_period: meta.review_period || "",
+              reviewed_by: meta.reviewed_by || "unknown",
+              title: meta.title || ""
+            });
           } catch (err) {
             // skip invalid JSON
           }
@@ -97,13 +95,16 @@ export default async function generate_document_review() {
   <tbody>`;
 
   reviewDocs.forEach(doc => {
-    const last = new Date(doc.last_reviewed);
-    let due = new Date(last);
+    const hasReviewDate = Boolean(doc.last_reviewed);
+    const hasReviewPeriod = Boolean(doc.review_period);
+    const hasReviewData = hasReviewDate && hasReviewPeriod;
+    const last = hasReviewDate ? new Date(doc.last_reviewed) : null;
+    let due = hasReviewDate ? new Date(last) : null;
     const period = doc.review_period;
 
     // Parse period (e.g. "6m" or "12m" or "1y")
     const match = period.match(/^(\d+)([my])$/);
-    if (match) {
+    if (match && due) {
       const num = parseInt(match[1]);
       if (match[2] === "m") {
         due.setMonth(due.getMonth() + num);
@@ -112,27 +113,26 @@ export default async function generate_document_review() {
       }
     }
 
-    const isOverdue = due < today;
-    const daysUntilDue = (due - today) / (1000 * 60 * 60 * 24);
-    const isUpcoming = !isOverdue && daysUntilDue <= 30;
+    const isOverdue = hasReviewData && due < today;
+    const daysUntilDue = hasReviewData ? (due - today) / (1000 * 60 * 60 * 24) : null;
+    const isUpcoming = hasReviewData && !isOverdue && daysUntilDue <= 30;
 
     const bgColor = isOverdue ? "background-color:#ffe5e5;" : isUpcoming ? "background-color:#fff8e1;" : "";
-    const dueStr = due.toISOString().split("T")[0];
+    const dueStr = hasReviewData ? due.toISOString().split("T")[0] : "N/A";
     const status = isOverdue ? " (Overdue)" : isUpcoming ? " (Upcoming)" : "";
     const color = isOverdue ? "red" : isUpcoming ? "orange" : "green";
 
-    const contentPath =
-      resolveContentPathFromPrivatePath(doc.path) ||
-      `content${doc.path}.md`.replace(/\//g, "/");
+    const contentPath = resolveContentPathFromPrivatePath(doc.path);
+    if (!contentPath) return;
 
     html += `
     <tr style="${bgColor}">
       <td><code>${doc.path}</code></td>
-      <td>${doc.last_reviewed}</td>
-      <td>${doc.review_period}</td>
+      <td>${doc.last_reviewed || "N/A"}</td>
+      <td>${doc.review_period || "N/A"}</td>
       <td>${doc.reviewed_by}</td>
       <td>
-        <span style="color:${color};">${dueStr}${status}</span>
+        <span style="color:${hasReviewData ? color : "inherit"};">${dueStr}${status}</span>
       </td>
       <td>
         <a href="https://github.com/StephenJD/ANL/blob/main/${contentPath}" target="_blank">

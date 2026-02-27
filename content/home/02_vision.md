@@ -5,9 +5,9 @@ type: document
 access: public
 ---
 
-# Ascend Next Level’s Vision
+# Ascend Next Level’s Vision {.text-center}
 
-## Encouraging young people and their families to live WELL
+## Encouraging young people and their families to live WELL {.text-center}
 
 ### Encourage
 To ‘inspire with courage, spirit or hope.’ We seek to encourage young people and their families to be healthy, resilient and strong mentally, spiritually, emotionally, and physically so that they can live life to the full, through offering life-giving activities in safe indoor and outdoor spaces. We seek to encourage churches who are already reaching out to young people and encourage those churches who have yet to do so to start to be a blessing and reach out to this generation.
@@ -18,6 +18,5 @@ We invite young people to grow stronger through encountering adventure, God and 
 ### Equip
 We seek to give young people the knowledge, tools and opportunities to live life fully and wisely with Jesus so they are resilient, strong, brave and well.
 
-If you’d like to receive our prayer updates or receive information about giving financially, please email [ascendnextleveluk@gmail.com](mailto:ascendnextleveluk@gmail.com)
+If you’d like to receive our prayer updates or receive information about giving financially, please email [contact@ascendnextlevel.org.uk](mailto:contact@ascendnextlevel.org.uk)
 
-## Thank you!!
