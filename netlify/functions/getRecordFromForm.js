@@ -1,7 +1,7 @@
 // /netlify/functions/getRecordFromForm.js
 
 import { parseHTML } from "linkedom";
-  
+
 export function getFormRecord(rawHTML) {
   const { document } = parseHTML(rawHTML);
   const form = document.querySelector("form");
@@ -9,19 +9,21 @@ export function getFormRecord(rawHTML) {
 
   const result = Array.from(form.children).flatMap(el => parseElement(el));
 
+  // remove empty arrays / empty keys
   const cleaned = removeEmptyArrays(structuredClone(result));
+
+  // merge cleaned array into object
   const merged = mergeArrays(cleaned);
 
   console.debug('[getRecordFromForm] Merged:', JSON.stringify(merged, null, 2));
-
   return merged;
 }
 
 function mergeArrays(cleaned) {
   const merged = {};
-
   for (const entry of cleaned) {
     for (const [key, value] of Object.entries(entry)) {
+      if (!key) continue; // skip empty-string keys
       if (!(key in merged)) {
         merged[key] = value;
       } else if (Array.isArray(merged[key]) && Array.isArray(value)) {
@@ -67,10 +69,9 @@ function removeEmptyArrays(data) {
 
 function getGroupKey(container) {
   if (!container || !container.tagName) return null;
-
   if (container.tagName === 'FIELDSET') {
     const legend = Array.from(container.children).find(el => el.tagName === 'LEGEND');
-    if (legend) return legend.textContent.trim()
+    if (legend) return legend.textContent.trim();
   }
 
   const firstLabelOnly = [...container.children].find(
@@ -90,7 +91,6 @@ function isControlledFieldset(fs) {
   while (parent && parent.nodeType !== 1) {
     parent = parent.previousSibling;
   }
-
   if (parent && parent.tagName === 'LABEL') {
     const nested = parent.querySelector('input[type="checkbox"], input[type="radio"]');
     if (nested && nested.hasAttribute('checked')) return true;
@@ -113,53 +113,40 @@ function parseFieldset(fieldset) {
 
   const valueArray = children.flatMap(parseElement);
 
+  // Merge sibling objects in array into single object if all are plain objects
+  const mergedArray = valueArray.every(v => v && typeof v === 'object' && !Array.isArray(v))
+    ? [Object.assign({}, ...valueArray)]
+    : valueArray;
+
   if (hasLegend) {
-    return { [groupKey]: valueArray };
+    return { [groupKey]: mergedArray };
   } else {
-    return valueArray;
+    return mergedArray;
   }
 }
 
 function parseElement(el) {
-
+  let valueArr = [];
   if (el.tagName === 'LABEL') {
-
     const nestedInput = getInputOrTextAreaInLabel(el);
-
     if (nestedInput) {
-      return parseInputOrControl(el, nestedInput);
+      valueArr = parseInputOrControl(el, nestedInput);
+    } else if (el.parentElement?.tagName === 'FIELDSET' && el === el.parentElement.firstElementChild) {
+      ; // acts as legend
+    } else {
+      const nextEl = el.nextElementSibling;
+      if (nextEl && (nextEl.tagName === 'INPUT' || nextEl.tagName === 'TEXTAREA')) {
+        valueArr = parseInputOrControl(el, nextEl);
+      }
     }
-
-    if (el.parentElement?.tagName === 'FIELDSET' && el === el.parentElement.firstElementChild) {
-      return [];
-    }
-
-    const nextEl = el.nextElementSibling;
-
-    if (nextEl && (nextEl.tagName === 'INPUT' || nextEl.tagName === 'TEXTAREA')) {
-      nextEl.__handledByLabel = true;   // prevent double parsing
-      return parseInputOrControl(el, nextEl);
-    }
-
+  } else if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+    valueArr = parseInputOrControl(el, el);
+  } else if (el.tagName === 'FIELDSET') {
+    valueArr = parseFieldset(el);
+  } else if (el.children.length) {
+    valueArr = Array.from(el.children).flatMap(parseElement);
   }
-
-  if ((el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') && el.__handledByLabel) {
-    return [];
-  }
-
-  if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
-    return parseInputOrControl(el, el);
-  }
-
-  if (el.tagName === 'FIELDSET') {
-    return parseFieldset(el);
-  }
-
-  if (el.children?.length) {
-    return Array.from(el.children).flatMap(parseElement);
-  }
-
-  return [];
+  return valueArr;
 }
 
 function getInputOrTextAreaInLabel(labelEl) {
@@ -180,33 +167,21 @@ function getLabelText(labelEl) {
 }
 
 function parseInputOrControl(labelEl, inputEl) {
-
   const type = getInputType(inputEl);
-
   if (['checkbox', 'radio'].includes(type)) {
     return parseCheckedInputWithFieldset(labelEl, inputEl);
   }
 
   const key = getLabelText(labelEl);
-
-  let value;
-
-  if (inputEl.tagName === 'TEXTAREA') {
-    value = inputEl.textContent.trim() || '';
-  } else {
-    value = (inputEl.getAttribute('value') || '').trim();
-  }
-
+  let value = inputEl.tagName === 'TEXTAREA' ? inputEl.textContent.trim() : (inputEl.getAttribute('value')?.trim() || '');
   return value ? [{ [key]: value }] : [];
 }
 
 function parseCheckedInputWithFieldset(labelEl, inputEl) {
-
   const isChecked = inputEl.getAttribute('checked') !== null || /\bchecked\b/i.test(inputEl.outerHTML);
   if (!isChecked) return [];
 
   let fieldsetControlledByCheckedInput = null;
-
   for (const child of labelEl.children) {
     if (child.tagName === 'FIELDSET') {
       fieldsetControlledByCheckedInput = child;
@@ -217,23 +192,13 @@ function parseCheckedInputWithFieldset(labelEl, inputEl) {
   if (!fieldsetControlledByCheckedInput) {
     let next = labelEl.nextSibling;
     while (next && next.nodeType !== 1) next = next.nextSibling;
-    if (next && next.tagName === 'FIELDSET') {
-      fieldsetControlledByCheckedInput = next;
-    }
+    if (next && next.tagName === 'FIELDSET') fieldsetControlledByCheckedInput = next;
   }
 
   const labelText = getLabelText(labelEl);
-
   if (fieldsetControlledByCheckedInput) {
-
-    const parsed = parseFieldset(fieldsetControlledByCheckedInput);
-
-    const value = Array.isArray(parsed)
-      ? parsed
-      : Object.values(parsed)[0];
-
-    return [{ [labelText]: value }];
+    return [{ [labelText]: parseFieldset(fieldsetControlledByCheckedInput) }];
   }
 
   return [labelText];
-                          }
+}
