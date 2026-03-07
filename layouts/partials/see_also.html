@@ -1,0 +1,51 @@
+{{ if eq .Parent.Type "sibling-links" }}
+
+{{ $pages := .CurrentSection.Pages.ByFilePath }}
+{{ if gt (len $pages) 1 }}
+
+<nav class="doc-sibling-nav">
+
+  {{ $prev := "" }}
+  {{ $next := "" }}
+
+  {{ range $i, $p := $pages }}
+    {{ if eq $p.Permalink $.Permalink }}
+
+      {{ if gt $i 0 }}
+        {{ $prev = index $pages (sub $i 1) }}
+      {{ end }}
+
+      {{ if lt $i (sub (len $pages) 1) }}
+        {{ $next = index $pages (add $i 1) }}
+      {{ end }}
+
+    {{ end }}
+  {{ end }}
+
+  <div class="nav-links">
+    {{ with $prev }}
+      <a class="prev" href="{{ .RelPermalink }}">← {{ .Title }}</a>
+    {{ end }}
+
+    <details class="sibling-links">
+      <summary>Section pages</summary>
+      <ul>
+        {{ range $pages }}
+          {{ if eq .Permalink $.Permalink }}
+            <li><strong>{{ .Title }}</strong></li>
+          {{ else }}
+            <li><a href="{{ .RelPermalink }}">{{ .Title }}</a></li>
+          {{ end }}
+        {{ end }}
+      </ul>
+    </details>
+
+    {{ with $next }}
+      <a class="next" href="{{ .RelPermalink }}">{{ .Title }} →</a>
+    {{ end }}
+  </div>
+
+</nav>
+
+{{ end }}
+{{ end }}
