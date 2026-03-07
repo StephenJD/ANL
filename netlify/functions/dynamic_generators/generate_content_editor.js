@@ -118,13 +118,14 @@ async function startEdit(file) {
         currentFile = file;
 
         const res = await fetch("/.netlify/functions/start_edit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ file })
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ file })
         });
 
         if (!res.ok) throw new Error("HTTP " + res.status);
         const data = await res.json();
+        log("Raw markdown received:\\n" + data.content);
         parseMarkdown(data.content);
         log("File loaded: " + file);
     } catch (err) {
@@ -133,22 +134,29 @@ async function startEdit(file) {
 }
 
 // =====================
-// Parse Markdown
+// Parse Markdown with logging
 // =====================
 function parseMarkdown(md) {
+    log("Parsing markdown...");
     const parts = md.split("---");
+    log("Split into parts: " + parts.length);
     const front = parts[1] || "";
     rawBody = parts.slice(2).join("---");
+    log("Front matter:\\n" + front);
+    log("Body starts with:\\n" + rawBody.slice(0,50) + "...");
 
     const lines = front.split("\\n");
     const fields = {};
 
-    lines.forEach(line => {
+    lines.forEach((line, idx) => {
         const i = line.indexOf(":");
         if(i > 0) {
             const k = line.slice(0,i).trim();
             const v = line.slice(i+1).trim();
             fields[k] = v;
+            log("Parsed field [" + idx + "]: " + k + " = " + v);
+        } else {
+            log("Skipping line [" + idx + "]: " + line);
         }
     });
 
@@ -156,13 +164,15 @@ function parseMarkdown(md) {
 }
 
 // =====================
-// Render form
+// Render form with logging
 // =====================
 function renderForm(fields) {
+    log("Rendering form...");
     const form = document.getElementById("editForm");
     form.innerHTML = "";
 
     Object.keys(fields).forEach(k => {
+        log("Rendering field: " + k + " = " + fields[k]);
         const label = document.createElement("label");
         label.textContent = k;
         label.style.display = "block";
@@ -189,6 +199,8 @@ function renderForm(fields) {
         form.appendChild(label);
         form.appendChild(input);
     });
+
+    log("Form rendering complete. Total fields: " + Object.keys(fields).length);
 }
 
 // =====================
