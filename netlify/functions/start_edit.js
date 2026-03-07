@@ -7,24 +7,29 @@ const contentRoot = path.join(process.cwd(), "content");
 const editsRoot = path.join(process.cwd(), "edits");
 
 export default async function start_edit(event) {
+  try {
+    const body = typeof event.body === "string" ? JSON.parse(event.body) : event.body;
+    const { file } = body;
 
-  // If event.body is string, parse; if object, use directly
-  const body = typeof event.body === "string" ? JSON.parse(event.body) : event.body;
-  const { file } = body;
+    const src = path.join(process.cwd(), "content", file);
+    const dst = path.join(process.cwd(), "edits", file);
 
-  const src = path.join(contentRoot, file);
-  const dst = path.join(editsRoot, file);
+    console.log("start_edit paths:", { src, dst });
 
-  fs.mkdirSync(path.dirname(dst), { recursive: true });
-  fs.copyFileSync(src, dst);
+    fs.mkdirSync(path.dirname(dst), { recursive: true });
+    fs.copyFileSync(src, dst);
 
-  const content = fs.readFileSync(dst, "utf8");
+    const content = fs.readFileSync(dst, "utf8");
 
-  return {
-    statusCode: 200,
-    body: JSON.stringify({
-      file,
-      content
-    })
-  };
+    return {
+      statusCode: 200,
+      body: JSON.stringify({ file, content })
+    };
+  } catch (err) {
+    console.error("start_edit error:", err);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: err.message })
+    };
+  }
 }
