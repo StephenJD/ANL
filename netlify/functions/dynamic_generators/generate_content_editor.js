@@ -1,5 +1,11 @@
 // \netlify\functions\dynamic_generators\generate_content_editor.js
 
+import { log } from "../log.js";
+import { normalizeFrontMatter } from "../normalizeFrontMatter.js";
+import { renderAccessOptions } from "../renderAccessOptions.js";
+import { renderExtraFields } from "../renderExtraFields.js";
+import { renderSubOptions } from "../renderSubOptions.js";
+
 export default async function generate_content_editor() {
 
 return `
@@ -25,7 +31,6 @@ return `
 
 </div>
 
-<!-- Log container -->
 <div id="logDiv" style="
     border-top:1px solid #ccc;
     margin-top:20px;
@@ -40,21 +45,12 @@ return `
 <script>
 
 // =====================
-// Logger
-// =====================
-function log(msg) {
-    const logDiv = document.getElementById("logDiv");
-    logDiv.textContent += msg + "\\n";
-    logDiv.scrollTop = logDiv.scrollHeight;
-}
-
-// =====================
 // Globals
 // =====================
 let currentFile = null;
 let rawBody = "";
+let frontMatter = {};
 let accessOptionsCache = null;
-let frontMatterFields = {};
 
 // =====================
 // Load Tree
@@ -62,11 +58,11 @@ let frontMatterFields = {};
 async function loadTree() {
     try {
         const res = await fetch("/.netlify/functions/list_content_tree");
-        if (!res.ok) throw new Error("HTTP " + res.status);
+        if(!res.ok) throw new Error("HTTP " + res.status);
         const tree = await res.json();
         log("Tree loaded successfully");
         document.getElementById("tree").appendChild(renderTree(tree));
-    } catch (err) {
+    } catch(err) {
         log("loadTree error: " + err);
     }
 }
@@ -114,7 +110,6 @@ async function startEdit(file) {
         log("startEdit called for " + file);
         currentFile = file;
 
-        // Hide tree when form is active
         document.getElementById("tree").style.display = "none";
 
         const res = await fetch("/.netlify/functions/start_edit", {
@@ -122,70 +117,47 @@ async function startEdit(file) {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ file })
         });
-
-        if (!res.ok) throw new Error("HTTP " + res.status);
+        if(!res.ok) throw new Error("HTTP " + res.status);
         const data = await res.json();
+
         parseMarkdown(data.content);
         log("File loaded: " + file);
-    } catch (err) {
+    } catch(err) {
         log("startEdit error: " + err);
     }
 }
 
 // =====================
-// Cancel Edit
-// =====================
-function cancelEdit() {
-    currentFile = null;
-    rawBody = "";
-    frontMatterFields = {};
-    document.getElementById("editForm").innerHTML = "";
-    document.getElementById("tree").style.display = "block";
-    log("Edit canceled, tree restored");
-}
-
-// =====================
-// Parse Markdown with comment-stripping & normalization
+// Parse Markdown
 // =====================
 function parseMarkdown(md) {
     const parts = md.split("---");
-    const front = parts[1] || "";
+    const frontRaw = parts[1] || "";
     rawBody = parts.slice(2).join("---");
 
-    const lines = front.split("\\n");
-    frontMatterFields = {};
-
-    lines.forEach(line => {
+    const fields = {};
+    frontRaw.split("\\n").forEach(line => {
         const i = line.indexOf(":");
         if(i > 0) {
-            const key = line.slice(0,i).trim();
+            let key = line.slice(0,i).trim();
             let value = line.slice(i+1).trim();
-            // Strip comment
-            const commentIndex = value.indexOf("#");
-            if(commentIndex >= 0) value = value.slice(0, commentIndex).trim();
-
-            // Normalize arrays
-            if(value.startsWith("[") && value.endsWith("]")) {
-                try {
-                    const arr = JSON.parse(value.replace(/'/g,'"'));
-                    frontMatterFields[key] = arr.map(v => v.toString().toLowerCase());
-                } catch(e) {
-                    frontMatterFields[key] = [value.slice(1,-1).toLowerCase()];
-                }
-            } else {
-                frontMatterFields[key] = value;
-            }
+            // ignore everything after #
+            const hashIdx = value.indexOf("#");
+            if(hashIdx >= 0) value = value.slice(0, hashIdx).trim();
+            fields[key] = value;
         }
     });
 
-    log("Parsed front matter: " + JSON.stringify(frontMatterFields));
-    renderForm(frontMatterFields);
+    frontMatter = normalizeFrontMatter(fields);
+    log("Parsed front matter: " + JSON.stringify(frontMatter));
+
+    renderForm();
 }
 
 // =====================
 // Render Form
 // =====================
-async function renderForm(fields) {
+async function renderForm() {
     const form = document.getElementById("editForm");
     form.innerHTML = "";
 
@@ -194,20 +166,21 @@ async function renderForm(fields) {
     pageTypeLabel.textContent = "Page type";
     pageTypeLabel.style.display = "block";
     pageTypeLabel.style.marginTop = "10px";
+
     const pageTypeSelect = document.createElement("select");
     ["content page","navigation page"].forEach(v => {
         const opt = document.createElement("option");
         opt.value = v;
         opt.textContent = v;
-        if(fields["page_type"] === v) opt.selected = true;
+        if(frontMatter["page_type"] === v) opt.selected = true;
         pageTypeSelect.appendChild(opt);
     });
     pageTypeSelect.name = "page_type";
     pageTypeSelect.style.width = "320px";
-    pageTypeSelect.onchange = () => renderSubOptions(pageTypeSelect.value, form, fields);
+    pageTypeSelect.onchange = () => renderSubOptions(pageTypeSelect.value, form, frontMatter);
+
     form.appendChild(pageTypeLabel);
     form.appendChild(pageTypeSelect);
-    log("Rendered Page Type");
 
     // --- Title ---
     const titleLabel = document.createElement("label");
@@ -216,12 +189,11 @@ async function renderForm(fields) {
     titleLabel.style.marginTop = "10px";
     const titleInput = document.createElement("input");
     titleInput.type = "text";
-    titleInput.value = fields["title"] || "";
+    titleInput.value = frontMatter["title"] || "";
     titleInput.name = "title";
     titleInput.style.width = "320px";
     form.appendChild(titleLabel);
     form.appendChild(titleInput);
-    log("Rendered Title");
 
     // --- Summary ---
     const summaryLabel = document.createElement("label");
@@ -230,121 +202,20 @@ async function renderForm(fields) {
     summaryLabel.style.marginTop = "10px";
     const summaryInput = document.createElement("textarea");
     summaryInput.name = "summary";
-    summaryInput.value = fields["summary"] || "";
+    summaryInput.value = frontMatter["summary"] || "";
     summaryInput.rows = 3;
     summaryInput.style.width = "320px";
     form.appendChild(summaryLabel);
     form.appendChild(summaryInput);
-    log("Rendered Summary");
 
     // --- Access ---
-    const accessLabel = document.createElement("label");
-    accessLabel.textContent = "Access";
-    accessLabel.style.display = "block";
-    accessLabel.style.marginTop = "10px";
-    const accessSelect = document.createElement("select");
-    accessSelect.name = "access";
-    accessSelect.style.width = "320px";
-    form.appendChild(accessLabel);
-    form.appendChild(accessSelect);
+    await renderAccessOptions(form, frontMatter, accessOptionsCache);
 
-    const frontValue = fields["access"] || ["public"];
-    log("Access front matter value: " + JSON.stringify(frontValue));
+    // --- Sub-options ---
+    renderSubOptions(pageTypeSelect.value, form, frontMatter);
 
-    const ensureArray = Array.isArray(frontValue) ? frontValue : [frontValue];
-    const normalizedFront = ensureArray.map(v => v.toString().toLowerCase());
-
-    if(accessOptionsCache) {
-        log("Rendering Access options from cache: " + JSON.stringify(accessOptionsCache));
-        populateAccessOptions(normalizedFront, accessSelect, accessOptionsCache);
-    } else {
-        try {
-            const res = await fetch("/.netlify/functions/get_role_options");
-            if(!res.ok) throw new Error("HTTP " + res.status);
-            const options = await res.json();
-            accessOptionsCache = options;
-            log("Rendering Access options from network: " + JSON.stringify(options));
-            populateAccessOptions(normalizedFront, accessSelect, options);
-        } catch(err) {
-            log("Access fetch error: " + err);
-        }
-    }
-
-    // --- Sub-options based on Page Type ---
-    renderSubOptions(pageTypeSelect.value, form, fields);
-
-    // --- Extra fields ---
-    Object.keys(fields).forEach(k => {
-        if(!["title","summary","page_type","access"].includes(k)) {
-            log('Rendered extra field: ' + k + ' = ' + JSON.stringify(fields[k]));
-        }
-    });
-}
-
-// =====================
-// Populate Access Options
-// =====================
-function populateAccessOptions(frontValues, selectEl, options) {
-    const allRoles = ["public"].concat(options.map(o => o.Role));
-    allRoles.forEach(role => {
-        const opt = document.createElement("option");
-        opt.value = role;
-        opt.textContent = role;
-        if(frontValues.includes(role.toLowerCase())) opt.selected = true;
-        selectEl.appendChild(opt);
-        log("Added Access option: " + role + (opt.selected ? " (selected)" : ""));
-    });
-    log("Rendered Access options complete");
-}
-
-// =====================
-// Render Sub-options
-// =====================
-function renderSubOptions(pageType, form, fields) {
-    // Remove any existing sub-options container
-    let existing = document.getElementById("subOptionsContainer");
-    if(existing) form.removeChild(existing);
-
-    const container = document.createElement("div");
-    container.id = "subOptionsContainer";
-    container.style.marginTop = "10px";
-
-    if(pageType === "content page") {
-        const label = document.createElement("label");
-        label.textContent = "Content Type";
-        label.style.display = "block";
-        const select = document.createElement("select");
-        select.name = "content_type";
-        select.style.width = "320px";
-        ["page from single file","page from section files"].forEach(v => {
-            const opt = document.createElement("option");
-            opt.value = v;
-            opt.textContent = v;
-            if(fields["content_type"] === v) opt.selected = true;
-            select.appendChild(opt);
-        });
-        container.appendChild(label);
-        container.appendChild(select);
-    } else if(pageType === "navigation page") {
-        const label = document.createElement("label");
-        label.textContent = "Navigation Options";
-        label.style.display = "block";
-        const select = document.createElement("select");
-        select.name = "navigation_options";
-        select.style.width = "320px";
-        ["With see-also links","Without see-also links"].forEach(v => {
-            const opt = document.createElement("option");
-            opt.value = v;
-            opt.textContent = v;
-            if(fields["navigation_options"] === v) opt.selected = true;
-            select.appendChild(opt);
-        });
-        container.appendChild(label);
-        container.appendChild(select);
-    }
-
-    form.appendChild(container);
-    log("Rendered Sub-options for " + pageType);
+    // --- Remaining fields ---
+    renderExtraFields(form, frontMatter);
 }
 
 // =====================
@@ -364,7 +235,7 @@ function buildMarkdown() {
 }
 
 // =====================
-// Save Edit
+// Save / Publish / Cancel
 // =====================
 async function saveEdit() {
     try {
@@ -373,26 +244,29 @@ async function saveEdit() {
             method: "POST",
             body: JSON.stringify({ file: currentFile, content })
         });
-        if (!res.ok) throw new Error("HTTP " + res.status);
+        if(!res.ok) throw new Error("HTTP " + res.status);
         log("Saved: " + currentFile);
         document.getElementById("tree").style.display = "block";
-    } catch (err) {
+    } catch(err) {
         log("saveEdit error: " + err);
     }
 }
 
-// =====================
-// Publish Edits
-// =====================
 async function publishEdits() {
     try {
         const res = await fetch("/.netlify/functions/publish_edits", { method: "POST" });
-        if (!res.ok) throw new Error("HTTP " + res.status);
+        if(!res.ok) throw new Error("HTTP " + res.status);
         log("All edits published");
         document.getElementById("tree").style.display = "block";
-    } catch (err) {
+    } catch(err) {
         log("publishEdits error: " + err);
     }
+}
+
+function cancelEdit() {
+    document.getElementById("editForm").innerHTML = "";
+    document.getElementById("tree").style.display = "block";
+    log("Edit canceled, tree restored");
 }
 
 // =====================
