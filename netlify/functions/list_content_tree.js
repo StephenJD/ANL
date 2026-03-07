@@ -1,4 +1,4 @@
-// \netlify\functions\list_content_tree.js
+// netlify/functions/list_content_tree.js
 import fs from "fs";
 import path from "path";
 
@@ -30,21 +30,20 @@ function walkDir(dir) {
 
 export default async function handler(event, context) {
   try {
-    // Use the same folder that your review docs generator uses
     const rootDir = path.join(process.cwd(), "netlify/functions/private_html");
+    console.log("Listing private_html at:", rootDir, fs.existsSync(rootDir));
+
     const tree = walkDir(rootDir);
 
-    return {
-      statusCode: 200,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(tree)
-    };
+    return new Response(JSON.stringify(tree), {
+      status: 200,
+      headers: { "Content-Type": "application/json" }
+    });
   } catch (err) {
     console.error("[list_content_tree] Fatal error:", err);
-    return {
-      statusCode: 500,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ error: "Failed to generate content tree" })
-    };
+    return new Response(JSON.stringify({ error: "Failed to generate content tree" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" }
+    });
   }
 }
