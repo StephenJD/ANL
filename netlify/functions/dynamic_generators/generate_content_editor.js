@@ -55,9 +55,13 @@ let currentFile = null;
 let rawBody = "";
 let accessOptionsCache = null;
 
-const dropdownSchema = {
-    review_period: ["6m","12m","24m"],
-    type: ["policy","form","page"]
+// =====================
+// Helpers
+// =====================
+function normalizeFrontMatterValue(val) {
+    if(!val) return "";
+    if(Array.isArray(val)) val = val[0];
+    return String(val).trim().toLowerCase();
 }
 
 // =====================
@@ -139,6 +143,8 @@ async function startEdit(file) {
 // Cancel Edit
 // =====================
 function cancelEdit() {
+    currentFile = null;
+    rawBody = "";
     document.getElementById("editForm").innerHTML = "";
     document.getElementById("tree").style.display = "block";
     log("Edit canceled, tree restored");
@@ -160,39 +166,16 @@ function parseMarkdown(md) {
         if(i > 0) {
             const k = line.slice(0,i).trim();
             const v = line.slice(i+1).trim();
-            fields[k] = v;
+            try {
+                fields[k] = JSON.parse(v);
+            } catch(e) {
+                fields[k] = v;
+            }
         }
     });
 
+    log("Parsed front matter: " + JSON.stringify(fields));
     renderForm(fields);
-}
-
-// =====================
-// Render Access Options Helper
-// =====================
-function renderAccessOptions(selectEl, options, fields) {
-    const frontAccess = fields["access"] || "Public";
-    log("Access front matter value: " + (fields["access"] || "none") + ", defaulting to: " + frontAccess);
-
-    const allOptions = [{Role:"Public"}].concat(options); // Always include Public
-
-    allOptions.forEach(opt => {
-        if(!opt.Role) return;
-        const option = document.createElement("option");
-        option.value = opt.Role;
-        option.textContent = opt.Role;
-
-        // Case-insensitive match
-        if(opt.Role.toLowerCase() === frontAccess.toLowerCase()) {
-            option.selected = true;
-            log("Selected Access option: " + opt.Role);
-        }
-
-        selectEl.appendChild(option);
-        log("Added Access option: " + opt.Role + (option.selected ? " (selected)" : ""));
-    });
-
-    log("Rendered Access options complete");
 }
 
 // =====================
@@ -201,8 +184,6 @@ function renderAccessOptions(selectEl, options, fields) {
 async function renderForm(fields) {
     const form = document.getElementById("editForm");
     form.innerHTML = "";
-
-    const knownFields = ["page_type","title","summary","access"];
 
     // --- Page Type ---
     const pageTypeLabel = document.createElement("label");
@@ -214,7 +195,7 @@ async function renderForm(fields) {
         const opt = document.createElement("option");
         opt.value = v;
         opt.textContent = v;
-        if(fields["page_type"] === v) opt.selected = true;
+        if(normalizeFrontMatterValue(fields["page_type"]) === normalizeFrontMatterValue(v)) opt.selected = true;
         pageTypeSelect.appendChild(opt);
     });
     pageTypeSelect.name = "page_type";
@@ -263,9 +244,32 @@ async function renderForm(fields) {
     form.appendChild(accessLabel);
     form.appendChild(accessSelect);
 
+    let frontAccess = normalizeFrontMatterValue(fields["access"]) || "public";
+    log("Access front matter value: " + fields["access"] + ", normalized to: " + frontAccess);
+
+    const renderOptions = (options) => {
+        // Always start with Public
+        const optPublic = document.createElement("option");
+        optPublic.value = "public";
+        optPublic.textContent = "Public";
+        if(frontAccess === "public") optPublic.selected = true;
+        accessSelect.appendChild(optPublic);
+        log("Added Access option: Public" + (frontAccess==="public"?" (selected)":""));
+
+        options.forEach(o => {
+            const val = normalizeFrontMatterValue(o.Role);
+            const opt = document.createElement("option");
+            opt.value = val;
+            opt.textContent = o.Role;
+            if(val === frontAccess) opt.selected = true;
+            accessSelect.appendChild(opt);
+            log("Added Access option: " + o.Role + (val===frontAccess?" (selected)":""));
+        });
+    };
+
     if(accessOptionsCache) {
         log("Rendering Access options from cache: " + JSON.stringify(accessOptionsCache));
-        renderAccessOptions(accessSelect, accessOptionsCache, fields);
+        renderOptions(accessOptionsCache);
     } else {
         try {
             const res = await fetch("/.netlify/functions/get_role_options");
@@ -273,7 +277,7 @@ async function renderForm(fields) {
             const options = await res.json();
             accessOptionsCache = options;
             log("Rendering Access options from network: " + JSON.stringify(options));
-            renderAccessOptions(accessSelect, options, fields);
+            renderOptions(options);
         } catch(err) {
             log("Access fetch error: " + err);
         }
@@ -282,22 +286,17 @@ async function renderForm(fields) {
     // --- Sub-options based on Page Type ---
     renderSubOptions(pageTypeSelect.value, form, fields);
 
-    // --- Render any extra front matter fields ---
+    // --- Extra fields ---
     Object.keys(fields).forEach(k => {
-        if(knownFields.includes(k)) return;
-        const label = document.createElement("label");
-        label.textContent = k;
-        label.style.display = "block";
-        label.style.marginTop = "10px";
-        const input = document.createElement("input");
-        input.type = "text";
-        input.name = k;
-        input.value = fields[k] || "";
-        input.style.width = "320px";
-        form.appendChild(label);
-        form.appendChild(input);
-        log("Rendered extra field: " + k + " = " + fields[k]);
+        if(!["page_type","title","summary","access"].includes(k)) {
+            const div = document.createElement("div");
+            div.textContent = k + " = " + JSON.stringify(fields[k]);
+            form.appendChild(div);
+            log("Rendered extra field: " + k + " = " + JSON.stringify(fields[k]));
+        }
     });
+
+    log("Rendered Access options complete");
 }
 
 // =====================
@@ -322,7 +321,7 @@ function renderSubOptions(pageType, form, fields) {
             const opt = document.createElement("option");
             opt.value = v;
             opt.textContent = v;
-            if(fields["content_type"] === v) opt.selected = true;
+            if(normalizeFrontMatterValue(fields["content_type"]) === normalizeFrontMatterValue(v)) opt.selected = true;
             select.appendChild(opt);
         });
         container.appendChild(label);
@@ -338,7 +337,7 @@ function renderSubOptions(pageType, form, fields) {
             const opt = document.createElement("option");
             opt.value = v;
             opt.textContent = v;
-            if(fields["navigation_options"] === v) opt.selected = true;
+            if(normalizeFrontMatterValue(fields["navigation_options"]) === normalizeFrontMatterValue(v)) opt.selected = true;
             select.appendChild(opt);
         });
         container.appendChild(label);
