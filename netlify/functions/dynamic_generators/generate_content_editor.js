@@ -54,15 +54,7 @@ function log(msg) {
 let currentFile = null;
 let rawBody = "";
 let accessOptionsCache = null;
-
-// =====================
-// Helpers
-// =====================
-function normalizeFrontMatterValue(val) {
-    if(!val) return "";
-    if(Array.isArray(val)) val = val[0];
-    return String(val).trim().toLowerCase();
-}
+let frontMatterFields = {};
 
 // =====================
 // Load Tree
@@ -122,6 +114,7 @@ async function startEdit(file) {
         log("startEdit called for " + file);
         currentFile = file;
 
+        // Hide tree when form is active
         document.getElementById("tree").style.display = "none";
 
         const res = await fetch("/.netlify/functions/start_edit", {
@@ -145,13 +138,14 @@ async function startEdit(file) {
 function cancelEdit() {
     currentFile = null;
     rawBody = "";
+    frontMatterFields = {};
     document.getElementById("editForm").innerHTML = "";
     document.getElementById("tree").style.display = "block";
     log("Edit canceled, tree restored");
 }
 
 // =====================
-// Parse Markdown
+// Parse Markdown with comment-stripping & normalization
 // =====================
 function parseMarkdown(md) {
     const parts = md.split("---");
@@ -159,23 +153,33 @@ function parseMarkdown(md) {
     rawBody = parts.slice(2).join("---");
 
     const lines = front.split("\\n");
-    const fields = {};
+    frontMatterFields = {};
 
     lines.forEach(line => {
         const i = line.indexOf(":");
         if(i > 0) {
-            const k = line.slice(0,i).trim();
-            const v = line.slice(i+1).trim();
-            try {
-                fields[k] = JSON.parse(v);
-            } catch(e) {
-                fields[k] = v;
+            const key = line.slice(0,i).trim();
+            let value = line.slice(i+1).trim();
+            // Strip comment
+            const commentIndex = value.indexOf("#");
+            if(commentIndex >= 0) value = value.slice(0, commentIndex).trim();
+
+            // Normalize arrays
+            if(value.startsWith("[") && value.endsWith("]")) {
+                try {
+                    const arr = JSON.parse(value.replace(/'/g,'"'));
+                    frontMatterFields[key] = arr.map(v => v.toString().toLowerCase());
+                } catch(e) {
+                    frontMatterFields[key] = [value.slice(1,-1).toLowerCase()];
+                }
+            } else {
+                frontMatterFields[key] = value;
             }
         }
     });
 
-    log("Parsed front matter: " + JSON.stringify(fields));
-    renderForm(fields);
+    log("Parsed front matter: " + JSON.stringify(frontMatterFields));
+    renderForm(frontMatterFields);
 }
 
 // =====================
@@ -195,7 +199,7 @@ async function renderForm(fields) {
         const opt = document.createElement("option");
         opt.value = v;
         opt.textContent = v;
-        if(normalizeFrontMatterValue(fields["page_type"]) === normalizeFrontMatterValue(v)) opt.selected = true;
+        if(fields["page_type"] === v) opt.selected = true;
         pageTypeSelect.appendChild(opt);
     });
     pageTypeSelect.name = "page_type";
@@ -244,32 +248,15 @@ async function renderForm(fields) {
     form.appendChild(accessLabel);
     form.appendChild(accessSelect);
 
-    let frontAccess = normalizeFrontMatterValue(fields["access"]) || "public";
-    log("Access front matter value: " + fields["access"] + ", normalized to: " + frontAccess);
+    const frontValue = fields["access"] || ["public"];
+    log("Access front matter value: " + JSON.stringify(frontValue));
 
-    const renderOptions = (options) => {
-        // Always start with Public
-        const optPublic = document.createElement("option");
-        optPublic.value = "public";
-        optPublic.textContent = "Public";
-        if(frontAccess === "public") optPublic.selected = true;
-        accessSelect.appendChild(optPublic);
-        log("Added Access option: Public" + (frontAccess==="public"?" (selected)":""));
-
-        options.forEach(o => {
-            const val = normalizeFrontMatterValue(o.Role);
-            const opt = document.createElement("option");
-            opt.value = val;
-            opt.textContent = o.Role;
-            if(val === frontAccess) opt.selected = true;
-            accessSelect.appendChild(opt);
-            log("Added Access option: " + o.Role + (val===frontAccess?" (selected)":""));
-        });
-    };
+    const ensureArray = Array.isArray(frontValue) ? frontValue : [frontValue];
+    const normalizedFront = ensureArray.map(v => v.toString().toLowerCase());
 
     if(accessOptionsCache) {
         log("Rendering Access options from cache: " + JSON.stringify(accessOptionsCache));
-        renderOptions(accessOptionsCache);
+        populateAccessOptions(normalizedFront, accessSelect, accessOptionsCache);
     } else {
         try {
             const res = await fetch("/.netlify/functions/get_role_options");
@@ -277,7 +264,7 @@ async function renderForm(fields) {
             const options = await res.json();
             accessOptionsCache = options;
             log("Rendering Access options from network: " + JSON.stringify(options));
-            renderOptions(options);
+            populateAccessOptions(normalizedFront, accessSelect, options);
         } catch(err) {
             log("Access fetch error: " + err);
         }
@@ -288,14 +275,25 @@ async function renderForm(fields) {
 
     // --- Extra fields ---
     Object.keys(fields).forEach(k => {
-        if(!["page_type","title","summary","access"].includes(k)) {
-            const div = document.createElement("div");
-            div.textContent = k + " = " + JSON.stringify(fields[k]);
-            form.appendChild(div);
-            log("Rendered extra field: " + k + " = " + JSON.stringify(fields[k]));
+        if(!["title","summary","page_type","access"].includes(k)) {
+            log('Rendered extra field: ' + k + ' = ' + JSON.stringify(fields[k]));
         }
     });
+}
 
+// =====================
+// Populate Access Options
+// =====================
+function populateAccessOptions(frontValues, selectEl, options) {
+    const allRoles = ["public"].concat(options.map(o => o.Role));
+    allRoles.forEach(role => {
+        const opt = document.createElement("option");
+        opt.value = role;
+        opt.textContent = role;
+        if(frontValues.includes(role.toLowerCase())) opt.selected = true;
+        selectEl.appendChild(opt);
+        log("Added Access option: " + role + (opt.selected ? " (selected)" : ""));
+    });
     log("Rendered Access options complete");
 }
 
@@ -303,6 +301,7 @@ async function renderForm(fields) {
 // Render Sub-options
 // =====================
 function renderSubOptions(pageType, form, fields) {
+    // Remove any existing sub-options container
     let existing = document.getElementById("subOptionsContainer");
     if(existing) form.removeChild(existing);
 
@@ -321,7 +320,7 @@ function renderSubOptions(pageType, form, fields) {
             const opt = document.createElement("option");
             opt.value = v;
             opt.textContent = v;
-            if(normalizeFrontMatterValue(fields["content_type"]) === normalizeFrontMatterValue(v)) opt.selected = true;
+            if(fields["content_type"] === v) opt.selected = true;
             select.appendChild(opt);
         });
         container.appendChild(label);
@@ -337,7 +336,7 @@ function renderSubOptions(pageType, form, fields) {
             const opt = document.createElement("option");
             opt.value = v;
             opt.textContent = v;
-            if(normalizeFrontMatterValue(fields["navigation_options"]) === normalizeFrontMatterValue(v)) opt.selected = true;
+            if(fields["navigation_options"] === v) opt.selected = true;
             select.appendChild(opt);
         });
         container.appendChild(label);
