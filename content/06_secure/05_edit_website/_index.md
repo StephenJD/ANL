@@ -1,5 +1,5 @@
 ---
-Type: dynamic generate_content_editor
-Title: Edit Website
-Access: draft
+type: dynamic generate_content_editor
+title: Edit Website
+access: draft
 ---
