@@ -224,45 +224,45 @@ async function renderForm(fields) {
     form.appendChild(accessLabel);
     form.appendChild(accessSelect);
 
-    async function renderAccessOptions() {
-        let options = accessOptionsCache;
-        if (!options) {
-            try {
-                const res = await fetch("/.netlify/functions/get_role_options");
-                if (!res.ok) throw new Error("HTTP " + res.status);
-                options = await res.json();
-                accessOptionsCache = options;
-                log("Fetched Access options: " + JSON.stringify(options));
-            } catch (err) {
-                log("Access fetch error: " + err);
-                options = [];
-            }
-        } else {
-            log("Using cached Access options: " + JSON.stringify(options));
+    if(accessOptionsCache) {
+        log("Rendering Access options from cache: " + JSON.stringify(accessOptionsCache));
+        renderAccessOptions(accessSelect, accessOptionsCache, fields);
+    } else {
+        try {
+            const res = await fetch("/.netlify/functions/get_role_options");
+            if(!res.ok) throw new Error("HTTP " + res.status);
+            const options = await res.json();
+            accessOptionsCache = options;
+            log("Rendering Access options from network: " + JSON.stringify(options));
+            renderAccessOptions(accessSelect, options, fields);
+        } catch(err) {
+            log("Access fetch error: " + err);
         }
-
-        let added = [];
-        options.forEach(opt => {
-            const optVal = typeof opt === "string" ? opt : (opt.name || opt.role || "");
-            if (!optVal) {
-                log("Skipped empty Access option: " + JSON.stringify(opt));
-                return;
-            }
-            const optionEl = document.createElement("option");
-            optionEl.value = optVal;
-            optionEl.textContent = optVal;
-            if (fields["access"] === optVal) optionEl.selected = true;
-            accessSelect.appendChild(optionEl);
-            added.push(optVal);
-        });
-
-        log("Added Access options to select: " + JSON.stringify(added));
     }
-
-    await renderAccessOptions();
 
     // --- Sub-options based on Page Type ---
     renderSubOptions(pageTypeSelect.value, form, fields);
+}
+
+// =====================
+// Render Access Options
+// =====================
+function renderAccessOptions(accessSelect, options, fields) {
+    const added = [];
+    options.forEach(opt => {
+        const optVal = typeof opt === "string" ? opt : (opt.Role || "");
+        if(!optVal) {
+            log("Skipped empty Access option: " + JSON.stringify(opt));
+            return;
+        }
+        const optionEl = document.createElement("option");
+        optionEl.value = optVal;
+        optionEl.textContent = optVal;
+        if(fields["access"] === optVal) optionEl.selected = true;
+        accessSelect.appendChild(optionEl);
+        added.push(optVal);
+    });
+    log("Added Access options to select: " + JSON.stringify(added));
 }
 
 // =====================
