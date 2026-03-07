@@ -18,6 +18,7 @@ return `
 <div style="margin-top:20px;">
 <button type="button" onclick="saveEdit()">Save</button>
 <button type="button" onclick="publishEdits()">Publish</button>
+<button type="button" onclick="cancelEdit()">Cancel</button>
 </div>
 
 </div>
@@ -117,7 +118,6 @@ async function startEdit(file) {
         log("startEdit called for " + file);
         currentFile = file;
 
-        // Hide tree when form is active
         document.getElementById("tree").style.display = "none";
 
         const res = await fetch("/.netlify/functions/start_edit", {
@@ -133,6 +133,15 @@ async function startEdit(file) {
     } catch (err) {
         log("startEdit error: " + err);
     }
+}
+
+// =====================
+// Cancel Edit
+// =====================
+function cancelEdit() {
+    document.getElementById("editForm").innerHTML = "";
+    document.getElementById("tree").style.display = "block";
+    log("Edit canceled, tree restored");
 }
 
 // =====================
@@ -162,15 +171,21 @@ function parseMarkdown(md) {
 // Render Access Options Helper
 // =====================
 function renderAccessOptions(selectEl, options, fields) {
-    options.forEach(opt => {
+    const selectedValue = fields["access"] || "Public";
+    log("Access front matter value: " + (fields["access"] || "none") + ", defaulting to: " + selectedValue);
+
+    const allOptions = [{Role:"Public"}].concat(options); // Always include Public
+
+    allOptions.forEach(opt => {
         if(!opt.Role) return;
         const option = document.createElement("option");
         option.value = opt.Role;
         option.textContent = opt.Role;
-        if(fields["access"] === opt.Role) option.selected = true;
+        if(selectedValue === opt.Role) option.selected = true;
         selectEl.appendChild(option);
         log("Added Access option: " + opt.Role + (option.selected ? " (selected)" : ""));
     });
+
     log("Rendered Access options complete");
 }
 
@@ -263,7 +278,7 @@ async function renderForm(fields) {
 
     // --- Render any extra front matter fields ---
     Object.keys(fields).forEach(k => {
-        if(knownFields.includes(k)) return; // already rendered
+        if(knownFields.includes(k)) return;
         const label = document.createElement("label");
         label.textContent = k;
         label.style.display = "block";
