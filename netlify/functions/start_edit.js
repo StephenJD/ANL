@@ -3,7 +3,7 @@ import fs from "fs";
 import path from "path";
 
 const contentRoot = path.join(process.cwd(), "content");
-const editsRoot   = path.join(process.cwd(), "edits");
+const editsRoot = path.join("/tmp/edits");
 
 export async function handler(event) {
     console.info("[start_edit] Received event");
