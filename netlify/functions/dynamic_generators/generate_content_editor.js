@@ -18,7 +18,6 @@ return `
 <div style="margin-top:20px;">
 <button type="button" onclick="saveEdit()">Save</button>
 <button type="button" onclick="publishEdits()">Publish</button>
-<button type="button" onclick="cancelEdit()">Cancel</button>
 </div>
 
 </div>
@@ -40,7 +39,7 @@ return `
 <script>
 
 // =====================
-// Logger to div
+// Logger
 // =====================
 function log(msg) {
     const logDiv = document.getElementById("logDiv");
@@ -53,15 +52,15 @@ function log(msg) {
 // =====================
 let currentFile = null;
 let rawBody = "";
+let accessOptionsCache = null;
 
 const dropdownSchema = {
     review_period: ["6m","12m","24m"],
-    access: ["public","member","admin"],
     type: ["policy","form","page"]
 }
 
 // =====================
-// Load and render tree
+// Load Tree
 // =====================
 async function loadTree() {
     try {
@@ -76,7 +75,7 @@ async function loadTree() {
 }
 
 // =====================
-// Render tree with clickable links
+// Render Tree
 // =====================
 function renderTree(nodes) {
     const ul = document.createElement("ul");
@@ -111,12 +110,15 @@ function renderTree(nodes) {
 }
 
 // =====================
-// Start editing
+// Start Editing
 // =====================
 async function startEdit(file) {
     try {
         log("startEdit called for " + file);
         currentFile = file;
+
+        // Hide tree when form is active
+        document.getElementById("tree").style.display = "none";
 
         const res = await fetch("/.netlify/functions/start_edit", {
             method: "POST",
@@ -126,12 +128,8 @@ async function startEdit(file) {
 
         if (!res.ok) throw new Error("HTTP " + res.status);
         const data = await res.json();
-
         parseMarkdown(data.content);
         log("File loaded: " + file);
-
-        // Hide tree when editing
-        document.getElementById("tree").style.display = "none";
     } catch (err) {
         log("startEdit error: " + err);
     }
@@ -161,39 +159,151 @@ function parseMarkdown(md) {
 }
 
 // =====================
-// Render form
+// Render Form
 // =====================
-function renderForm(fields) {
+async function renderForm(fields) {
     const form = document.getElementById("editForm");
     form.innerHTML = "";
 
-    Object.keys(fields).forEach(k => {
-        const label = document.createElement("label");
-        label.textContent = k;
-        label.style.display = "block";
-        label.style.marginTop = "10px";
-
-        let input;
-        if(dropdownSchema[k]) {
-            input = document.createElement("select");
-            dropdownSchema[k].forEach(v => {
-                const opt = document.createElement("option");
-                opt.value = v;
-                opt.textContent = v;
-                if(v === fields[k]) opt.selected = true;
-                input.appendChild(opt);
-            });
-        } else {
-            input = document.createElement("input");
-            input.value = fields[k];
-        }
-
-        input.name = k;
-        input.style.width = "320px";
-
-        form.appendChild(label);
-        form.appendChild(input);
+    // --- Page Type ---
+    const pageTypeLabel = document.createElement("label");
+    pageTypeLabel.textContent = "Page type";
+    pageTypeLabel.style.display = "block";
+    pageTypeLabel.style.marginTop = "10px";
+    const pageTypeSelect = document.createElement("select");
+    ["content page","navigation page"].forEach(v => {
+        const opt = document.createElement("option");
+        opt.value = v;
+        opt.textContent = v;
+        if(fields["page_type"] === v) opt.selected = true;
+        pageTypeSelect.appendChild(opt);
     });
+    pageTypeSelect.name = "page_type";
+    pageTypeSelect.style.width = "320px";
+    pageTypeSelect.onchange = () => renderSubOptions(pageTypeSelect.value, form, fields);
+    form.appendChild(pageTypeLabel);
+    form.appendChild(pageTypeSelect);
+    log("Rendered Page Type");
+
+    // --- Title ---
+    const titleLabel = document.createElement("label");
+    titleLabel.textContent = "Title (required)";
+    titleLabel.style.display = "block";
+    titleLabel.style.marginTop = "10px";
+    const titleInput = document.createElement("input");
+    titleInput.type = "text";
+    titleInput.value = fields["title"] || "";
+    titleInput.name = "title";
+    titleInput.style.width = "320px";
+    form.appendChild(titleLabel);
+    form.appendChild(titleInput);
+    log("Rendered Title");
+
+    // --- Summary ---
+    const summaryLabel = document.createElement("label");
+    summaryLabel.textContent = "Summary (optional)";
+    summaryLabel.style.display = "block";
+    summaryLabel.style.marginTop = "10px";
+    const summaryInput = document.createElement("textarea");
+    summaryInput.name = "summary";
+    summaryInput.value = fields["summary"] || "";
+    summaryInput.rows = 3;
+    summaryInput.style.width = "320px";
+    form.appendChild(summaryLabel);
+    form.appendChild(summaryInput);
+    log("Rendered Summary");
+
+    // --- Access ---
+    const accessLabel = document.createElement("label");
+    accessLabel.textContent = "Access";
+    accessLabel.style.display = "block";
+    accessLabel.style.marginTop = "10px";
+    const accessSelect = document.createElement("select");
+    accessSelect.name = "access";
+    accessSelect.style.width = "320px";
+    form.appendChild(accessLabel);
+    form.appendChild(accessSelect);
+
+    if(accessOptionsCache) {
+        accessOptionsCache.forEach(optVal => {
+            const opt = document.createElement("option");
+            opt.value = optVal;
+            opt.textContent = optVal;
+            if(fields["access"] === optVal) opt.selected = true;
+            accessSelect.appendChild(opt);
+        });
+        log("Rendered Access from cache");
+    } else {
+        try {
+            const res = await fetch("/.netlify/functions/get_role_options");
+            if(!res.ok) throw new Error("HTTP " + res.status);
+            const options = await res.json();
+            accessOptionsCache = options;
+            options.forEach(optVal => {
+                const opt = document.createElement("option");
+                opt.value = optVal;
+                opt.textContent = optVal;
+                if(fields["access"] === optVal) opt.selected = true;
+                accessSelect.appendChild(opt);
+            });
+            log("Rendered Access from network");
+        } catch(err) {
+            log("Access fetch error: " + err);
+        }
+    }
+
+    // --- Sub-options based on Page Type ---
+    renderSubOptions(pageTypeSelect.value, form, fields);
+}
+
+// =====================
+// Render Sub-options
+// =====================
+function renderSubOptions(pageType, form, fields) {
+    // Remove any existing sub-options container
+    let existing = document.getElementById("subOptionsContainer");
+    if(existing) form.removeChild(existing);
+
+    const container = document.createElement("div");
+    container.id = "subOptionsContainer";
+    container.style.marginTop = "10px";
+
+    if(pageType === "content page") {
+        const label = document.createElement("label");
+        label.textContent = "Content Type";
+        label.style.display = "block";
+        const select = document.createElement("select");
+        select.name = "content_type";
+        select.style.width = "320px";
+        ["page from single file","page from section files"].forEach(v => {
+            const opt = document.createElement("option");
+            opt.value = v;
+            opt.textContent = v;
+            if(fields["content_type"] === v) opt.selected = true;
+            select.appendChild(opt);
+        });
+        container.appendChild(label);
+        container.appendChild(select);
+    } else if(pageType === "navigation page") {
+        const label = document.createElement("label");
+        label.textContent = "Navigation Options";
+        label.style.display = "block";
+        const select = document.createElement("select");
+        select.name = "navigation_options";
+        select.style.width = "320px";
+        ["With see-also links","Without see-also links"].forEach(v => {
+            const opt = document.createElement("option");
+            opt.value = v;
+            opt.textContent = v;
+            if(fields["navigation_options"] === v) opt.selected = true;
+            select.appendChild(opt);
+        });
+        container.appendChild(label);
+        container.appendChild(select);
+    }
+
+    form.appendChild(container);
+    log("Rendered Sub-options for " + pageType);
 }
 
 // =====================
@@ -213,7 +323,7 @@ function buildMarkdown() {
 }
 
 // =====================
-// Save edit
+// Save Edit
 // =====================
 async function saveEdit() {
     try {
@@ -224,36 +334,21 @@ async function saveEdit() {
         });
         if (!res.ok) throw new Error("HTTP " + res.status);
         log("Saved: " + currentFile);
-
-        // Show tree after save
         document.getElementById("tree").style.display = "block";
-        currentFile = null;
     } catch (err) {
         log("saveEdit error: " + err);
     }
 }
 
 // =====================
-// Cancel edit
-// =====================
-function cancelEdit() {
-    log("Edit cancelled");
-    document.getElementById("tree").style.display = "block";
-    currentFile = null;
-}
-
-// =====================
-// Publish edits
+// Publish Edits
 // =====================
 async function publishEdits() {
     try {
         const res = await fetch("/.netlify/functions/publish_edits", { method: "POST" });
         if (!res.ok) throw new Error("HTTP " + res.status);
         log("All edits published");
-
-        // Show tree after publish
         document.getElementById("tree").style.display = "block";
-        currentFile = null;
     } catch (err) {
         log("publishEdits error: " + err);
     }
