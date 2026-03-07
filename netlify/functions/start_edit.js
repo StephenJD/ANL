@@ -1,35 +1,76 @@
-// \netlify\functions\start_edit.mjs
+// \netlify\functions\start_edit.js
 
-import fs from "fs";
-import path from "path";
+const fs = require("fs");
+const path = require("path");
 
 const contentRoot = path.join(process.cwd(), "content");
 const editsRoot = path.join(process.cwd(), "edits");
 
-export default async function start_edit(event) {
-  try {
-    const body = typeof event.body === "string" ? JSON.parse(event.body) : event.body;
-    const { file } = body;
+exports.handler = async function(event) {
 
-    const src = path.join(process.cwd(), "content", file);
-    const dst = path.join(process.cwd(), "edits", file);
+    // =====================
+    // Parse body safely
+    // =====================
+    let file;
+    try {
+        const body = typeof event.body === "string" ? JSON.parse(event.body) : event.body;
+        file = body.file;
+        console.log("Received file:", file);
+    } catch(err) {
+        console.error("start_edit: failed to parse body", err, event.body);
+        return {
+            statusCode: 400,
+            body: JSON.stringify({ error: "Invalid request body" })
+        };
+    }
 
-    console.log("start_edit paths:", { src, dst });
+    if (!file) {
+        console.error("start_edit: no file specified");
+        return {
+            statusCode: 400,
+            body: JSON.stringify({ error: "No file specified" })
+        };
+    }
 
-    fs.mkdirSync(path.dirname(dst), { recursive: true });
-    fs.copyFileSync(src, dst);
+    // =====================
+    // Build paths
+    // =====================
+    const src = path.join(contentRoot, file);
+    const dst = path.join(editsRoot, file);
+    console.log("Source path:", src);
+    console.log("Destination path:", dst);
 
-    const content = fs.readFileSync(dst, "utf8");
+    // =====================
+    // Copy file
+    // =====================
+    try {
+        fs.mkdirSync(path.dirname(dst), { recursive: true });
+        console.log("Ensured edits folder exists:", path.dirname(dst));
 
-    return {
-      statusCode: 200,
-      body: JSON.stringify({ file, content })
-    };
-  } catch (err) {
-    console.error("start_edit error:", err);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: err.message })
-    };
-  }
-}
+        if (!fs.existsSync(src)) {
+            console.error("Source file does not exist:", src);
+            return {
+                statusCode: 404,
+                body: JSON.stringify({ error: "Source file not found" })
+            };
+        }
+
+        fs.copyFileSync(src, dst);
+        console.log("Copied file to edits folder");
+
+        const content = fs.readFileSync(dst, "utf8");
+        console.log("Read file content, length:", content.length);
+
+        return {
+            statusCode: 200,
+            body: JSON.stringify({ file, content })
+        };
+
+    } catch(err) {
+        console.error("start_edit error:", err);
+        return {
+            statusCode: 500,
+            body: JSON.stringify({ error: err.message })
+        };
+    }
+};
