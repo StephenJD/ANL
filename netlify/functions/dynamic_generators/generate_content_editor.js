@@ -118,8 +118,9 @@ async function startEdit(file) {
         currentFile = file;
 
         const res = await fetch("/.netlify/functions/start_edit", {
-            method: "POST",
-            body: JSON.stringify({ file })
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ file })
         });
 
         if (!res.ok) throw new Error("HTTP " + res.status);
