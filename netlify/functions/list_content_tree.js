@@ -14,7 +14,7 @@ function walkDir(dir) {
           name: entry.name,
           children: walkDir(fullPath)
         });
-      } else if (entry.name.endsWith(".md") || entry.name.endsWith(".html") || entry.name.endsWith(".json")) {
+      } else if (entry.name.toLowerCase().endsWith(".md")) { // only .MD files
         items.push({
           type: "file",
           name: entry.name,
@@ -30,8 +30,8 @@ function walkDir(dir) {
 
 export default async function handler(event, context) {
   try {
-    const rootDir = path.join(process.cwd(), "netlify/functions/private_html");
-    console.log("Listing private_html at:", rootDir, fs.existsSync(rootDir));
+    const rootDir = path.join(process.cwd(), "content"); // content folder
+    console.log("Listing content at:", rootDir, fs.existsSync(rootDir));
 
     const tree = walkDir(rootDir);
 
