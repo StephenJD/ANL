@@ -232,23 +232,31 @@ async function renderForm(fields) {
                 if (!res.ok) throw new Error("HTTP " + res.status);
                 options = await res.json();
                 accessOptionsCache = options;
+                log("Fetched Access options: " + JSON.stringify(options));
             } catch (err) {
                 log("Access fetch error: " + err);
                 options = [];
             }
+        } else {
+            log("Using cached Access options: " + JSON.stringify(options));
         }
 
+        let added = [];
         options.forEach(opt => {
             const optVal = typeof opt === "string" ? opt : (opt.name || opt.role || "");
-            if (!optVal) return;
+            if (!optVal) {
+                log("Skipped empty Access option: " + JSON.stringify(opt));
+                return;
+            }
             const optionEl = document.createElement("option");
             optionEl.value = optVal;
             optionEl.textContent = optVal;
             if (fields["access"] === optVal) optionEl.selected = true;
             accessSelect.appendChild(optionEl);
+            added.push(optVal);
         });
 
-        log("Rendered Access options");
+        log("Added Access options to select: " + JSON.stringify(added));
     }
 
     await renderAccessOptions();
@@ -261,7 +269,6 @@ async function renderForm(fields) {
 // Render Sub-options
 // =====================
 function renderSubOptions(pageType, form, fields) {
-    // Remove any existing sub-options container
     let existing = document.getElementById("subOptionsContainer");
     if(existing) form.removeChild(existing);
 
@@ -364,4 +371,4 @@ loadTree();
 
 </div>
 `;
-  }
+}
