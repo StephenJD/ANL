@@ -24,31 +24,27 @@ return `
 
 </div>
 
+<!-- Log container -->
+<div id="logDiv" style="
+    border-top:1px solid #ccc;
+    margin-top:20px;
+    padding:10px;
+    max-height:200px;
+    overflow-y:auto;
+    background:#f9f9f9;
+    font-size:12px;
+    white-space:pre-wrap;
+"></div>
+
 <script>
 
 // =====================
-// Mobile-friendly logger
+// Logger to div
 // =====================
 function log(msg) {
     const logDiv = document.getElementById("logDiv");
-    if (!logDiv) {
-        const div = document.createElement("div");
-        div.id = "logDiv";
-        div.style.position = "fixed";
-        div.style.bottom = "0";
-        div.style.left = "0";
-        div.style.right = "0";
-        div.style.maxHeight = "200px";
-        div.style.overflowY = "scroll";
-        div.style.background = "rgba(0,0,0,0.8)";
-        div.style.color = "white";
-        div.style.fontSize = "12px";
-        div.style.zIndex = "9999";
-        document.body.appendChild(div);
-        div.innerHTML = msg + "<br>";
-    } else {
-        logDiv.innerHTML += msg + "<br>";
-    }
+    logDiv.textContent += msg + "\\n";
+    logDiv.scrollTop = logDiv.scrollHeight;
 }
 
 // =====================
@@ -69,16 +65,18 @@ const dropdownSchema = {
 async function loadTree() {
     try {
         const res = await fetch("/.netlify/functions/list_content_tree");
-        if (!res.ok) throw new Error("HTTP error " + res.status);
+        if (!res.ok) throw new Error("HTTP " + res.status);
         const tree = await res.json();
         log("Tree loaded successfully");
         document.getElementById("tree").appendChild(renderTree(tree));
     } catch (err) {
         log("loadTree error: " + err);
-        alert("loadTree error: " + err);
     }
 }
 
+// =====================
+// Render tree with clickable links
+// =====================
 function renderTree(nodes) {
     const ul = document.createElement("ul");
     ul.style.listStyle = "none";
@@ -92,16 +90,17 @@ function renderTree(nodes) {
             li.textContent = node.name;
             li.appendChild(renderTree(node.children));
         } else {
-            li.style.cursor = "pointer";
-            li.textContent = node.name;
-            li.onclick = () => {
+            const a = document.createElement("a");
+            a.href = "#";
+            a.textContent = node.name;
+            a.style.display = "block";
+            a.style.cursor = "pointer";
+            a.onclick = (e) => {
+                e.preventDefault();
                 log("Clicked file: " + node.path);
-                alert("Clicked file: " + node.path);
-                startEdit(node.path).catch(err => {
-                    log("startEdit error: " + err);
-                    alert("startEdit error: " + err);
-                });
-            }
+                startEdit(node.path).catch(err => log("startEdit error: " + err));
+            };
+            li.appendChild(a);
         }
 
         ul.appendChild(li);
@@ -111,13 +110,11 @@ function renderTree(nodes) {
 }
 
 // =====================
-// Start editing a file
+// Start editing
 // =====================
 async function startEdit(file) {
     try {
         log("startEdit called for " + file);
-        alert("startEdit called for " + file);
-
         currentFile = file;
 
         const res = await fetch("/.netlify/functions/start_edit", {
@@ -125,19 +122,17 @@ async function startEdit(file) {
             body: JSON.stringify({ file })
         });
 
-        if (!res.ok) throw new Error("HTTP error " + res.status);
-
+        if (!res.ok) throw new Error("HTTP " + res.status);
         const data = await res.json();
         parseMarkdown(data.content);
-        log("File loaded successfully: " + file);
+        log("File loaded: " + file);
     } catch (err) {
         log("startEdit error: " + err);
-        alert("startEdit error: " + err);
     }
 }
 
 // =====================
-// Parse markdown into frontmatter and body
+// Parse Markdown
 // =====================
 function parseMarkdown(md) {
     const parts = md.split("---");
@@ -150,8 +145,8 @@ function parseMarkdown(md) {
     lines.forEach(line => {
         const i = line.indexOf(":");
         if(i > 0) {
-            const k = line.slice(0, i).trim();
-            const v = line.slice(i + 1).trim();
+            const k = line.slice(0,i).trim();
+            const v = line.slice(i+1).trim();
             fields[k] = v;
         }
     });
@@ -160,7 +155,7 @@ function parseMarkdown(md) {
 }
 
 // =====================
-// Render form for editing
+// Render form
 // =====================
 function renderForm(fields) {
     const form = document.getElementById("editForm");
@@ -196,7 +191,7 @@ function renderForm(fields) {
 }
 
 // =====================
-// Build markdown from form
+// Build Markdown
 // =====================
 function buildMarkdown() {
     const form = document.getElementById("editForm");
@@ -221,12 +216,10 @@ async function saveEdit() {
             method: "POST",
             body: JSON.stringify({ file: currentFile, content })
         });
-        if (!res.ok) throw new Error("HTTP error " + res.status);
+        if (!res.ok) throw new Error("HTTP " + res.status);
         log("Saved: " + currentFile);
-        alert("Saved: " + currentFile);
     } catch (err) {
         log("saveEdit error: " + err);
-        alert("saveEdit error: " + err);
     }
 }
 
@@ -236,17 +229,15 @@ async function saveEdit() {
 async function publishEdits() {
     try {
         const res = await fetch("/.netlify/functions/publish_edits", { method: "POST" });
-        if (!res.ok) throw new Error("HTTP error " + res.status);
+        if (!res.ok) throw new Error("HTTP " + res.status);
         log("All edits published");
-        alert("All edits published");
     } catch (err) {
         log("publishEdits error: " + err);
-        alert("publishEdits error: " + err);
     }
 }
 
 // =====================
-// Initial load
+// Init
 // =====================
 loadTree();
 
