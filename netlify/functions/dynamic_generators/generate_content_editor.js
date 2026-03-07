@@ -18,6 +18,7 @@ return `
 <div style="margin-top:20px;">
 <button type="button" onclick="saveEdit()">Save</button>
 <button type="button" onclick="publishEdits()">Publish</button>
+<button type="button" onclick="cancelEdit()">Cancel</button>
 </div>
 
 </div>
@@ -125,38 +126,34 @@ async function startEdit(file) {
 
         if (!res.ok) throw new Error("HTTP " + res.status);
         const data = await res.json();
-        log("Raw markdown received:\\n" + data.content);
+
         parseMarkdown(data.content);
         log("File loaded: " + file);
+
+        // Hide tree when editing
+        document.getElementById("tree").style.display = "none";
     } catch (err) {
         log("startEdit error: " + err);
     }
 }
 
 // =====================
-// Parse Markdown with logging
+// Parse Markdown
 // =====================
 function parseMarkdown(md) {
-    log("Parsing markdown...");
     const parts = md.split("---");
-    log("Split into parts: " + parts.length);
     const front = parts[1] || "";
     rawBody = parts.slice(2).join("---");
-    log("Front matter:\\n" + front);
-    log("Body starts with:\\n" + rawBody.slice(0,50) + "...");
 
     const lines = front.split("\\n");
     const fields = {};
 
-    lines.forEach((line, idx) => {
+    lines.forEach(line => {
         const i = line.indexOf(":");
         if(i > 0) {
             const k = line.slice(0,i).trim();
             const v = line.slice(i+1).trim();
             fields[k] = v;
-            log("Parsed field [" + idx + "]: " + k + " = " + v);
-        } else {
-            log("Skipping line [" + idx + "]: " + line);
         }
     });
 
@@ -164,15 +161,13 @@ function parseMarkdown(md) {
 }
 
 // =====================
-// Render form with logging
+// Render form
 // =====================
 function renderForm(fields) {
-    log("Rendering form...");
     const form = document.getElementById("editForm");
     form.innerHTML = "";
 
     Object.keys(fields).forEach(k => {
-        log("Rendering field: " + k + " = " + fields[k]);
         const label = document.createElement("label");
         label.textContent = k;
         label.style.display = "block";
@@ -199,8 +194,6 @@ function renderForm(fields) {
         form.appendChild(label);
         form.appendChild(input);
     });
-
-    log("Form rendering complete. Total fields: " + Object.keys(fields).length);
 }
 
 // =====================
@@ -231,9 +224,22 @@ async function saveEdit() {
         });
         if (!res.ok) throw new Error("HTTP " + res.status);
         log("Saved: " + currentFile);
+
+        // Show tree after save
+        document.getElementById("tree").style.display = "block";
+        currentFile = null;
     } catch (err) {
         log("saveEdit error: " + err);
     }
+}
+
+// =====================
+// Cancel edit
+// =====================
+function cancelEdit() {
+    log("Edit cancelled");
+    document.getElementById("tree").style.display = "block";
+    currentFile = null;
 }
 
 // =====================
@@ -244,6 +250,10 @@ async function publishEdits() {
         const res = await fetch("/.netlify/functions/publish_edits", { method: "POST" });
         if (!res.ok) throw new Error("HTTP " + res.status);
         log("All edits published");
+
+        // Show tree after publish
+        document.getElementById("tree").style.display = "block";
+        currentFile = null;
     } catch (err) {
         log("publishEdits error: " + err);
     }
