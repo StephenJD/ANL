@@ -1,41 +1,50 @@
+// \netlify\functions\list_content_tree.js
 import fs from "fs";
 import path from "path";
 
-const contentRoot = path.join(process.cwd(), "content");
-
-function walk(dir, rel = "") {
-  const entries = fs.readdirSync(dir, { withFileTypes: true });
-
-  return entries
-    .map(e => {
-      const full = path.join(dir, e.name);
-      const relative = path.join(rel, e.name);
-
-      if (e.isDirectory()) {
-        return {
+function walkDir(dir) {
+  const items = [];
+  try {
+    const entries = fs.readdirSync(dir, { withFileTypes: true });
+    for (const entry of entries) {
+      const fullPath = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        items.push({
           type: "folder",
-          name: e.name,
-          path: relative,
-          children: walk(full, relative)
-        };
-      }
-
-      if (e.isFile() && e.name.endsWith(".md")) {
-        return {
+          name: entry.name,
+          children: walkDir(fullPath)
+        });
+      } else if (entry.name.endsWith(".md") || entry.name.endsWith(".html") || entry.name.endsWith(".json")) {
+        items.push({
           type: "file",
-          name: e.name,
-          path: relative
-        };
+          name: entry.name,
+          path: path.relative(process.cwd(), fullPath).replace(/\\/g, "/")
+        });
       }
-
-      return null;
-    })
-    .filter(Boolean);
+    }
+  } catch (err) {
+    console.error("[list_content_tree] Error reading dir:", dir, err);
+  }
+  return items;
 }
 
-export default async function list_content_tree() {
+export default async function handler(event, context) {
+  try {
+    // Use the same folder that your review docs generator uses
+    const rootDir = path.join(process.cwd(), "netlify/functions/private_html");
+    const tree = walkDir(rootDir);
 
-  const tree = walk(contentRoot);
-
-  return JSON.stringify(tree);
+    return {
+      statusCode: 200,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(tree)
+    };
+  } catch (err) {
+    console.error("[list_content_tree] Fatal error:", err);
+    return {
+      statusCode: 500,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ error: "Failed to generate content tree" })
+    };
+  }
 }
