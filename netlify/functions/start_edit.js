@@ -5,62 +5,70 @@ import path from "path";
 const contentRoot = path.join(process.cwd(), "content");
 const editsRoot = path.join(process.cwd(), "edits");
 
-export default async function start_edit(event) {
+export async function handler(event) {
+    console.log("[start_edit] Received event");
 
-  // Log raw body immediately
-  console.log("RAW event.body:", event.body);
+    // ==========================
+    // Read event.body safely
+    // ==========================
+    let bodyStr = "";
 
-  let body;
-  try {
-    body = JSON.parse(event.body);
-    console.log("Parsed body:", body);
-  } catch (err) {
-    console.error("JSON parse error:", err);
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ error: "Invalid JSON body" })
-    };
-  }
+    if (event.body instanceof ReadableStream) {
+        bodyStr = await new Response(event.body).text();
+    } else {
+        bodyStr = event.body;
+    }
 
-  const { file } = body;
-  console.log("Received file:", file);
+    console.log("[start_edit] RAW body string:", bodyStr);
 
-  if (!file) {
-    console.error("No file provided");
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ error: "No file provided" })
-    };
-  }
+    let body;
+    try {
+        body = JSON.parse(bodyStr);
+        console.log("[start_edit] Parsed body:", body);
+    } catch (err) {
+        console.error("[start_edit] JSON parse error:", err);
+        return {
+            statusCode: 400,
+            body: JSON.stringify({ error: "Invalid JSON body" })
+        };
+    }
 
-  try {
-    // Resolve source and destination paths
+    const { file } = body;
+    console.log("[start_edit] Received file:", file);
+
+    if (!file) {
+        console.error("[start_edit] No file provided");
+        return {
+            statusCode: 400,
+            body: JSON.stringify({ error: "No file provided" })
+        };
+    }
+
     const src = path.join(contentRoot, file);
     const dst = path.join(editsRoot, file);
 
-    console.log("Source path:", src);
-    console.log("Destination path:", dst);
+    console.log("[start_edit] Source path:", src);
+    console.log("[start_edit] Destination path:", dst);
 
-    // Ensure destination folder exists
-    fs.mkdirSync(path.dirname(dst), { recursive: true });
+    try {
+        fs.mkdirSync(path.dirname(dst), { recursive: true });
+        fs.copyFileSync(src, dst);
 
-    // Copy file to edits folder
-    fs.copyFileSync(src, dst);
+        const content = fs.readFileSync(dst, "utf8");
 
-    // Read content for editor
-    const content = fs.readFileSync(dst, "utf8");
-
-    // Return JSON with content
-    return {
-      statusCode: 200,
-      body: JSON.stringify({ file, content })
-    };
-
-  } catch (err) {
-    console.error("start_edit error:", err);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: err.message })
-    };
-  }
+        console.log("[start_edit] File copied successfully");
+        return {
+            statusCode: 200,
+            body: JSON.stringify({
+                file,
+                content
+            })
+        };
+    } catch (err) {
+        console.error("[start_edit] start_edit error:", err);
+        return {
+            statusCode: 500,
+            body: JSON.stringify({ error: err.message })
+        };
+    }
 }
