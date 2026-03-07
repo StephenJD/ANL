@@ -171,8 +171,8 @@ function parseMarkdown(md) {
 // Render Access Options Helper
 // =====================
 function renderAccessOptions(selectEl, options, fields) {
-    const selectedValue = fields["access"] || "Public";
-    log("Access front matter value: " + (fields["access"] || "none") + ", defaulting to: " + selectedValue);
+    const frontAccess = fields["access"] || "Public";
+    log("Access front matter value: " + (fields["access"] || "none") + ", defaulting to: " + frontAccess);
 
     const allOptions = [{Role:"Public"}].concat(options); // Always include Public
 
@@ -181,7 +181,13 @@ function renderAccessOptions(selectEl, options, fields) {
         const option = document.createElement("option");
         option.value = opt.Role;
         option.textContent = opt.Role;
-        if(selectedValue === opt.Role) option.selected = true;
+
+        // Case-insensitive match
+        if(opt.Role.toLowerCase() === frontAccess.toLowerCase()) {
+            option.selected = true;
+            log("Selected Access option: " + opt.Role);
+        }
+
         selectEl.appendChild(option);
         log("Added Access option: " + opt.Role + (option.selected ? " (selected)" : ""));
     });
