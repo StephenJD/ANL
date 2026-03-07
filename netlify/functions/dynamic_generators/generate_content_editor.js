@@ -159,11 +159,29 @@ function parseMarkdown(md) {
 }
 
 // =====================
+// Render Access Options Helper
+// =====================
+function renderAccessOptions(selectEl, options, fields) {
+    options.forEach(opt => {
+        if(!opt.Role) return;
+        const option = document.createElement("option");
+        option.value = opt.Role;
+        option.textContent = opt.Role;
+        if(fields["access"] === opt.Role) option.selected = true;
+        selectEl.appendChild(option);
+        log("Added Access option: " + opt.Role + (option.selected ? " (selected)" : ""));
+    });
+    log("Rendered Access options complete");
+}
+
+// =====================
 // Render Form
 // =====================
 async function renderForm(fields) {
     const form = document.getElementById("editForm");
     form.innerHTML = "";
+
+    const knownFields = ["page_type","title","summary","access"];
 
     // --- Page Type ---
     const pageTypeLabel = document.createElement("label");
@@ -242,27 +260,23 @@ async function renderForm(fields) {
 
     // --- Sub-options based on Page Type ---
     renderSubOptions(pageTypeSelect.value, form, fields);
-}
 
-// =====================
-// Render Access Options
-// =====================
-function renderAccessOptions(accessSelect, options, fields) {
-    const added = [];
-    options.forEach(opt => {
-        const optVal = typeof opt === "string" ? opt : (opt.Role || "");
-        if(!optVal) {
-            log("Skipped empty Access option: " + JSON.stringify(opt));
-            return;
-        }
-        const optionEl = document.createElement("option");
-        optionEl.value = optVal;
-        optionEl.textContent = optVal;
-        if(fields["access"] === optVal) optionEl.selected = true;
-        accessSelect.appendChild(optionEl);
-        added.push(optVal);
+    // --- Render any extra front matter fields ---
+    Object.keys(fields).forEach(k => {
+        if(knownFields.includes(k)) return; // already rendered
+        const label = document.createElement("label");
+        label.textContent = k;
+        label.style.display = "block";
+        label.style.marginTop = "10px";
+        const input = document.createElement("input");
+        input.type = "text";
+        input.name = k;
+        input.value = fields[k] || "";
+        input.style.width = "320px";
+        form.appendChild(label);
+        form.appendChild(input);
+        log("Rendered extra field: " + k + " = " + fields[k]);
     });
-    log("Added Access options to select: " + JSON.stringify(added));
 }
 
 // =====================
