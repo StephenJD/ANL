@@ -1,76 +1,49 @@
 // \netlify\functions\start_edit.js
-
-const fs = require("fs");
-const path = require("path");
+import fs from "fs";
+import path from "path";
 
 const contentRoot = path.join(process.cwd(), "content");
-const editsRoot = path.join(process.cwd(), "edits");
+// Use /tmp for writable folder in Netlify functions
+const editsRoot = path.join("/tmp", "edits");
 
-exports.handler = async function(event) {
-
-    // =====================
-    // Parse body safely
-    // =====================
-    let file;
+export default async function start_edit(event) {
     try {
-        const body = typeof event.body === "string" ? JSON.parse(event.body) : event.body;
-        file = body.file;
+        const { file } = JSON.parse(event.body);
+
         console.log("Received file:", file);
-    } catch(err) {
-        console.error("start_edit: failed to parse body", err, event.body);
-        return {
-            statusCode: 400,
-            body: JSON.stringify({ error: "Invalid request body" })
-        };
-    }
 
-    if (!file) {
-        console.error("start_edit: no file specified");
-        return {
-            statusCode: 400,
-            body: JSON.stringify({ error: "No file specified" })
-        };
-    }
+        if (!file) throw new Error("No file provided");
 
-    // =====================
-    // Build paths
-    // =====================
-    const src = path.join(contentRoot, file);
-    const dst = path.join(editsRoot, file);
-    console.log("Source path:", src);
-    console.log("Destination path:", dst);
+        const src = path.join(contentRoot, file);
+        const dst = path.join(editsRoot, file);
 
-    // =====================
-    // Copy file
-    // =====================
-    try {
+        console.log("Source path:", src);
+        console.log("Destination path:", dst);
+
+        // Ensure destination folder exists
         fs.mkdirSync(path.dirname(dst), { recursive: true });
-        console.log("Ensured edits folder exists:", path.dirname(dst));
 
-        if (!fs.existsSync(src)) {
-            console.error("Source file does not exist:", src);
-            return {
-                statusCode: 404,
-                body: JSON.stringify({ error: "Source file not found" })
-            };
-        }
-
+        // Copy file for editing
         fs.copyFileSync(src, dst);
-        console.log("Copied file to edits folder");
 
         const content = fs.readFileSync(dst, "utf8");
-        console.log("Read file content, length:", content.length);
 
+        console.log("File loaded successfully");
+
+        // Netlify requires a Response or undefined
         return {
             statusCode: 200,
-            body: JSON.stringify({ file, content })
+            body: JSON.stringify({
+                file,
+                content
+            })
         };
-
-    } catch(err) {
+    } catch (err) {
         console.error("start_edit error:", err);
+
         return {
             statusCode: 500,
             body: JSON.stringify({ error: err.message })
         };
     }
-};
+}
