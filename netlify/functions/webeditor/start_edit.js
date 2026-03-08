@@ -1,4 +1,4 @@
-// \netlify\functions\start_edit.js
+// netlify/functions/webeditor/start_edit.js
 import fs from "fs";
 import path from "path";
 
