@@ -17,6 +17,7 @@ return `
 <div style="margin-top:20px;">
 <button type="button" onclick="saveEdit()">Save</button>
 <button type="button" onclick="publishEdits()">Publish</button>
+<button type="button" onclick="dropEdits()">Drop Edits</button>
 <button type="button" onclick="cancelEdit()">Cancel</button>
 </div>
 
@@ -174,7 +175,7 @@ const li=document.createElement("li");
 if(node.type==="folder"){
 
 li.style.fontWeight="bold";
-li.textContent=node.name;
+a.textContent=node.qualifiedTitle || node.name;
 
 li.appendChild(renderTree(node.children));
 
@@ -487,7 +488,41 @@ document.getElementById("tree").style.display="block";
 log("Edit canceled, tree restored");
 
 }
+// =====================
+// Drop Edits
+// =====================
 
+async function dropEdits(){
+
+try{
+
+if(!currentFile){
+log("No file selected for drop edits");
+return;
+}
+
+const res=await fetch("/.netlify/functions/drop_edit",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({file:currentFile})
+});
+
+log("drop_edit HTTP status: "+res.status);
+
+if(!res.ok) throw new Error("HTTP "+res.status);
+
+log("Edits dropped: "+currentFile);
+
+document.getElementById("tree").style.display="block";
+document.getElementById("editForm").innerHTML="";
+
+}catch(err){
+
+log("dropEdits error: "+err);
+
+}
+
+}
 </script>
 `;
   }
