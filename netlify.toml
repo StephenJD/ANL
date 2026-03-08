@@ -37,4 +37,5 @@ hugo --gc --minify -b $URL
     Content-Type = "application/rss+xml"
     
 [functions]
+  directory = "netlify/functions"
   included_files = ["netlify/functions/private_html/**/*"]
