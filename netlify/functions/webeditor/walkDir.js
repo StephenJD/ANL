@@ -2,7 +2,6 @@
 import fs from "fs";
 import path from "path";
 import { qualifyTitle } from "../../../static/js/webeditor/qualifyTitle.js";
-
 // Parses front matter for title and type
 function parseFrontMatter(md) {
   const fm = { title: null, type: null };
