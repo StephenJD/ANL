@@ -1,5 +1,5 @@
-// \netlify\functions\webeditor\normalizeFrontMatter.js
-export function normalizeFrontMatter(mdContent) {
+// \static\js\webeditor\normalizeFrontMatter.js
+function normalizeFrontMatter(mdContent) {
     const front = {};
     const lines = mdContent.split('---')[1]?.split('\n') || [];
     lines.forEach(line => {
