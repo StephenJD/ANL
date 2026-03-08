@@ -1,7 +1,6 @@
-// \netlify\functions\webeditor\renderAccessOptions.js
-import { log } from './log.js';
+// \static/js\webeditor\renderAccessOptions.js
 
-export async function renderAccessOptions(form, frontMatter, cache) {
+async function renderAccessOptions(form, frontMatter, cache) {
     const accessLabel = document.createElement("label");
     accessLabel.textContent = "Access";
     accessLabel.style.display = "block";
