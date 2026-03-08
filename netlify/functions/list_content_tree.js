@@ -58,64 +58,50 @@ function getFolderIndexType(dir) {
 }
 
 function walkDir(dir) {
-
-  const items = [];
-
   const entries = fs.readdirSync(dir, { withFileTypes: true });
-  entries.sort((a,b)=>a.name.localeCompare(b.name));
-  
-  const folderIndexType = getFolderIndexType(dir);
+  entries.sort((a, b) => a.name.localeCompare(b.name)); // filename order
+
+  let indexNode = null;
+  const children = [];
 
   for (const entry of entries) {
-
     const fullPath = path.join(dir, entry.name);
 
     if (entry.isDirectory()) {
-
-      items.push({
-        type: "folder",
-        name: entry.name,
-        children: walkDir(fullPath)
-      });
-
+      const sub = walkDir(fullPath);
+      if (sub) children.push(sub);
       continue;
     }
 
     if (!entry.name.toLowerCase().endsWith(".md")) continue;
 
     const fm = parseFrontmatter(fullPath);
-
     const title = fm.title || entry.name;
-
     const isIndex = entry.name.toLowerCase() === "_index.md";
 
-    let role;
+    const role = isIndex
+      ? (fm.type || "").toLowerCase().includes("collated") ? "Collated" : "Navigation"
+      : (indexNode && indexNode.type === "Collated") ? "Section" : "Content";
 
-    if (isIndex) {
-
-      role = fm.type === "collated_page"
-        ? "Collated"
-        : "Navigation";
-
-    } else {
-
-      role = folderIndexType === "collated_page"
-        ? "Section"
-        : "Content";
-
-    }
-
-    items.push({
-      type: "file",
-      name: entry.name,
+    const node = {
+      type: isIndex ? role : "file",
       qualifiedTitle: `${role}: ${title}`,
       path: path.relative(process.cwd(), fullPath).replace(/\\/g, "/")
-    });
+    };
 
+    if (isIndex) indexNode = node;
+    else children.push(node);
   }
 
-  return items;
+  if (!indexNode && children.length === 0) return null; // empty folder
 
+  if (indexNode) {
+    indexNode.children = children.length ? children : undefined;
+    return indexNode;
+  }
+
+  // folder with only non-index files → wrap in pseudo node
+  return { type: "folder", qualifiedTitle: path.basename(dir), children };
 }
 
 export default async function handler() {
