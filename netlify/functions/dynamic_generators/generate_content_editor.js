@@ -308,7 +308,7 @@ fields[key]=value;
 log("Parsed raw fields:");
 log(JSON.stringify(fields));
 
-frontMatter=normalizeFrontMatter(fields);
+frontMatter = normalizeFrontMatter(md);
 
 log("Normalized front matter:");
 log(JSON.stringify(frontMatter));
