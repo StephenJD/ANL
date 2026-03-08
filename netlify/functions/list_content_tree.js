@@ -62,7 +62,8 @@ function walkDir(dir) {
   const items = [];
 
   const entries = fs.readdirSync(dir, { withFileTypes: true });
-
+  entries.sort((a,b)=>a.name.localeCompare(b.name));
+  
   const folderIndexType = getFolderIndexType(dir);
 
   for (const entry of entries) {
@@ -92,13 +93,13 @@ function walkDir(dir) {
 
     if (isIndex) {
 
-      role = fm.type === "collated-pages"
+      role = fm.type === "collated_page"
         ? "Collated"
         : "Navigation";
 
     } else {
 
-      role = folderIndexType === "collated-pages"
+      role = folderIndexType === "collated_page"
         ? "Section"
         : "Content";
 
