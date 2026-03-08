@@ -1,5 +1,5 @@
 // \static\js\webeditor\log.js
-function log(msg) {
+window.log = function(msg) {
     const logDiv = document.getElementById("logDiv");
     if(logDiv) {
         logDiv.textContent += msg + "\n";
