@@ -1,4 +1,4 @@
-// netlify/functions/drop_edit.js
+// netlify/functions/webeditor/drop_edit.js
 import fs from "fs";
 import path from "path";
 
