@@ -1,7 +1,6 @@
-// \netlify\functions\webeditor\renderSubOptions.js
-import { log } from './log.js';
+// \static/js\webeditor\renderSubOptions.js
 
-export function renderSubOptions(pageType, form, frontMatter) {
+function renderSubOptions(pageType, form, frontMatter) {
     let existing = document.getElementById("subOptionsContainer");
     if(existing) form.removeChild(existing);
 
