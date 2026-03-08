@@ -175,7 +175,6 @@ const li=document.createElement("li");
 if(node.type==="folder"){
 
 li.style.fontWeight="bold";
-a.textContent=node.qualifiedTitle || node.name;
 
 li.appendChild(renderTree(node.children));
 
@@ -184,7 +183,7 @@ li.appendChild(renderTree(node.children));
 const a=document.createElement("a");
 
 a.href="#";
-a.textContent=node.name;
+a.textContent=node.qualifiedTitle || node.name;
 a.style.display="block";
 a.style.cursor="pointer";
 
