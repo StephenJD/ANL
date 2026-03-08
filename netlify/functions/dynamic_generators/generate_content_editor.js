@@ -14,7 +14,7 @@ return `
 
 <form id="editForm"></form>
 
-<div style="margin-top:20px;">
+<div id="editButtons" style="margin-top:20px;display:none;">
 <button type="button" onclick="saveEdit()">Save</button>
 <button type="button" onclick="publishEdits()">Publish</button>
 <button type="button" onclick="dropEdits()">Drop Edits</button>
@@ -223,6 +223,7 @@ try{
 log("startEdit called for "+file);
 
 currentFile=file;
+document.getElementById("editButtons").style.display="block";
 
 document.getElementById("tree").style.display="none";
 
@@ -448,7 +449,7 @@ document.getElementById("tree").style.display="block";
 log("saveEdit error: "+err);
 
 }
-
+document.getElementById("editButtons").style.display="none";
 }
 
 // =====================
@@ -474,7 +475,7 @@ document.getElementById("tree").style.display="block";
 log("publishEdits error: "+err);
 
 }
-
+document.getElementById("editButtons").style.display="none";
 }
 
 // =====================
@@ -488,7 +489,7 @@ document.getElementById("editForm").innerHTML="";
 document.getElementById("tree").style.display="block";
 
 log("Edit canceled, tree restored");
-
+document.getElementById("editButtons").style.display="none";
 }
 // =====================
 // Drop Edits
@@ -523,7 +524,7 @@ document.getElementById("editForm").innerHTML="";
 log("dropEdits error: "+err);
 
 }
-
+document.getElementById("editButtons").style.display="none";
 }
 </script>
 `;
