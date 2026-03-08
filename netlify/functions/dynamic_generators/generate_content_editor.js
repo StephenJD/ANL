@@ -1,10 +1,10 @@
 // \netlify\functions\dynamic_generators\generate_content_editor.js
 
-import { log } from "../log.js";
-import { normalizeFrontMatter } from "../normalizeFrontMatter.js";
-import { renderAccessOptions } from "../renderAccessOptions.js";
-import { renderExtraFields } from "../renderExtraFields.js";
-import { renderSubOptions } from "../renderSubOptions.js";
+import { log } from "../webeditor/log.js";
+import { normalizeFrontMatter } from "../webeditor/normalizeFrontMatter.js";
+import { renderAccessOptions } from "../webeditor/renderAccessOptions.js";
+import { renderExtraFields } from "../webeditor/renderExtraFields.js";
+import { renderSubOptions } from "../webeditor/renderSubOptions.js";
 
 export default async function generate_content_editor() {
 
