@@ -9,10 +9,17 @@ window.normalizeFrontMatter = function (mdContent) {
         key = key.trim().toLowerCase();
         let value = rest.join(':').trim();
         if(value.startsWith('[') && value.endsWith(']')) {
-            value = JSON.parse(value.toLowerCase());
-        } else {
-            value = value.toLowerCase();
-        }
+
+    value = value
+        .slice(1,-1)
+        .split(',')
+        .map(v => v.trim().toLowerCase());
+
+} else {
+
+    value = value.toLowerCase();
+
+}
         front[key] = value;
     });
     return front;
