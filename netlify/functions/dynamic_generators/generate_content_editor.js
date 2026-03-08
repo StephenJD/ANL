@@ -84,7 +84,7 @@ white-space:pre-wrap;
   async function loadTree() {
     try {
       log("Loading tree...");
-      const res = await fetch("/.netlify/functions/list_content_tree");
+      const res = await fetch("/.netlify/functions/webeditor/list_content_tree");
       log("Tree HTTP status: " + res.status);
       if(!res.ok) throw new Error("HTTP "+res.status);
 
@@ -103,7 +103,7 @@ white-space:pre-wrap;
             document.getElementById("editButtons").style.display = "block";
             document.getElementById("tree").style.display = "none";
 
-            const res = await fetch("/.netlify/functions/start_edit", {
+            const res = await fetch("/.netlify/functions/webeditor/start_edit", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ file })
