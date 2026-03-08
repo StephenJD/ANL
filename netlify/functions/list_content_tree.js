@@ -1,132 +1,76 @@
-// netlify/functions/list_content_tree.js
+// \netlify\functions\list_content_tree.js
 import fs from "fs";
 import path from "path";
+import { qualifyTitle } from "../../static/js/webeditor/qualifyTitle.js";
 
-const CONTENT_ROOT = path.join(process.cwd(), "content");
+function parseFrontMatter(md) {
+  const fm = { title: null, type: null };
+  if (!md || typeof md !== "string") return fm;
 
-function parseFrontmatter(filePath) {
+  const parts = md.split("---");
+  if (parts.length < 3) return fm;
 
-  try {
-
-    const text = fs.readFileSync(filePath, "utf8");
-
-    if (!text.startsWith("---")) return {};
-
-    const end = text.indexOf("---", 3);
-    if (end === -1) return {};
-
-    const raw = text.slice(3, end).trim();
-
-    const obj = {};
-
-    raw.split("\n").forEach(line => {
-
-      const i = line.indexOf(":");
-      if (i === -1) return;
-
-      const key = line.slice(0, i).trim();
-      const val = line.slice(i + 1).trim().replace(/^["']|["']$/g, "");
-
-      obj[key] = val;
-
-    });
-
-    return obj;
-
-  } catch {
-    return {};
-  }
-
-}
-
-function getFolderIndexType(dir) {
-
-  try {
-
-    const indexPath = path.join(dir, "_index.md");
-
-    if (!fs.existsSync(indexPath)) return null;
-
-    const fm = parseFrontmatter(indexPath);
-
-    return fm.type || null;
-
-  } catch {
-    return null;
-  }
-
+  const frontRaw = parts[1];
+  frontRaw.split("\n").forEach(line => {
+    const i = line.indexOf(":");
+    if (i > 0) {
+      const key = line.slice(0,i).trim();
+      let value = line.slice(i+1).trim();
+      const hashIdx = value.indexOf("#");
+      if (hashIdx >= 0) value = value.slice(0,hashIdx).trim();
+      if (key === "title") fm.title = value;
+      if (key === "type") fm.type = value;
+    }
+  });
+  return fm;
 }
 
 function walkDir(dir) {
-  const entries = fs.readdirSync(dir, { withFileTypes: true });
-  entries.sort((a, b) => a.name.localeCompare(b.name)); // filename order
-
-  let indexNode = null;
-  const children = [];
-
-  for (const entry of entries) {
-    const fullPath = path.join(dir, entry.name);
-
-    if (entry.isDirectory()) {
-      const sub = walkDir(fullPath);
-      if (sub) children.push(sub);
-      continue;
+  const items = [];
+  try {
+    const entries = fs.readdirSync(dir, { withFileTypes: true }).sort((a,b)=> a.name.localeCompare(b.name));
+    for (const entry of entries) {
+      const fullPath = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        items.push({
+          type: "folder",
+          name: entry.name,
+          children: walkDir(fullPath)
+        });
+      } else if (entry.name.toLowerCase().endsWith(".md")) {
+        const raw = fs.readFileSync(fullPath, "utf-8");
+        const fm = parseFrontMatter(raw);
+        items.push({
+          type: fm.type || "dynamic",
+          name: entry.name,
+          title: fm.title || entry.name,
+          qualifiedTitle: qualifyTitle({ type: fm.type || "dynamic", title: fm.title || entry.name, name: entry.name }),
+          path: path.relative(process.cwd(), fullPath).replace(/\\/g, "/")
+        });
+      }
     }
-
-    if (!entry.name.toLowerCase().endsWith(".md")) continue;
-
-    const fm = parseFrontmatter(fullPath);
-    const title = fm.title || entry.name;
-    const isIndex = entry.name.toLowerCase() === "_index.md";
-
-    const role = isIndex
-      ? (fm.type || "").toLowerCase().includes("collated") ? "Collated" : "Navigation"
-      : (indexNode && indexNode.type === "Collated") ? "Section" : "Content";
-
-    const node = {
-      type: isIndex ? role : "file",
-      qualifiedTitle: `${role}: ${title}`,
-      path: path.relative(process.cwd(), fullPath).replace(/\\/g, "/")
-    };
-
-    if (isIndex) indexNode = node;
-    else children.push(node);
+  } catch (err) {
+    console.error("[list_content_tree] Error reading dir:", dir, err);
   }
-
-  if (!indexNode && children.length === 0) return null; // empty folder
-
-  if (indexNode) {
-    indexNode.children = children.length ? children : undefined;
-    return indexNode;
-  }
-
-  // folder with only non-index files → wrap in pseudo node
-  return { type: "folder", qualifiedTitle: path.basename(dir), children };
+  return items;
 }
 
-export default async function handler() {
-
+export default async function handler(event, context) {
   try {
+    const rootDir = path.join(process.cwd(), "content");
+    console.log("Listing content at:", rootDir, fs.existsSync(rootDir));
 
-    const tree = walkDir(CONTENT_ROOT);
+    const tree = walkDir(rootDir);
 
     return new Response(JSON.stringify(tree), {
       status: 200,
       headers: { "Content-Type": "application/json" }
     });
-
   } catch (err) {
-
-    console.error("[list_content_tree]", err);
-
-    return new Response(
-      JSON.stringify({ error: "Failed to generate content tree" }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json" }
-      }
-    );
-
+    console.error("[list_content_tree] Fatal error:", err);
+    return new Response(JSON.stringify({ error: "Failed to generate content tree" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" }
+    });
   }
-
-                }
+}
