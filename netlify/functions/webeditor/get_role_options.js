@@ -1,5 +1,5 @@
-// /netlify/functions/get_role_options.js
-import { getSecureItem } from "./multiSecureStore.js";
+// /netlify/functions/webeditor/get_role_options.js
+import { getSecureItem } from "../multiSecureStore.js";
 
 let cachedRoles = null;
 let cacheTimestamp = 0;
