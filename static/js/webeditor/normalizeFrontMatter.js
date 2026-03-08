@@ -1,5 +1,5 @@
 // \static\js\webeditor\normalizeFrontMatter.js
-window.normalizeFrontMatter = function (mdContent) {
+export function normalizeFrontMatter(mdContent) {
     const front = {};
     const lines = mdContent.split('---')[1]?.split('\n') || [];
     lines.forEach(line => {
