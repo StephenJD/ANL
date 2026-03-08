@@ -1,7 +1,7 @@
 // \netlify\functions\dynamic_generators\generate_content_editor.js
 
 export default async function generate_content_editor() {
-return `
+  return `
 <div class="wide-content">
 
 <h1>Content Editor</h1>
@@ -11,16 +11,13 @@ return `
 <div id="tree" style="width:320px;border-right:1px solid #ccc;padding-right:20px;"></div>
 
 <div id="editor" style="flex:1;">
-
-<form id="editForm"></form>
-
-<div id="editButtons" style="margin-top:20px;display:none;">
-<button type="button" onclick="saveEdit()">Save</button>
-<button type="button" onclick="publishEdits()">Publish</button>
-<button type="button" onclick="dropEdits()">Drop Edits</button>
-<button type="button" onclick="cancelEdit()">Cancel</button>
-</div>
-
+  <form id="editForm"></form>
+  <div id="editButtons" style="margin-top:20px;display:none;">
+    <button type="button" onclick="saveEdit()">Save</button>
+    <button type="button" onclick="publishEdits()">Publish</button>
+    <button type="button" onclick="dropEdits()">Drop Edits</button>
+    <button type="button" onclick="cancelEdit()">Cancel</button>
+  </div>
 </div>
 
 </div>
@@ -51,26 +48,7 @@ function log(msg) {
 log("Step 1: generator script started");
 
 // =====================
-// Globals
-// =====================
-
-let currentFile = null;
-let rawBody = "";
-let frontMatter = {};
-let accessOptionsCache = null;
-
-// =====================
-// Init editor
-// =====================
-
-function initEditor() {
-  log("Step 2: initializing editor");
-  log("Tree element exists: " + !!document.getElementById("tree"));
-  loadTree();
-}
-
-// =====================
-// Script loader
+// Load client-side helpers
 // =====================
 
 async function loadScript(src) {
@@ -83,270 +61,74 @@ async function loadScript(src) {
   });
 }
 
-// =====================
-// Load helpers
-// =====================
-
 (async()=>{
-  try{
-    await loadScript("/js/webeditor/normalizeFrontMatter.js");
-    await loadScript("/js/webeditor/renderAccessOptions.js");
-    await loadScript("/js/webeditor/renderExtraFields.js");
-    await loadScript("/js/webeditor/renderSubOptions.js");
+  try {
+    await loadScript("/js/webeditor/qualifyTitle.js");
+    await loadScript("/js/webeditor/renderTree.js");
+    await loadScript("/js/webeditor/parseMarkdown.js");
+    await loadScript("/js/webeditor/renderForm.js");
+    await loadScript("/js/webeditor/editActions.js");
 
     log("All helper scripts loaded successfully");
 
-    initEditor();
+    // =====================
+    // Globals
+    // =====================
+    let currentFile = null;
+    let rawBody = "";
 
-  }catch(err){
+    // Setup edit actions
+    const { saveEdit, publishEdits, cancelEdit, dropEdits } = setupEditActions(
+      { value: currentFile },
+      { value: rawBody }
+    );
+
+    // =====================
+    // Load Tree
+    // =====================
+    async function loadTree(){
+      try {
+        log("Loading tree...");
+        const res = await fetch("/.netlify/functions/list_content_tree");
+        log("Tree HTTP status: "+res.status);
+        if(!res.ok) throw new Error("HTTP "+res.status);
+        const tree = await res.json();
+        log("Tree loaded successfully");
+
+        document.getElementById("tree").appendChild(
+          renderTree(tree, async (file) => {
+            currentFile = file;
+            document.getElementById("editButtons").style.display = "block";
+            document.getElementById("tree").style.display = "none";
+
+            const res = await fetch("/.netlify/functions/start_edit", {
+              method:"POST",
+              headers:{"Content-Type":"application/json"},
+              body: JSON.stringify({ file })
+            });
+
+            if(!res.ok) throw new Error("HTTP "+res.status);
+            const data = await res.json();
+            const parsed = parseMarkdown(data.content);
+            rawBody = parsed.rawBody;
+            await renderForm(parsed.frontMatter);
+          })
+        );
+
+      } catch(err){
+        log("loadTree error: "+err);
+      }
+    }
+
+    // =====================
+    // Initialize editor
+    // =====================
+    loadTree();
+
+  } catch(err) {
     log("Script loading error: "+err);
   }
 })();
-
-</script>
-
-<script>
-
-// =====================
-// Load Tree
-// =====================
-
-async function loadTree(){
-  try{
-    log("Loading tree...");
-    const res = await fetch("/.netlify/functions/list_content_tree");
-    log("Tree HTTP status: "+res.status);
-    if(!res.ok) throw new Error("HTTP "+res.status);
-
-    let tree = await res.json();
-    log("Tree loaded successfully");
-
-    // ensure top-level is always an array
-    const treeNodes = tree ? (Array.isArray(tree) ? tree : [tree]) : [];
-
-    document.getElementById("tree").appendChild(renderTree(treeNodes));
-
-  }catch(err){
-    log("loadTree error: "+err);
-  }
-}
-
-// =====================
-// Render Tree
-// =====================
-
-function renderTree(nodes) {
-  const ul = document.createElement("ul");
-  ul.style.listStyle = "none";
-  ul.style.paddingLeft = "15px";
-
-  nodes.forEach(node => {
-    const li = document.createElement("li");
-
-    const a = document.createElement("a");
-    a.href = "#";
-    a.textContent = node.qualifiedTitle;
-    a.style.display = "block";
-    a.style.cursor = "pointer";
-
-    a.onclick = e => {
-      e.preventDefault();
-      log("Clicked file: " + node.path);
-      if (node.path) {
-        currentFile = node.path;
-        document.getElementById("editButtons").style.display = "block";
-        startEdit(node.path).catch(err => log("startEdit error: "+err));
-      }
-    };
-
-    li.appendChild(a);
-
-    if(node.children && node.children.length){
-      li.appendChild(renderTree(node.children));
-    }
-
-    ul.appendChild(li);
-  });
-
-  return ul;
-}
-
-// =====================
-// Start Editing
-// =====================
-
-async function startEdit(file){
-  try{
-    log("startEdit called for "+file);
-    currentFile = file;
-    document.getElementById("editButtons").style.display="block";
-    document.getElementById("tree").style.display="none";
-
-    const res = await fetch("/.netlify/functions/start_edit",{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({file})
-    });
-
-    log("start_edit HTTP status: "+res.status);
-    if(!res.ok) throw new Error("HTTP "+res.status);
-
-    const data = await res.json();
-    parseMarkdown(data.content);
-    log("File loaded: "+file);
-
-  }catch(err){
-    log("startEdit error: "+err);
-  }
-}
-
-// =====================
-// Parse Markdown
-// =====================
-
-function parseMarkdown(md){
-  if(typeof md !== "string") throw new Error("Markdown not string");
-  rawBody = md.split("---").slice(2).join("---");
-  frontMatter = normalizeFrontMatter(md);
-  renderForm();
-}
-
-// =====================
-// Render Form
-// =====================
-
-async function renderForm(){
-  const form = document.getElementById("editForm");
-  form.innerHTML = "";
-
-  // Page type
-  const pageTypeLabel = document.createElement("label");
-  pageTypeLabel.textContent = "Page type";
-  pageTypeLabel.style.display="block";
-  pageTypeLabel.style.marginTop="10px";
-
-  const pageTypeSelect = document.createElement("select");
-  ["content page","navigation page"].forEach(v=>{
-    const opt = document.createElement("option");
-    opt.value = v;
-    opt.textContent = v;
-    if(frontMatter["page_type"]===v) opt.selected = true;
-    pageTypeSelect.appendChild(opt);
-  });
-  pageTypeSelect.name="page_type";
-  pageTypeSelect.style.width="320px";
-  pageTypeSelect.onchange = ()=>renderSubOptions(pageTypeSelect.value,form,frontMatter);
-
-  form.appendChild(pageTypeLabel);
-  form.appendChild(pageTypeSelect);
-
-  // Title
-  const titleLabel = document.createElement("label");
-  titleLabel.textContent="Title (required)";
-  titleLabel.style.display="block";
-  titleLabel.style.marginTop="10px";
-
-  const titleInput = document.createElement("input");
-  titleInput.type="text";
-  titleInput.value=frontMatter["title"]||"";
-  titleInput.name="title";
-  titleInput.style.width="320px";
-
-  form.appendChild(titleLabel);
-  form.appendChild(titleInput);
-
-  // Summary
-  const summaryLabel=document.createElement("label");
-  summaryLabel.textContent="Summary (optional)";
-  summaryLabel.style.display="block";
-  summaryLabel.style.marginTop="10px";
-
-  const summaryInput=document.createElement("textarea");
-  summaryInput.name="summary";
-  summaryInput.value=frontMatter["summary"]||"";
-  summaryInput.rows=3;
-  summaryInput.style.width="320px";
-
-  form.appendChild(summaryLabel);
-  form.appendChild(summaryInput);
-
-  await renderAccessOptions(form,frontMatter,accessOptionsCache);
-  renderSubOptions(pageTypeSelect.value,form,frontMatter);
-  renderExtraFields(form,frontMatter);
-}
-
-// =====================
-// Build Markdown
-// =====================
-
-function buildMarkdown(){
-  const form=document.getElementById("editForm");
-  const data=new FormData(form);
-  let front="---\\n";
-  for(const[k,v]of data.entries()) front+=k+": "+v+"\\n";
-  front+="---\\n";
-  return front + rawBody;
-}
-
-// =====================
-// Save
-// =====================
-
-async function saveEdit(){
-  try{
-    const content=buildMarkdown();
-    const res=await fetch("/.netlify/functions/save_edit",{
-      method:"POST",
-      body:JSON.stringify({file:currentFile,content})
-    });
-    if(!res.ok) throw new Error("HTTP "+res.status);
-    document.getElementById("tree").style.display="block";
-  }catch(err){ log("saveEdit error: "+err); }
-  document.getElementById("editButtons").style.display="none";
-}
-
-// =====================
-// Publish
-// =====================
-
-async function publishEdits(){
-  try{
-    const res=await fetch("/.netlify/functions/publish_edits",{method:"POST"});
-    if(!res.ok) throw new Error("HTTP "+res.status);
-    document.getElementById("tree").style.display="block";
-  }catch(err){ log("publishEdits error: "+err); }
-  document.getElementById("editButtons").style.display="none";
-}
-
-// =====================
-// Cancel
-// =====================
-
-function cancelEdit(){
-  document.getElementById("editForm").innerHTML="";
-  document.getElementById("tree").style.display="block";
-  document.getElementById("editButtons").style.display="none";
-}
-
-// =====================
-// Drop Edits
-// =====================
-
-async function dropEdits(){
-  try{
-    if(!currentFile){ log("No file selected for drop edits"); return; }
-    const res=await fetch("/.netlify/functions/drop_edit",{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({file:currentFile})
-    });
-    if(!res.ok) throw new Error("HTTP "+res.status);
-    document.getElementById("tree").style.display="block";
-    document.getElementById("editForm").innerHTML="";
-  }catch(err){ log("dropEdits error: "+err); }
-  document.getElementById("editButtons").style.display="none";
-}
-
 </script>
 `;
 }
