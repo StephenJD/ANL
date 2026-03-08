@@ -162,54 +162,43 @@ log("loadTree error: "+err);
 // Render Tree
 // =====================
 
-function renderTree(nodes){
+function renderTree(nodes) {
+  const ul = document.createElement("ul");
+  ul.style.listStyle = "none";
+  ul.style.paddingLeft = "15px";
 
-const ul=document.createElement("ul");
-ul.style.listStyle="none";
-ul.style.paddingLeft="15px";
+  nodes.forEach(node => {
+    const li = document.createElement("li");
 
-nodes.forEach(node=>{
+    // Node label
+    const a = document.createElement("a");
+    a.href = "#";
+    a.textContent = node.qualifiedTitle;
+    a.style.display = "block";
+    a.style.cursor = "pointer";
 
-const li=document.createElement("li");
+    a.onclick = e => {
+      e.preventDefault();
+      log("Clicked file: " + node.path);
 
-if(node.type==="folder"){
+      if (node.path) {
+        currentFile = node.path;
+        document.getElementById("editButtons").style.display = "block";
+        startEdit(node.path).catch(err => log("startEdit error: " + err));
+      }
+    };
 
-const label=document.createElement("div");
+    li.appendChild(a);
 
-label.textContent=node.name;
-label.style.fontWeight="bold";
+    // Children
+    if (node.children && node.children.length) {
+      li.appendChild(renderTree(node.children));
+    }
 
-li.appendChild(label);
-li.appendChild(renderTree(node.children));
-}else{
+    ul.appendChild(li);
+  });
 
-const a=document.createElement("a");
-
-a.href="#";
-a.textContent=node.qualifiedTitle || node.name;
-a.style.display="block";
-a.style.cursor="pointer";
-
-a.onclick=(e)=>{
-
-e.preventDefault();
-
-log("Clicked file: "+node.path);
-
-startEdit(node.path).catch(err=>log("startEdit error: "+err));
-
-};
-
-li.appendChild(a);
-
-}
-
-ul.appendChild(li);
-
-});
-
-return ul;
-
+  return ul;
 }
 
 // =====================
