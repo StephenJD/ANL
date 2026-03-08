@@ -1,7 +1,6 @@
-// \netlify\functions\webeditor\renderExtraFields.js
-import { log } from './log.js';
+// \static/js\webeditor\renderExtraFields.js
 
-export function renderExtraFields(form, frontMatter) {
+function renderExtraFields(form, frontMatter) {
     Object.entries(frontMatter).forEach(([k,v]) => {
         if(['title','page_type','summary','access','content_type','navigation_options'].includes(k)) return;
 
