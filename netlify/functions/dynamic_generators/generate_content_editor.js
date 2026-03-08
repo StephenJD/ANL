@@ -12,17 +12,46 @@ return `
 function log(msg) {
     const logDiv = document.getElementById("logDiv");
     if(logDiv) {
-        logDiv.textContent += msg + "\n";
+        logDiv.textContent += msg + "\\n";
         logDiv.scrollTop = logDiv.scrollHeight;
     }
     console.log(msg);
 }
+log("Step 1: generator script started");
 </script>
 
-<script src="/js/webeditor/normalizeFrontMatter.js"></script>
-<script src="/js/webeditor/renderAccessOptions.js"></script>
-<script src="/js/webeditor/renderExtraFields.js"></script>
-<script src="/js/webeditor/renderSubOptions.js"></script>
+<script>
+// ===== Script loader with logging =====
+async function loadScript(src) {
+    return new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = src;
+        s.onload = () => {
+            log("Loaded script: " + src);
+            resolve();
+        };
+        s.onerror = () => {
+            log("Failed to load script: " + src);
+            reject(new Error("Failed to load " + src));
+        };
+        document.head.appendChild(s);
+    });
+}
+
+(async () => {
+    try {
+        await loadScript("/js/webeditor/normalizeFrontMatter.js");
+        await loadScript("/js/webeditor/renderAccessOptions.js");
+        await loadScript("/js/webeditor/renderExtraFields.js");
+        await loadScript("/js/webeditor/renderSubOptions.js");
+
+        log("All helper scripts loaded successfully");
+        initEditor();
+    } catch(err) {
+        log("Script loading error: " + err);
+    }
+})();
+</script>
 
 <div style="display:flex;gap:40px;">
 
@@ -39,7 +68,6 @@ function log(msg) {
 </div>
 
 </div>
-
 </div>
 
 <div id="logDiv" style="
@@ -63,18 +91,29 @@ let rawBody = "";
 let frontMatter = {};
 let accessOptionsCache = null;
 
+function initEditor() {
+    log("Step 2: initializing editor, checking tree div existence: " + !!document.getElementById("tree"));
+    loadTree();
+}
+
 // =====================
 // Load Tree
 // =====================
 async function loadTree() {
     try {
+        log("loadTree started");
         const res = await fetch("/.netlify/functions/list_content_tree");
         if(!res.ok) throw new Error("HTTP " + res.status);
         const tree = await res.json();
-        window.log("Tree loaded successfully");
+        log("Tree data loaded: " + JSON.stringify(tree));
+        if(typeof renderTree !== 'function') {
+            log("renderTree is not defined!");
+            return;
+        }
         document.getElementById("tree").appendChild(renderTree(tree));
+        log("Tree rendered");
     } catch(err) {
-        window.log("loadTree error: " + err);
+        log("loadTree error: " + err);
     }
 }
 
@@ -82,6 +121,7 @@ async function loadTree() {
 // Render Tree
 // =====================
 function renderTree(nodes) {
+    log("renderTree called");
     const ul = document.createElement("ul");
     ul.style.listStyle = "none";
     ul.style.paddingLeft = "15px";
@@ -101,8 +141,8 @@ function renderTree(nodes) {
             a.style.cursor = "pointer";
             a.onclick = (e) => {
                 e.preventDefault();
-                window.log("Clicked file: " + node.path);
-                startEdit(node.path).catch(err => window.log("startEdit error: " + err));
+                log("Clicked file: " + node.path);
+                startEdit(node.path).catch(err => log("startEdit error: " + err));
             };
             li.appendChild(a);
         }
@@ -118,10 +158,11 @@ function renderTree(nodes) {
 // =====================
 async function startEdit(file) {
     try {
-        window.log("startEdit called for " + file);
+        log("startEdit called for " + file);
         currentFile = file;
 
-        document.getElementById("tree").style.display = "none";
+        const treeDiv = document.getElementById("tree");
+        if(treeDiv) treeDiv.style.display = "none";
 
         const res = await fetch("/.netlify/functions/start_edit", {
             method: "POST",
@@ -132,9 +173,9 @@ async function startEdit(file) {
         const data = await res.json();
 
         parseMarkdown(data.content);
-        window.log("File loaded: " + file);
+        log("File loaded: " + file);
     } catch(err) {
-        window.log("startEdit error: " + err);
+        log("startEdit error: " + err);
     }
 }
 
@@ -142,7 +183,11 @@ async function startEdit(file) {
 // Parse Markdown
 // =====================
 function parseMarkdown(md) {
-    md = typeof md === "string" ? md : (md.content || "");
+    log("parseMarkdown called, type: " + typeof md);
+    if(typeof md !== "string") {
+        log("md is not a string, attempting to read .content property");
+        md = md.content || "";
+    }
 
     const parts = md.split("---");
     const frontRaw = parts[1] || "";
@@ -160,8 +205,14 @@ function parseMarkdown(md) {
         }
     });
 
-    frontMatter = window.normalizeFrontMatter(fields);
-    window.log("Parsed front matter: " + JSON.stringify(frontMatter));
+    if(typeof normalizeFrontMatter !== 'function') {
+        log("normalizeFrontMatter not defined!");
+        frontMatter = fields;
+    } else {
+        frontMatter = normalizeFrontMatter(fields);
+    }
+
+    log("Parsed front matter: " + JSON.stringify(frontMatter));
 
     renderForm();
 }
@@ -171,63 +222,22 @@ function parseMarkdown(md) {
 // =====================
 async function renderForm() {
     const form = document.getElementById("editForm");
+    if(!form) {
+        log("editForm not found!");
+        return;
+    }
     form.innerHTML = "";
 
-    // --- Page Type ---
-    const pageTypeLabel = document.createElement("label");
-    pageTypeLabel.textContent = "Page type";
-    pageTypeLabel.style.display = "block";
-    pageTypeLabel.style.marginTop = "10px";
+    if(typeof renderAccessOptions !== 'function') log("renderAccessOptions not defined!");
+    else await renderAccessOptions(form, frontMatter, accessOptionsCache);
 
-    const pageTypeSelect = document.createElement("select");
-    ["content page","navigation page"].forEach(v => {
-        const opt = document.createElement("option");
-        opt.value = v;
-        opt.textContent = v;
-        if(frontMatter["page_type"] === v) opt.selected = true;
-        pageTypeSelect.appendChild(opt);
-    });
-    pageTypeSelect.name = "page_type";
-    pageTypeSelect.style.width = "320px";
-    pageTypeSelect.onchange = () => window.renderSubOptions(pageTypeSelect.value, form, frontMatter);
+    if(typeof renderSubOptions !== 'function') log("renderSubOptions not defined!");
+    else renderSubOptions(frontMatter["page_type"] || "content page", form, frontMatter);
 
-    form.appendChild(pageTypeLabel);
-    form.appendChild(pageTypeSelect);
+    if(typeof renderExtraFields !== 'function') log("renderExtraFields not defined!");
+    else renderExtraFields(form, frontMatter);
 
-    // --- Title ---
-    const titleLabel = document.createElement("label");
-    titleLabel.textContent = "Title (required)";
-    titleLabel.style.display = "block";
-    titleLabel.style.marginTop = "10px";
-    const titleInput = document.createElement("input");
-    titleInput.type = "text";
-    titleInput.value = frontMatter["title"] || "";
-    titleInput.name = "title";
-    titleInput.style.width = "320px";
-    form.appendChild(titleLabel);
-    form.appendChild(titleInput);
-
-    // --- Summary ---
-    const summaryLabel = document.createElement("label");
-    summaryLabel.textContent = "Summary (optional)";
-    summaryLabel.style.display = "block";
-    summaryLabel.style.marginTop = "10px";
-    const summaryInput = document.createElement("textarea");
-    summaryInput.name = "summary";
-    summaryInput.value = frontMatter["summary"] || "";
-    summaryInput.rows = 3;
-    summaryInput.style.width = "320px";
-    form.appendChild(summaryLabel);
-    form.appendChild(summaryInput);
-
-    // --- Access ---
-    await window.renderAccessOptions(form, frontMatter, accessOptionsCache);
-
-    // --- Sub-options ---
-    window.renderSubOptions(pageTypeSelect.value, form, frontMatter);
-
-    // --- Remaining fields ---
-    window.renderExtraFields(form, frontMatter);
+    log("Form rendered");
 }
 
 // =====================
@@ -257,10 +267,11 @@ async function saveEdit() {
             body: JSON.stringify({ file: currentFile, content })
         });
         if(!res.ok) throw new Error("HTTP " + res.status);
-        window.log("Saved: " + currentFile);
-        document.getElementById("tree").style.display = "block";
+        log("Saved: " + currentFile);
+        const treeDiv = document.getElementById("tree");
+        if(treeDiv) treeDiv.style.display = "block";
     } catch(err) {
-        window.log("saveEdit error: " + err);
+        log("saveEdit error: " + err);
     }
 }
 
@@ -268,26 +279,22 @@ async function publishEdits() {
     try {
         const res = await fetch("/.netlify/functions/publish_edits", { method: "POST" });
         if(!res.ok) throw new Error("HTTP " + res.status);
-        window.log("All edits published");
-        document.getElementById("tree").style.display = "block";
+        log("All edits published");
+        const treeDiv = document.getElementById("tree");
+        if(treeDiv) treeDiv.style.display = "block";
     } catch(err) {
-        window.log("publishEdits error: " + err);
+        log("publishEdits error: " + err);
     }
 }
 
 function cancelEdit() {
-    document.getElementById("editForm").innerHTML = "";
-    document.getElementById("tree").style.display = "block";
-    window.log("Edit canceled, tree restored");
+    const form = document.getElementById("editForm");
+    if(form) form.innerHTML = "";
+    const treeDiv = document.getElementById("tree");
+    if(treeDiv) treeDiv.style.display = "block";
+    log("Edit canceled, tree restored");
 }
 
-// =====================
-// Init
-// =====================
-loadTree();
-
 </script>
-
-</div>
 `;
 }
