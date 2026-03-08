@@ -131,12 +131,15 @@ async function startEdit(file) {
 // Parse Markdown
 // =====================
 function parseMarkdown(md) {
+    // Ensure we have a string
+    md = typeof md === "string" ? md : (md.content || "");
+
     const parts = md.split("---");
     const frontRaw = parts[1] || "";
     rawBody = parts.slice(2).join("---");
 
     const fields = {};
-    frontRaw.split("\\n").forEach(line => {
+    frontRaw.split("\n").forEach(line => {
         const i = line.indexOf(":");
         if(i > 0) {
             let key = line.slice(0,i).trim();
