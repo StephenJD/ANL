@@ -1,5 +1,5 @@
-// \netlify\functions\webeditor\log.js
-export function log(msg) {
+// \static\js\webeditor\log.js
+function log(msg) {
     const logDiv = document.getElementById("logDiv");
     if(logDiv) {
         logDiv.textContent += msg + "\n";
