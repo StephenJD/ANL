@@ -1,6 +1,6 @@
 // \static/js\webeditor\renderSubOptions.js
 
-function renderSubOptions(pageType, form, frontMatter) {
+window.renderSubOptions = function(pageType, form, frontMatter) {
     let existing = document.getElementById("subOptionsContainer");
     if(existing) form.removeChild(existing);
 
