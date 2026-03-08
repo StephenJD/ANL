@@ -1,17 +1,17 @@
 // \netlify\functions\dynamic_generators\generate_content_editor.js
 
-import { log } from "../webeditor/log.js";
-import { normalizeFrontMatter } from "../webeditor/normalizeFrontMatter.js";
-import { renderAccessOptions } from "../webeditor/renderAccessOptions.js";
-import { renderExtraFields } from "../webeditor/renderExtraFields.js";
-import { renderSubOptions } from "../webeditor/renderSubOptions.js";
-
 export default async function generate_content_editor() {
 
 return `
 <div class="wide-content">
 
 <h1>Content Editor</h1>
+
+<script src="/js/webeditor/log.js"></script>
+<script src="/js/webeditor/normalizeFrontMatter.js"></script>
+<script src="/js/webeditor/renderAccessOptions.js"></script>
+<script src="/js/webeditor/renderExtraFields.js"></script>
+<script src="/js/webeditor/renderSubOptions.js"></script>
 
 <div style="display:flex;gap:40px;">
 
