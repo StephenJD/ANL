@@ -15,10 +15,10 @@ function parseFrontMatter(md) {
   frontRaw.split("\n").forEach(line => {
     const i = line.indexOf(":");
     if (i > 0) {
-      const key = line.slice(0,i).trim();
-      let value = line.slice(i+1).trim();
+      const key = line.slice(0, i).trim();
+      let value = line.slice(i + 1).trim();
       const hashIdx = value.indexOf("#");
-      if (hashIdx >= 0) value = value.slice(0,hashIdx).trim();
+      if (hashIdx >= 0) value = value.slice(0, hashIdx).trim();
       if (key === "title") fm.title = value;
       if (key === "type") fm.type = value;
     }
@@ -30,42 +30,60 @@ function parseFrontMatter(md) {
 function walkDir(dir, parentType = null) {
   const items = [];
   try {
-    const entries = fs.readdirSync(dir, { withFileTypes: true }).sort((a,b) => a.name.localeCompare(b.name));
+    const entries = fs.readdirSync(dir, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name));
+
+    // First, check if _index.md exists in this folder
+    const indexEntry = entries.find(e => e.isFile() && e.name.toLowerCase() === "_index.md");
+    let folderType = null;
+    let folderTitle = null;
+
+    if (indexEntry) {
+      const fullIndexPath = path.join(dir, indexEntry.name);
+      const raw = fs.readFileSync(fullIndexPath, "utf-8");
+      const fm = parseFrontMatter(raw);
+      folderType = fm.type || "dynamic";
+      folderTitle = fm.title || indexEntry.name;
+
+      // Add the _index.md as a pseudo-folder node
+      items.push({
+        type: folderType,
+        name: indexEntry.name,
+        title: folderTitle,
+        qualifiedTitle: qualifyTitle({ type: folderType, title: folderTitle, name: indexEntry.name }, parentType),
+        path: path.relative(process.cwd(), fullIndexPath).replace(/\\/g, "/"),
+        children: []
+      });
+    }
+
+    // Process all other entries
     for (const entry of entries) {
       const fullPath = path.join(dir, entry.name);
 
       if (entry.isDirectory()) {
-        const children = walkDir(fullPath, null); // parentType unknown until _index.md read
-        items.push({
+        const children = walkDir(fullPath, folderType);
+        // Use folder name if no _index.md
+        const childFolderNode = {
           type: "folder",
           name: entry.name,
+          title: entry.name,
+          qualifiedTitle: qualifyTitle({ type: folderType || "folder", title: entry.name, name: entry.name }, parentType),
           children
-        });
-      } else if (entry.name.toLowerCase().endsWith(".md")) {
+        };
+        items.push(childFolderNode);
+      } else if (entry.name.toLowerCase().endsWith(".md") && entry.name.toLowerCase() !== "_index.md") {
         const raw = fs.readFileSync(fullPath, "utf-8");
         const fm = parseFrontMatter(raw);
         const nodeType = fm.type || "dynamic";
-        const qualified = qualifyTitle({ type: nodeType, title: fm.title || entry.name, name: entry.name }, parentType);
+        const nodeTitle = fm.title || entry.name;
         items.push({
           type: nodeType,
           name: entry.name,
-          title: fm.title || entry.name,
-          qualifiedTitle: qualified,
+          title: nodeTitle,
+          qualifiedTitle: qualifyTitle({ type: nodeType, title: nodeTitle, name: entry.name }, folderType),
           path: path.relative(process.cwd(), fullPath).replace(/\\/g, "/")
         });
       }
     }
-
-    // Determine if folder has _index.md
-    const indexMd = items.find(i => i.name.toLowerCase() === "_index.md");
-    const parentTypeForChildren = indexMd ? indexMd.type : null;
-
-    // Let qualifyTitle handle all children based on parentType
-    items.forEach(i => {
-      if (i !== indexMd) {
-        i.qualifiedTitle = qualifyTitle(i, parentTypeForChildren);
-      }
-    });
 
   } catch (err) {
     console.error("[list_content_tree] Error reading dir:", dir, err);
@@ -91,4 +109,4 @@ export default async function handler(event, context) {
       headers: { "Content-Type": "application/json" }
     });
   }
-      }
+}
