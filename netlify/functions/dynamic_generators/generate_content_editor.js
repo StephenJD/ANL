@@ -7,7 +7,18 @@ return `
 
 <h1>Content Editor</h1>
 
-<script src="/js/webeditor/log.js"></script>
+<script>
+// ===== Inline log helper =====
+function log(msg) {
+    const logDiv = document.getElementById("logDiv");
+    if(logDiv) {
+        logDiv.textContent += msg + "\n";
+        logDiv.scrollTop = logDiv.scrollHeight;
+    }
+    console.log(msg);
+}
+</script>
+
 <script src="/js/webeditor/normalizeFrontMatter.js"></script>
 <script src="/js/webeditor/renderAccessOptions.js"></script>
 <script src="/js/webeditor/renderExtraFields.js"></script>
