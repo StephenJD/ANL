@@ -1,3 +1,4 @@
+// netlify/functions/webeditor/publish_edits.js 
 import fs from "fs";
 import path from "path";
 import fetch from "node-fetch";
