@@ -1,6 +1,6 @@
 // \static/js\webeditor\renderAccessOptions.js
 
-async function renderAccessOptions(form, frontMatter, cache) {
+window.renderAccessOptions = async function(form, frontMatter, cache){
     const accessLabel = document.createElement("label");
     accessLabel.textContent = "Access";
     accessLabel.style.display = "block";
