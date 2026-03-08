@@ -174,10 +174,13 @@ const li=document.createElement("li");
 
 if(node.type==="folder"){
 
-li.style.fontWeight="bold";
+const label=document.createElement("div");
 
+label.textContent=node.name;
+label.style.fontWeight="bold";
+
+li.appendChild(label);
 li.appendChild(renderTree(node.children));
-
 }else{
 
 const a=document.createElement("a");
