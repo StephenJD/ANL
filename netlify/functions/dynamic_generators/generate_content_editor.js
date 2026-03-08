@@ -60,10 +60,10 @@ async function loadTree() {
         const res = await fetch("/.netlify/functions/list_content_tree");
         if(!res.ok) throw new Error("HTTP " + res.status);
         const tree = await res.json();
-        log("Tree loaded successfully");
+        window.log("Tree loaded successfully");
         document.getElementById("tree").appendChild(renderTree(tree));
     } catch(err) {
-        log("loadTree error: " + err);
+        window.log("loadTree error: " + err);
     }
 }
 
@@ -90,8 +90,8 @@ function renderTree(nodes) {
             a.style.cursor = "pointer";
             a.onclick = (e) => {
                 e.preventDefault();
-                log("Clicked file: " + node.path);
-                startEdit(node.path).catch(err => log("startEdit error: " + err));
+                window.log("Clicked file: " + node.path);
+                startEdit(node.path).catch(err => window.log("startEdit error: " + err));
             };
             li.appendChild(a);
         }
@@ -107,7 +107,7 @@ function renderTree(nodes) {
 // =====================
 async function startEdit(file) {
     try {
-        log("startEdit called for " + file);
+        window.log("startEdit called for " + file);
         currentFile = file;
 
         document.getElementById("tree").style.display = "none";
@@ -121,9 +121,9 @@ async function startEdit(file) {
         const data = await res.json();
 
         parseMarkdown(data.content);
-        log("File loaded: " + file);
+        window.log("File loaded: " + file);
     } catch(err) {
-        log("startEdit error: " + err);
+        window.log("startEdit error: " + err);
     }
 }
 
@@ -131,7 +131,6 @@ async function startEdit(file) {
 // Parse Markdown
 // =====================
 function parseMarkdown(md) {
-    // Ensure we have a string
     md = typeof md === "string" ? md : (md.content || "");
 
     const parts = md.split("---");
@@ -144,15 +143,14 @@ function parseMarkdown(md) {
         if(i > 0) {
             let key = line.slice(0,i).trim();
             let value = line.slice(i+1).trim();
-            // ignore everything after #
             const hashIdx = value.indexOf("#");
             if(hashIdx >= 0) value = value.slice(0, hashIdx).trim();
             fields[key] = value;
         }
     });
 
-    frontMatter = normalizeFrontMatter(fields);
-    log("Parsed front matter: " + JSON.stringify(frontMatter));
+    frontMatter = window.normalizeFrontMatter(fields);
+    window.log("Parsed front matter: " + JSON.stringify(frontMatter));
 
     renderForm();
 }
@@ -180,7 +178,7 @@ async function renderForm() {
     });
     pageTypeSelect.name = "page_type";
     pageTypeSelect.style.width = "320px";
-    pageTypeSelect.onchange = () => renderSubOptions(pageTypeSelect.value, form, frontMatter);
+    pageTypeSelect.onchange = () => window.renderSubOptions(pageTypeSelect.value, form, frontMatter);
 
     form.appendChild(pageTypeLabel);
     form.appendChild(pageTypeSelect);
@@ -212,13 +210,13 @@ async function renderForm() {
     form.appendChild(summaryInput);
 
     // --- Access ---
-    await renderAccessOptions(form, frontMatter, accessOptionsCache);
+    await window.renderAccessOptions(form, frontMatter, accessOptionsCache);
 
     // --- Sub-options ---
-    renderSubOptions(pageTypeSelect.value, form, frontMatter);
+    window.renderSubOptions(pageTypeSelect.value, form, frontMatter);
 
     // --- Remaining fields ---
-    renderExtraFields(form, frontMatter);
+    window.renderExtraFields(form, frontMatter);
 }
 
 // =====================
@@ -248,10 +246,10 @@ async function saveEdit() {
             body: JSON.stringify({ file: currentFile, content })
         });
         if(!res.ok) throw new Error("HTTP " + res.status);
-        log("Saved: " + currentFile);
+        window.log("Saved: " + currentFile);
         document.getElementById("tree").style.display = "block";
     } catch(err) {
-        log("saveEdit error: " + err);
+        window.log("saveEdit error: " + err);
     }
 }
 
@@ -259,17 +257,17 @@ async function publishEdits() {
     try {
         const res = await fetch("/.netlify/functions/publish_edits", { method: "POST" });
         if(!res.ok) throw new Error("HTTP " + res.status);
-        log("All edits published");
+        window.log("All edits published");
         document.getElementById("tree").style.display = "block";
     } catch(err) {
-        log("publishEdits error: " + err);
+        window.log("publishEdits error: " + err);
     }
 }
 
 function cancelEdit() {
     document.getElementById("editForm").innerHTML = "";
     document.getElementById("tree").style.display = "block";
-    log("Edit canceled, tree restored");
+    window.log("Edit canceled, tree restored");
 }
 
 // =====================
