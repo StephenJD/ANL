@@ -16,10 +16,11 @@ export default async function generate_content_editor() {
     <textarea id="frontMatterText" style="width:100%;height:200px;margin-bottom:10px;"></textarea>
 
     <div id="editButtons" style="margin-top:20px; display:none;">
-<button type="button" id="saveBtn">Save</button>
-<button type="button" id="publishBtn">Publish</button>
-<button type="button" id="cancelBtn">Cancel</button>
-<button type="button" id="dropBtn">Drop</button>.    </div>
+      <button type="button" id="saveBtn">Save</button>
+      <button type="button" id="publishBtn">Publish</button>
+      <button type="button" id="cancelBtn">Cancel</button>
+      <button type="button" id="dropBtn">Drop</button>
+    </div>
   </div>
 
 </div>
@@ -74,14 +75,21 @@ white-space:pre-wrap;
       try { const mod = await import('/js/webeditor/renderForm.js'); renderFormFn = mod.renderForm; log("renderForm loaded"); }
       catch(e){ log("renderForm load failed: " + e); }
 
-      try { const mod = await import('/js/webeditor/editActions.js'); 
-            ({ saveEdit, publishEdits, cancelEdit, dropEdits } = mod.setupEditActions({value: currentFile}, {value: rawBody})); 
-            log("editActions loaded"); }
-            document.getElementById("saveBtn").addEventListener("click", saveEdit);
-document.getElementById("publishBtn").addEventListener("click", publishEdits);
-document.getElementById("cancelBtn").addEventListener("click", cancelEdit);
-document.getElementById("dropBtn").addEventListener("click", dropEdits);
-      catch(e){ log("editActions load failed: " + e); }
+      try { 
+        const mod = await import('/js/webeditor/editActions.js'); 
+        ({ saveEdit, publishEdits, cancelEdit, dropEdits } =
+          mod.setupEditActions({value: currentFile}, {value: rawBody}));
+
+        document.getElementById("saveBtn").addEventListener("click", saveEdit);
+        document.getElementById("publishBtn").addEventListener("click", publishEdits);
+        document.getElementById("cancelBtn").addEventListener("click", cancelEdit);
+        document.getElementById("dropBtn").addEventListener("click", dropEdits);
+
+        log("editActions loaded and listeners attached");
+
+      } catch(e){
+        log("editActions load failed: " + e);
+      }
 
       log("Step 2: Helper loading complete");
     } catch(err) {
