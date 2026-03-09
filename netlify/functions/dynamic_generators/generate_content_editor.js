@@ -16,11 +16,10 @@ export default async function generate_content_editor() {
     <textarea id="frontMatterText" style="width:100%;height:200px;margin-bottom:10px;"></textarea>
 
     <div id="editButtons" style="margin-top:20px; display:none;">
-      <button type="button" onclick="saveEdit()">Save</button>
-      <button type="button" onclick="publishEdits()">Publish</button>
-      <button type="button" onclick="dropEdits()">Drop Edits</button>
-      <button type="button" onclick="cancelEdit()">Cancel</button>
-    </div>
+<button type="button" id="saveBtn">Save</button>
+<button type="button" id="publishBtn">Publish</button>
+<button type="button" id="cancelBtn">Cancel</button>
+<button type="button" id="dropBtn">Drop</button>.    </div>
   </div>
 
 </div>
@@ -78,6 +77,10 @@ white-space:pre-wrap;
       try { const mod = await import('/js/webeditor/editActions.js'); 
             ({ saveEdit, publishEdits, cancelEdit, dropEdits } = mod.setupEditActions({value: currentFile}, {value: rawBody})); 
             log("editActions loaded"); }
+            document.getElementById("saveBtn").addEventListener("click", saveEdit);
+document.getElementById("publishBtn").addEventListener("click", publishEdits);
+document.getElementById("cancelBtn").addEventListener("click", cancelEdit);
+document.getElementById("dropBtn").addEventListener("click", dropEdits);
       catch(e){ log("editActions load failed: " + e); }
 
       log("Step 2: Helper loading complete");
