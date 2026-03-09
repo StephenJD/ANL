@@ -55,9 +55,7 @@ white-space:pre-wrap;
   // =====================
   async function loadHelpers() {
     try {
-      try { const mod = await import('/js/webeditor/qualifyTitle.js'); qualifyTitleFn = mod.qualifyTitle; log("qualifyTitle loaded"); }
-      catch(e){ log("qualifyTitle failed: "+e); }
-
+      
       try { const mod = await import('/js/webeditor/renderTree.js'); renderTreeFn = mod.renderTree; log("renderTree loaded"); }
       catch(e){ log("renderTree failed: "+e); }
 
