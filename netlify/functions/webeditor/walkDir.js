@@ -21,7 +21,7 @@ export async function walkDir(dir, parentType = null) {
             let type = "document-folder";
 
             if (fs.existsSync(indexPath)) {
-                console.log(`[walkDir] Reading file: ${indexPath}`);
+                console.log(`[walkDir] Reading _index.md: ${indexPath}`);
                 fm = readFrontMatter(indexPath);
                 type = fm.type || type;
             }
@@ -35,8 +35,12 @@ export async function walkDir(dir, parentType = null) {
             };
 
             folderNode.qualifiedTitle = qualifyTitle(folderNode, parentType);
-            console.log(`[walkDir] Raw title: ${folderNode.title}`);
-            console.log(`[walkDir] Qualified title: ${folderNode.qualifiedTitle}`);
+            console.log(`[walkDir] Folder node created:`, {
+                rawTitle: folderNode.title,
+                qualifiedTitle: folderNode.qualifiedTitle,
+                type: folderNode.type,
+                path: folderNode.path
+            });
 
             folderNode.children = await walkDir(fullPath, type);
 
@@ -45,8 +49,7 @@ export async function walkDir(dir, parentType = null) {
             } else {
                 folderNodes.push(folderNode);
             }
-        }
-        else if (entry.isFile() && entry.name.endsWith(".md")) {
+        } else if (entry.isFile() && entry.name.endsWith(".md")) {
             if (entry.name === "_index.md") continue;
 
             console.log(`[walkDir] Reading file: ${fullPath}`);
@@ -60,8 +63,12 @@ export async function walkDir(dir, parentType = null) {
             };
 
             node.qualifiedTitle = qualifyTitle(node, parentType);
-            console.log(`[walkDir] Raw title: ${node.title}`);
-            console.log(`[walkDir] Qualified title: ${node.qualifiedTitle}`);
+            console.log(`[walkDir] File node created:`, {
+                rawTitle: node.title,
+                qualifiedTitle: node.qualifiedTitle,
+                type: node.type,
+                path: node.path
+            });
 
             if (!parentType && node.type === "login") {
                 loginNodes.push(node);
@@ -88,15 +95,26 @@ export async function walkDir(dir, parentType = null) {
 }
 
 function readFrontMatter(filePath) {
-    console.log(`[FM] Reading frontmatter: ${filePath}`);
+    console.log(`[FM] Reading frontmatter from: ${filePath}`);
     const content = fs.readFileSync(filePath, "utf8");
     const fm = {};
-    const lines = content.split(/\r?\n/);
+    const rawLines = [];
+    let inFrontMatter = false;
 
+    const lines = content.split(/\r?\n/);
     for (let line of lines) {
+        rawLines.push(line);
         line = line.trim();
+
+        if (line === "---") {
+            inFrontMatter = !inFrontMatter;
+            continue;
+        }
+
+        if (!inFrontMatter) continue;
         if (!line || line.startsWith("#")) continue;
-        const match = line.match(/^([\w_]+)\s*=\s*(.+)$/);
+
+        const match = line.match(/^([\w_]+)\s*:\s*(.+)$/) || line.match(/^([\w_]+)\s*=\s*(.+)$/);
         if (match) {
             const key = match[1].trim();
             let value = match[2].trim();
@@ -105,10 +123,14 @@ function readFrontMatter(filePath) {
                 value = value.slice(1, -1);
             }
             fm[key] = value;
-            console.log(`[FM] line: ${line}`);
+        } else {
+            console.log(`[FM] Unparsed line: "${line}"`);
         }
     }
 
-    console.log(`[FM] Result:`, fm);
+    console.log(`[FM] Raw frontmatter lines for ${filePath}:`);
+    rawLines.forEach((l, i) => console.log(`  ${i + 1}: ${l}`));
+
+    console.log(`[FM] Parsed frontmatter object:`, fm);
     return fm;
-              }
+          }
