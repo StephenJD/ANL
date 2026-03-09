@@ -8,7 +8,7 @@ export async function handler(event, context) {
     const rootDir = path.join(process.cwd(), "content");
     console.log("[list_content_tree] Listing content at:", rootDir, "Exists:", fs.existsSync(rootDir));
 
-    const tree = walkDir(rootDir);
+    const tree = await walkDir(rootDir);
     console.log("[list_content_tree] Tree generated with", tree.length, "top-level nodes");
     console.log("[list_content_tree] TREE JSON:", JSON.stringify(tree, null, 2));
     
