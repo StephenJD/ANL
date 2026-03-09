@@ -103,7 +103,7 @@ white-space:pre-wrap;
             document.getElementById("editButtons").style.display = "block";
             document.getElementById("tree").style.display = "none";
 
-            const res = await fetch("/.netlify/functions/webeditor/start_edit", {
+            const res = await fetch("/.netlify/functions/start_edit", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ file })
