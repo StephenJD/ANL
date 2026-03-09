@@ -10,12 +10,13 @@ export default async function generate_content_editor() {
   <div id="tree" style="width:320px;border-right:1px solid #ccc;padding-right:20px;"></div>
 
   <div id="editor" style="flex:1;">
+    <textarea id="fmText" style="width:100%;height:200px;margin-bottom:20px;"></textarea>
     <form id="editForm"></form>
     <div id="editButtons" style="margin-top:20px;display:none;">
-      <button id="btnSave" type="button">Save</button>
-      <button id="btnPublish" type="button">Publish</button>
-      <button id="btnDrop" type="button">Drop Edits</button>
-      <button id="btnCancel" type="button">Cancel</button>
+      <button type="button" onclick="saveEdit()">Save</button>
+      <button type="button" onclick="publishEdits()">Publish</button>
+      <button type="button" onclick="dropEdits()">Drop Edits</button>
+      <button type="button" onclick="cancelEdit()">Cancel</button>
     </div>
   </div>
 
@@ -33,26 +34,19 @@ white-space:pre-wrap;
 "></div>
 
 <script type="module">
-  // ===== Inline log helper =====
-  function log(msg) {
+  window.log = function(msg) {
     const logDiv = document.getElementById("logDiv");
     if(logDiv){ logDiv.textContent += msg + "\\n"; logDiv.scrollTop = logDiv.scrollHeight; }
     console.log(msg);
   }
   log("Step 1: generator script started");
 
-  // =====================
-  // Scoped variables
-  // =====================
   let currentFile = null;
   let rawBody = "";
 
   let saveEdit, publishEdits, cancelEdit, dropEdits;
   let renderTreeFn, parseMarkdownFn, renderFormFn;
 
-  // =====================
-  // Load helper modules
-  // =====================
   async function loadHelpers() {
     try {
       try { const mod = await import('/js/webeditor/renderTree.js'); renderTreeFn = mod.renderTree; log("renderTree loaded"); }
@@ -64,26 +58,44 @@ white-space:pre-wrap;
       try { const mod = await import('/js/webeditor/renderForm.js'); renderFormFn = mod.renderForm; log("renderForm loaded"); }
       catch(e){ log("renderForm failed: "+e); }
 
-      try {
-        const mod = await import('/js/webeditor/editActions.js'); 
-        ({ saveEdit, publishEdits, cancelEdit, dropEdits } = mod.setupEditActions({value: currentFile}, {value: rawBody}));
-        log("editActions loaded");
-
-        // ===== Wire buttons =====
-        document.getElementById("btnSave")?.addEventListener("click", saveEdit);
-        document.getElementById("btnPublish")?.addEventListener("click", publishEdits);
-        document.getElementById("btnDrop")?.addEventListener("click", dropEdits);
-        document.getElementById("btnCancel")?.addEventListener("click", () => {
-          cancelEdit();
-          document.getElementById("editButtons").style.display = "none";
-          document.getElementById("tree").style.display = "block";
-        });
-
-      } catch(e){ log("editActions failed: "+e); }
+      try { const mod = await import('/js/webeditor/editActions.js'); 
+            ({ saveEdit, publishEdit, cancelEdit, dropEdits } = mod.setupEditActions({value: currentFile}, {value: rawBody})); 
+            log("editActions loaded"); }
+      catch(e){ log("editActions failed: "+e); }
 
       log("All helpers attempted to load");
-    } catch(err) {
-      log("loadHelpers fatal error: " + err);
+    } catch(err) { log("loadHelpers fatal error: "+err); }
+  }
+
+  // =====================
+  // Frontmatter textarea sync
+  // =====================
+  const fmTextarea = document.getElementById("fmText");
+
+  function updateTextareaFromField(key, value) {
+    const lines = fmTextarea.value.split("\\n");
+    let found = false;
+    for (let i=0;i<lines.length;i++){
+      const [beforeComment, comment] = lines[i].split(/(?=#)/);
+      if(beforeComment.trim().startsWith(key+":") || beforeComment.trim().startsWith(key+"=")){
+        lines[i] = key + ": " + value + (comment || "");
+        found = true;
+        break;
+      }
+    }
+    if(!found) lines.push(key + ": " + value);
+    fmTextarea.value = lines.join("\\n");
+  }
+
+  function updateFieldFromTextarea(key, inputEl){
+    const lines = fmTextarea.value.split("\\n");
+    for(const line of lines){
+      const [beforeComment] = line.split(/(?=#)/);
+      const match = beforeComment.match(/^([\\w_]+)\\s*[:=]/);
+      if(match && match[1].trim()===key){
+        inputEl.value = line.split(/[:=]/)[1].trim();
+        break;
+      }
     }
   }
 
@@ -106,49 +118,48 @@ white-space:pre-wrap;
       if(!renderTreeFn) { log("renderTree function not available"); return; }
 
       treeContainer.appendChild(
-        renderTreeFn(tree, async (file) => {
+        renderTreeFn(tree, async (file)=>{
           try {
             currentFile = file;
-            document.getElementById("editButtons").style.display = "block";
-            document.getElementById("tree").style.display = "none";
+            document.getElementById("editButtons").style.display="block";
+            treeContainer.style.display="none";
 
             const res = await fetch("/.netlify/functions/start_edit", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ file })
+              method:"POST",
+              headers:{"Content-Type":"application/json"},
+              body: JSON.stringify({file})
             });
-            log("start_edit HTTP status: " + res.status);
-            if(!res.ok) throw new Error("HTTP " + res.status);
+            log("start_edit HTTP status: "+res.status);
+            if(!res.ok) throw new Error("HTTP "+res.status);
 
             const data = await res.json();
-            if(!parseMarkdownFn) { log("parseMarkdown function not available"); return; }
+            if(!parseMarkdownFn){ log("parseMarkdown not available"); return; }
             const parsed = parseMarkdownFn(data.content);
+
             rawBody = parsed.rawBody || "";
+            fmTextarea.value = rawBody;
 
-            if(!renderFormFn) { log("renderForm function not available"); return; }
-            await renderFormFn(parsed.frontMatter);
+            if(!renderFormFn){ log("renderForm not available"); return; }
+            // render fields and wire each field to sync back to textarea
+            await renderFormFn(parsed.frontMatter, (key, inputEl)=>{
+              inputEl.oninput = ()=>updateTextareaFromField(key, inputEl.value);
+            });
 
-          } catch(e) { log("Tree click handler error: "+e); }
+          } catch(e){ log("Tree click handler error: "+e); }
         })
       );
 
-    } catch(err) {
-      log("loadTree error: " + err);
-    }
+    } catch(err){ log("loadTree error: "+err); }
   }
 
-  // =====================
-  // Initialize editor
-  // =====================
-  (async()=> {
-    try {
+  (async()=>{
+    try{
       await loadHelpers();
       await loadTree();
       log("Editor initialized");
-    } catch(e) {
-      log("Initialization error: "+e);
-    }
+    }catch(e){ log("Initialization error: "+e); }
   })();
+
 </script>
 `;
 }
