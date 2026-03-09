@@ -2,52 +2,37 @@
 import fs from "fs";
 import path from "path";
 
-const contentRoot = path.join(process.cwd(), "content");
-
 export async function handler(event) {
-    console.info("[start_edit] Received event");
+  try {
+    const { file } = JSON.parse(event.body);
 
-    try {
-        const body = JSON.parse(event.body);
-        const file = body.file;
-        if (!file) return { statusCode: 400, body: "No file provided" };
+    // Base content directory
+    const contentDir = path.join(process.cwd(), "content");
 
-        // Strip leading "content/" if present
-        const relativeFile = file.startsWith("content/") ? file.slice("content/".length) : file;
-        const src = path.join(contentRoot, relativeFile);
-        console.info("[start_edit] Reading file:", src);
+    // Full path
+    let fullPath = path.join(contentDir, file);
 
-        if (!fs.existsSync(src)) {
-            return { statusCode: 404, body: "File not found" };
-        }
-
-        const content = fs.readFileSync(src, "utf8");
-        const lines = content.split(/\r?\n/);
-
-        let inFrontMatter = false;
-        const rawFrontMatterLines = [];
-
-        for (let line of lines) {
-            const trimmed = line.trim();
-            if (trimmed === "---") {
-                inFrontMatter = !inFrontMatter;
-                continue;
-            }
-            if (inFrontMatter) {
-                rawFrontMatterLines.push(line);
-            }
-        }
-
-        return {
-            statusCode: 200,
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                rawFrontMatter: rawFrontMatterLines.join("\n")
-            })
-        };
-
-    } catch (err) {
-        console.error("[start_edit] Error:", err);
-        return { statusCode: 500, body: "Server error" };
+    // If path is a folder, append _index.md
+    if (fs.existsSync(fullPath) && fs.statSync(fullPath).isDirectory()) {
+      fullPath = path.join(fullPath, "_index.md");
     }
+
+    // Read file
+    if (!fs.existsSync(fullPath)) {
+      return { statusCode: 404, body: "File not found" };
+    }
+
+    const rawContent = fs.readFileSync(fullPath, "utf-8");
+
+    // Extract front matter (simple split for now)
+    const frontMatterMatch = rawContent.match(/^---\n([\s\S]*?)\n---/);
+    const rawFrontMatter = frontMatterMatch ? frontMatterMatch[0] : "";
+
+    return {
+      statusCode: 200,
+      body: JSON.stringify({ rawFrontMatter, content: rawContent }),
+    };
+  } catch (err) {
+    return { statusCode: 500, body: String(err) };
+  }
 }
