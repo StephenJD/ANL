@@ -26,34 +26,15 @@ export async function handler(event) {
 
         let inFrontMatter = false;
         const rawFrontMatterLines = [];
-        const frontMatterObject = {};
 
         for (let line of lines) {
             const trimmed = line.trim();
             if (trimmed === "---") {
-                if (!inFrontMatter) {
-                    inFrontMatter = true;
-                } else {
-                    break; // end of front matter
-                }
+                inFrontMatter = !inFrontMatter;
                 continue;
             }
-
             if (inFrontMatter) {
                 rawFrontMatterLines.push(line);
-
-                // parse key: value or key = value
-                const match = line.match(/^([\w_]+)\s*[:=]\s*(.+)$/);
-                if (match) {
-                    let [, key, value] = match;
-                    key = key.trim();
-                    value = value.trim();
-                    if ((value.startsWith('"') && value.endsWith('"')) ||
-                        (value.startsWith("'") && value.endsWith("'"))) {
-                        value = value.slice(1, -1);
-                    }
-                    frontMatterObject[key] = value;
-                }
             }
         }
 
@@ -61,8 +42,7 @@ export async function handler(event) {
             statusCode: 200,
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                rawFrontMatter: rawFrontMatterLines.join("\n"),
-                frontMatter: frontMatterObject
+                rawFrontMatter: rawFrontMatterLines.join("\n")
             })
         };
 
@@ -70,4 +50,4 @@ export async function handler(event) {
         console.error("[start_edit] Error:", err);
         return { statusCode: 500, body: "Server error" };
     }
-      }
+}
