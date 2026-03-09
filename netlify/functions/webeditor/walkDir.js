@@ -3,77 +3,81 @@ import fs from "fs";
 import path from "path";
 import { qualifyTitle } from "./qualifyTitle.js";
 
-// Parses front matter for title and type
 function parseFrontMatter(md) {
-  const fm = { title: null, type: null };
-  if (!md || typeof md !== "string") return fm;
-
+  const fm = {};
   const parts = md.split("---");
   if (parts.length < 3) return fm;
 
-  const frontRaw = parts[1];
-  frontRaw.split("\n").forEach(line => {
-    const i = line.indexOf(":");
-    if (i > 0) {
-      const key = line.slice(0, i).trim();
-      let value = line.slice(i + 1).trim();
-      const hashIdx = value.indexOf("#");
-      if (hashIdx >= 0) value = value.slice(0, hashIdx).trim();
-      if (key === "title") fm.title = value;
-      if (key === "type") fm.type = value;
-    }
+  parts[1].split("\n").forEach(line => {
+    const [k, ...rest] = line.split(":");
+    if (!k) return;
+    fm[k.trim()] = rest.join(":").split("#")[0].trim();
   });
+
   return fm;
 }
 
-// Recursively walk directory to build tree with logging
+function sortEntries(entries) {
+  const priority = n =>
+    n === "_index.md" ? 0 :
+    n === "home.md" ? 1 :
+    n === "user_login.md" ? 2 : 10;
+
+  return entries.sort((a, b) => {
+    const pa = priority(a.name);
+    const pb = priority(b.name);
+    return pa !== pb ? pa - pb : a.name.localeCompare(b.name);
+  });
+}
+
 export function walkDir(dir, parentType = null) {
-  console.log("[walkDir] Entering dir:", dir);
+  const entries = sortEntries(
+    fs.readdirSync(dir, { withFileTypes: true })
+  );
 
-  let folderNode = null; // will represent the folder if _index.md exists
-  const children = [];
+  let folderNode = null;
+  const nodes = [];
 
-  try {
-    const entries = fs.readdirSync(dir, { withFileTypes: true });
+  for (const e of entries) {
+    const full = path.join(dir, e.name);
 
-    for (const entry of entries) {
-      const fullPath = path.join(dir, entry.name);
-
-      if (entry.isDirectory()) {
-        const childNode = walkDir(fullPath, parentType);
-        if (childNode) children.push(childNode);
-      } else if (entry.isFile()) {
-        const ext = path.extname(entry.name).toLowerCase();
-
-        if (ext === ".md") {
-          const content = fs.readFileSync(fullPath, "utf8");
-          const fm = parseFrontMatter(content);
-
-          // If this is an _index.md, treat as folder node
-          if (entry.name === "_index.md") {
-            folderNode = {
-              name: path.basename(dir),
-              path: dir,
-              title: qualifyTitle(fm.title || path.basename(dir)),
-              type: fm.type || parentType,
-              children: [],
-            };
-          } else {
-            children.push({
-              name: path.basename(entry.name, ext),
-              path: fullPath,
-              title: qualifyTitle(fm.title || path.basename(entry.name, ext)),
-              type: fm.type || parentType,
-            });
-          }
-        }
-      }
+    if (e.isDirectory()) {
+      nodes.push(...walkDir(full, parentType));
+      continue;
     }
 
-    if (folderNode) return [folderNode];
-    if (children.length) return children;
-return [];} catch (err) {
-    console.error("[walkDir] Error reading dir:", dir, err);
-    return null;
+    if (!e.name.endsWith(".md")) continue;
+
+    const md = fs.readFileSync(full, "utf8");
+    const fm = parseFrontMatter(md);
+
+    const title = qualifyTitle(
+      fm.title || path.basename(e.name, ".md")
+    );
+
+    const node = {
+      name: path.basename(e.name, ".md"),
+      path: full,
+      title,
+      type: fm.type || parentType
+    };
+
+    if (e.name === "_index.md") {
+      folderNode = {
+        ...node,
+        name: path.basename(dir),
+        path: dir,
+        children: []
+      };
+    } else {
+      nodes.push(node);
+    }
   }
+
+  if (folderNode) {
+    folderNode.children = nodes;
+    return [folderNode];
+  }
+
+  return nodes;
 }
