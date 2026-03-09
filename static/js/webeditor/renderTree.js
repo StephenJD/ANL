@@ -1,6 +1,12 @@
 // static/js/webeditor/renderTree.js
 
-export function renderTree(nodes, startEditCallback, editButtonsId = "editButtons") {
+export function renderTree(
+  nodes,
+  startEditCallback,
+  editButtonsId = "editButtons",
+  selectedNodePath = null,
+  addMoveButtonsFn = null
+) {
   console.log("[renderTree] Called with nodes:", nodes);
 
   if (!nodes) {
@@ -10,7 +16,6 @@ export function renderTree(nodes, startEditCallback, editButtonsId = "editButton
 
   if (!Array.isArray(nodes)) {
     console.error("[renderTree] ERROR: nodes is NOT an array!", nodes);
-    // Try to coerce into array for safety
     nodes = Array.isArray(nodes.children) ? nodes.children : [nodes];
     console.log("[renderTree] nodes coerced to array:", nodes);
   }
@@ -27,7 +32,6 @@ export function renderTree(nodes, startEditCallback, editButtonsId = "editButton
 
     const li = document.createElement("li");
 
-    // Use qualifiedTitle from server
     const displayTitle = node.qualifiedTitle || node.title || "Untitled";
 
     const a = document.createElement("a");
@@ -42,15 +46,28 @@ export function renderTree(nodes, startEditCallback, editButtonsId = "editButton
         console.log("[renderTree] Node clicked:", node.path);
         const btn = document.getElementById(editButtonsId);
         if (btn) btn.style.display = "block";
+
         startEditCallback(node.path);
+
+        // update selectedNodePath and re-render parent
+        if (ul.parentElement && ul.parentElement.closest) {
+          // signal parent to re-render tree with new selection
+          // this relies on your main code to call renderTree again with updated selectedNodePath
+        }
       }
     };
 
     li.appendChild(a);
 
+    // Add move buttons only if this is the selected node and a callback exists
+    if (selectedNodePath && node.path === selectedNodePath && typeof addMoveButtonsFn === "function") {
+      addMoveButtonsFn(li, node, nodes, renderTree, startEditCallback);
+    }
+
     if (node.children && node.children.length) {
-      console.log("[renderTree] Rendering children for:", displayTitle, node.children);
-      li.appendChild(renderTree(node.children, startEditCallback, editButtonsId));
+      li.appendChild(
+        renderTree(node.children, startEditCallback, editButtonsId, selectedNodePath, addMoveButtonsFn)
+      );
     }
 
     ul.appendChild(li);
