@@ -10,7 +10,7 @@ export async function handler(event, context) {
 
     const tree = await walkDir(rootDir);
     console.log("[list_content_tree] Tree generated with", tree.length, "top-level nodes");
-    console.log("[list_content_tree] TREE JSON:", JSON.stringify(tree, null, 2));
+    //console.log("[list_content_tree] TREE JSON:", JSON.stringify(tree, null, 2));
     
     return {
       statusCode: 200,
