@@ -9,13 +9,13 @@ export default async function generate_content_editor() {
 
   <div id="tree" style="width:320px;border-right:1px solid #ccc;padding-right:20px;"></div>
 
-  <div id="editor" style="flex:1; display:none;">
+  <div id="editorContainer" style="flex:1; display:none;">
     <form id="editForm"></form>
 
     <label for="frontMatterText">Front Matter:</label>
     <textarea id="frontMatterText" style="width:100%;height:200px;margin-bottom:10px;"></textarea>
 
-    <div id="editButtons" style="margin-top:20px; display:none;">
+    <div id="editButtons" style="margin-top:20px;">
       <button type="button" id="saveBtn">Save</button>
       <button type="button" id="publishBtn">Publish</button>
       <button type="button" id="cancelBtn">Cancel</button>
@@ -37,7 +37,6 @@ white-space:pre-wrap;
 "></div>
 
 <script type="module">
-  // ===== Inline log helper =====
   window.log = function(msg){
     const logDiv = document.getElementById("logDiv");
     if(logDiv){ logDiv.textContent += msg + "\\n"; logDiv.scrollTop = logDiv.scrollHeight; }
@@ -61,7 +60,7 @@ white-space:pre-wrap;
   let renderFormFn = null;
 
   // =====================
-  // Load helper modules safely
+  // Load helper modules
   // =====================
   async function loadHelpers() {
     log("Step 2: Loading helpers...");
@@ -75,21 +74,25 @@ white-space:pre-wrap;
       try { const mod = await import('/js/webeditor/renderForm.js'); renderFormFn = mod.renderForm; log("renderForm loaded"); }
       catch(e){ log("renderForm load failed: " + e); }
 
-      try { 
-        const mod = await import('/js/webeditor/editActions.js'); 
-        ({ saveEdit, publishEdits, cancelEdit, dropEdits } =
-          mod.setupEditActions({value: currentFile}, {value: rawBody}));
+      try { const mod = await import('/js/webeditor/editActions.js'); 
+            ({ saveEdit, publishEdits, cancelEdit, dropEdits } = mod.setupEditActions({value: currentFile}, {value: rawBody})); 
+            log("editActions loaded"); }
 
-        document.getElementById("saveBtn").addEventListener("click", saveEdit);
-        document.getElementById("publishBtn").addEventListener("click", publishEdits);
-        document.getElementById("cancelBtn").addEventListener("click", cancelEdit);
-        document.getElementById("dropBtn").addEventListener("click", dropEdits);
+      catch(e){ log("editActions load failed: " + e); }
 
-        log("editActions loaded and listeners attached");
-
-      } catch(e){
-        log("editActions load failed: " + e);
-      }
+      // attach listeners to buttons
+      document.getElementById("saveBtn").addEventListener("click", saveEdit);
+      document.getElementById("publishBtn").addEventListener("click", publishEdits);
+      document.getElementById("cancelBtn").addEventListener("click", ()=>{
+        cancelEdit();
+        document.getElementById("editorContainer").style.display = "none";
+        document.getElementById("tree").style.display = "block";
+      });
+      document.getElementById("dropBtn").addEventListener("click", ()=>{
+        dropEdits();
+        document.getElementById("editorContainer").style.display = "none";
+        document.getElementById("tree").style.display = "block";
+      });
 
       log("Step 2: Helper loading complete");
     } catch(err) {
@@ -98,7 +101,7 @@ white-space:pre-wrap;
   }
 
   // =====================
-  // Load and render tree safely
+  // Load and render tree
   // =====================
   async function loadTree() {
     log("Step 3: Loading tree...");
@@ -123,8 +126,7 @@ white-space:pre-wrap;
             renderTreeFn(tree, async (file)=>{
               try {
                 currentFile = file;
-                document.getElementById("editButtons").style.display = "block";
-                document.getElementById("editor").style.display = "block";
+                document.getElementById("editorContainer").style.display = "block";
                 document.getElementById("tree").style.display = "none";
 
                 log("Clicked file: " + file);
@@ -174,7 +176,6 @@ white-space:pre-wrap;
   }
 
   init();
-
 </script>
 `;
 }
