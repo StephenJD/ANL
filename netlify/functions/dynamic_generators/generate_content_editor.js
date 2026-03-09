@@ -15,7 +15,7 @@ export async function generate_content_editor() {
     <label for="frontMatterText">Front Matter:</label>
     <textarea id="frontMatterText" style="width:100%;height:200px;margin-bottom:10px;"></textarea>
 
-    <div id="editButtons" style="margin-top:20px;">
+    <div id="editButtons" style="margin-top:20px; display:none;">
       <button type="button" onclick="saveEdit()">Save</button>
       <button type="button" onclick="publishEdits()">Publish</button>
       <button type="button" onclick="dropEdits()">Drop Edits</button>
@@ -29,7 +29,7 @@ export async function generate_content_editor() {
 border-top:1px solid #ccc;
 margin-top:20px;
 padding:10px;
-max-height:200px;
+max-height:300px;
 overflow-y:auto;
 background:#f9f9f9;
 font-size:12px;
@@ -43,89 +43,127 @@ white-space:pre-wrap;
     if(logDiv){ logDiv.textContent += msg + "\\n"; logDiv.scrollTop = logDiv.scrollHeight; }
     console.log(msg);
   };
-  log("Step 1: generator script started");
+  log("Step 1: Content editor script started");
 
+  // =====================
+  // Globals
+  // =====================
   let currentFile = null;
   let rawBody = "";
 
-  let saveEdit, publishEdits, cancelEdit, dropEdits;
-  let renderTreeFn, parseMarkdownFn, renderFormFn;
+  let saveEdit = ()=>log("saveEdit not loaded yet");
+  let publishEdits = ()=>log("publishEdits not loaded yet");
+  let cancelEdit = ()=>log("cancelEdit not loaded yet");
+  let dropEdits = ()=>log("dropEdits not loaded yet");
+
+  let renderTreeFn = null;
+  let parseMarkdownFn = null;
+  let renderFormFn = null;
 
   // =====================
-  // Load helper modules with full logging
+  // Load helper modules safely
   // =====================
   async function loadHelpers() {
-    log("Step 2: loadHelpers started");
-    const modules = [
-      { path: '/js/webeditor/renderTree.js', name: 'renderTree' },
-      { path: '/js/webeditor/parseMarkdown.js', name: 'parseMarkdown' },
-      { path: '/js/webeditor/renderForm.js', name: 'renderForm' },
-      { path: '/js/webeditor/editActions.js', name: 'editActions' }
-    ];
+    log("Step 2: Loading helpers...");
+    try {
+      try { const mod = await import('/js/webeditor/renderTree.js'); renderTreeFn = mod.renderTree; log("renderTree loaded"); } 
+      catch(e){ log("renderTree load failed: " + e); }
 
-    for (const mod of modules) {
-      try {
-        log(\`Attempting import: \${mod.path}\`);
-        const imported = await import(mod.path);
-        if(mod.name === 'editActions'){
-          ({ saveEdit, publishEdits, cancelEdit, dropEdits } = imported.setupEditActions({value: currentFile}, {value: rawBody}));
-        } else {
-          if(mod.name === 'renderTree') renderTreeFn = imported.renderTree;
-          if(mod.name === 'parseMarkdown') parseMarkdownFn = imported.parseMarkdown;
-          if(mod.name === 'renderForm') renderFormFn = imported.renderForm;
-        }
-        log(\`\${mod.name} loaded successfully\`);
-      } catch(e) {
-        log(\`\${mod.name} import failed: \${e.message}\`);
-      }
+      try { const mod = await import('/js/webeditor/parseMarkdown.js'); parseMarkdownFn = mod.parseMarkdown; log("parseMarkdown loaded"); }
+      catch(e){ log("parseMarkdown load failed: " + e); }
+
+      try { const mod = await import('/js/webeditor/renderForm.js'); renderFormFn = mod.renderForm; log("renderForm loaded"); }
+      catch(e){ log("renderForm load failed: " + e); }
+
+      try { const mod = await import('/js/webeditor/editActions.js'); 
+            ({ saveEdit, publishEdits, cancelEdit, dropEdits } = mod.setupEditActions({value: currentFile}, {value: rawBody})); 
+            log("editActions loaded"); }
+      catch(e){ log("editActions load failed: " + e); }
+
+      log("Step 2: Helper loading complete");
+    } catch(err) {
+      log("loadHelpers fatal error: " + err);
     }
-    log("Step 2: loadHelpers complete");
   }
 
   // =====================
-  // Load tree with logging
+  // Load and render tree safely
   // =====================
   async function loadTree() {
-    log("Step 3: loadTree started");
+    log("Step 3: Loading tree...");
     try {
-      const res = await fetch("/.netlify/functions/list_content_tree");
-      log("Tree fetch status: " + res.status);
-      if(!res.ok) throw new Error("HTTP " + res.status);
-
-      const tree = await res.json();
-      log("Tree loaded: " + JSON.stringify(tree, null, 2));
-
-      if(!renderTreeFn) { log("renderTreeFn not available"); return; }
-
       const treeContainer = document.getElementById("tree");
-      treeContainer.innerHTML = "";
-      treeContainer.appendChild(
-        renderTreeFn(tree, async (file) => {
-          try {
-            log("Tree node clicked: " + file);
-          } catch(err) {
-            log("Tree node click handler error: " + err.message);
-          }
-        })
-      );
-      log("Tree rendered successfully");
-    } catch(err) {
-      log("loadTree error: " + err.message);
+      if(!treeContainer){ log("Tree container missing"); return; }
+
+      let tree = [];
+      if(renderTreeFn){
+        try {
+          const res = await fetch("/.netlify/functions/list_content_tree");
+          log("Tree HTTP status: " + res.status);
+          if(res.ok) tree = await res.json();
+          else log("Tree fetch failed with HTTP " + res.status);
+        } catch(e){
+          log("Tree fetch error: " + e);
+        }
+
+        try {
+          treeContainer.innerHTML = "";
+          treeContainer.appendChild(
+            renderTreeFn(tree, async (file)=>{
+              try {
+                currentFile = file;
+                document.getElementById("editButtons").style.display = "block";
+                document.getElementById("editor").style.display = "block";
+                document.getElementById("tree").style.display = "none";
+
+                log("Clicked file: " + file);
+
+                const res = await fetch("/.netlify/functions/start_edit", {
+                  method: "POST",
+                  headers: {"Content-Type":"application/json"},
+                  body: JSON.stringify({file})
+                });
+
+                log("start_edit HTTP status: " + res.status);
+                if(!res.ok) throw new Error("start_edit failed HTTP " + res.status);
+
+                const data = await res.json();
+                rawBody = data.rawFrontMatter || "";
+                const fmTextArea = document.getElementById("frontMatterText");
+                if(fmTextArea) fmTextArea.value = rawBody;
+
+                log("Front matter loaded for edit");
+
+              } catch(e){
+                log("Error handling file click: " + e);
+              }
+            })
+          );
+          log("Tree rendered");
+        } catch(e){
+          log("Tree rendering failed: " + e);
+        }
+      } else {
+        log("renderTree function not available, tree cannot be displayed");
+      }
+
+    } catch(err){
+      log("loadTree fatal error: " + err);
     }
-    log("Step 3: loadTree complete");
   }
 
   // =====================
-  // Initialize page
+  // Initialize editor page
   // =====================
   async function init() {
-    log("Step 0: init started");
+    log("Step 0: Initializing editor");
     await loadHelpers();
     await loadTree();
-    log("Step 0: init complete");
+    log("Step 4: Initialization complete");
   }
 
   init();
+
 </script>
 `;
 }
