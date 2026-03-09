@@ -1,166 +1,96 @@
+// netlify/functions/webeditor/walkDir.js
 import fs from "fs";
 import path from "path";
 import { qualifyTitle } from "./qualifyTitle.js";
 
-/*
-KISS front-matter parser
-Reads lines between the first two --- markers
-*/
-function parseFrontMatter(md, filePath = "") {
-  const fm = { title: null, type: null };
+export async function walkDir(dir, parentType = null) {
+    console.log(`[walkDir] Entering: ${dir}`);
 
-  if (!md) {
-    console.log("[FM] Empty markdown:", filePath);
-    return fm;
-  }
+    const children = [];
 
-  const lines = md.split("\n");
+    const entries = fs.readdirSync(dir, { withFileTypes: true });
 
-  if (lines[0].trim() !== "---") {
-    console.log("[FM] No frontmatter start:", filePath);
-    return fm;
-  }
+    for (const entry of entries) {
+        const fullPath = path.join(dir, entry.name);
 
-  console.log("[FM] Reading frontmatter:", filePath);
+        if (entry.isDirectory()) {
+            console.log(`[walkDir] Entering folder: ${fullPath}`);
 
-  for (let i = 1; i < lines.length; i++) {
-    const line = lines[i].trim();
+            // Check for _index.md in folder
+            const indexPath = path.join(fullPath, "_index.md");
+            let fm = {};
+            let type = "document-folder";
 
-    if (line === "---") break;
+            if (fs.existsSync(indexPath)) {
+                console.log(`[walkDir] Reading file: ${indexPath}`);
+                fm = readFrontMatter(indexPath);
+                type = fm.type || type;
+            }
 
-    const idx = line.indexOf(":");
-    if (idx === -1) continue;
+            const folderNode = {
+                name: path.basename(fullPath),
+                path: fullPath,
+                title: fm.title || path.basename(fullPath),
+                type,
+                children: []
+            };
 
-    const key = line.slice(0, idx).trim();
-    const value = line.slice(idx + 1).trim();
+            folderNode.qualifiedTitle = qualifyTitle(folderNode, parentType);
+            console.log(`[walkDir] Raw title: ${folderNode.title}`);
+            console.log(`[walkDir] Qualified title: ${folderNode.qualifiedTitle}`);
 
-    console.log("[FM] line:", key, "=", value);
+            folderNode.children = await walkDir(fullPath, type);
 
-    if (key === "title") fm.title = value;
-    if (key === "type") fm.type = value;
-  }
+            children.push(folderNode);
+        }
+        else if (entry.isFile() && entry.name.endsWith(".md")) {
+            if (entry.name === "_index.md") continue;
 
-  console.log("[FM] Result:", fm);
+            console.log(`[walkDir] Reading file: ${fullPath}`);
+            const fm = readFrontMatter(fullPath);
 
-  return fm;
+            const node = {
+                name: path.basename(entry.name, ".md"),
+                path: fullPath,
+                title: fm.title || path.basename(entry.name, ".md"),
+                type: fm.type || "document"
+            };
+
+            node.qualifiedTitle = qualifyTitle(node, parentType);
+
+            console.log(`[walkDir] Raw title: ${node.title}`);
+            console.log(`[walkDir] Qualified title: ${node.qualifiedTitle}`);
+
+            children.push(node);
+        }
+    }
+
+    return children;
 }
 
-/*
-Sort entries
-*/
-function sortEntries(entries) {
-  const priority = name =>
-    name === "_index.md" ? 0 :
-    name === "home.md" ? 1 :
-    name === "user_login.md" ? 2 :
-    10;
+function readFrontMatter(filePath) {
+    console.log(`[FM] Reading frontmatter: ${filePath}`);
+    const content = fs.readFileSync(filePath, "utf8");
+    const fm = {};
+    const lines = content.split(/\r?\n/);
 
-  return entries.sort((a, b) => {
-    const pa = priority(a.name);
-    const pb = priority(b.name);
-    if (pa !== pb) return pa - pb;
-    return a.name.localeCompare(b.name);
-  });
-}
-
-/*
-Directory walker
-*/
-export function walkDir(dir, parentType = null) {
-
-  console.log("[walkDir] Entering:", dir);
-
-  let folderNode = null;
-  const children = [];
-
-  let entries;
-
-  try {
-    entries = fs.readdirSync(dir, { withFileTypes: true });
-  } catch (err) {
-    console.error("[walkDir] Failed reading dir:", dir, err);
-    return [];
-  }
-
-  entries = sortEntries(entries);
-
-  for (const entry of entries) {
-
-    const fullPath = path.join(dir, entry.name);
-
-    /*
-    Handle subdirectories
-    */
-    if (entry.isDirectory()) {
-
-      const sub = walkDir(fullPath, parentType);
-
-      if (sub.length) {
-        children.push(...sub);
-      }
-
-      continue;
+    for (let line of lines) {
+        line = line.trim();
+        if (!line || line.startsWith("#")) continue;
+        const match = line.match(/^([\w_]+)\s*=\s*(.+)$/);
+        if (match) {
+            const key = match[1].trim();
+            let value = match[2].trim();
+            // Remove surrounding quotes
+            if ((value.startsWith('"') && value.endsWith('"')) ||
+                (value.startsWith("'") && value.endsWith("'"))) {
+                value = value.slice(1, -1);
+            }
+            fm[key] = value;
+            console.log(`[FM] line: ${line}`);
+        }
     }
 
-    /*
-    Only process markdown
-    */
-    if (!entry.name.endsWith(".md")) continue;
-
-    console.log("[walkDir] Reading file:", fullPath);
-
-    let content = "";
-
-    try {
-      content = fs.readFileSync(fullPath, "utf8");
-    } catch (err) {
-      console.error("[walkDir] Failed reading file:", fullPath, err);
-      continue;
+    console.log(`[FM] Result:`, fm);
+    return fm;
     }
-
-    const fm = parseFrontMatter(content, fullPath);
-
-    const rawTitle = fm.title || path.basename(entry.name, ".md");
-
-    console.log("[walkDir] Raw title:", rawTitle);
-
-    const title = qualifyTitle(rawTitle);
-
-    console.log("[walkDir] Qualified title:", title);
-
-    const type = fm.type || parentType;
-
-    /*
-    Folder definition
-    */
-    if (entry.name === "_index.md") {
-
-      folderNode = {
-        name: path.basename(dir),
-        path: dir,
-        title,
-        type,
-        children: []
-      };
-
-      continue;
-    }
-
-    /*
-    Normal document
-    */
-    children.push({
-      name: path.basename(entry.name, ".md"),
-      path: fullPath,
-      title,
-      type
-    });
-  }
-
-  if (folderNode) {
-    folderNode.children = children;
-    return [folderNode];
-  }
-
-  return children;
-      }
