@@ -1,4 +1,4 @@
-// \netlify\functions\dynamic_generators\generate_content_editor.js
+// netlify/functions/dynamic_generators/generate_content_editor.js
 export default async function generate_content_editor() {
   return `
 <div class="wide-content">
@@ -9,10 +9,13 @@ export default async function generate_content_editor() {
 
   <div id="tree" style="width:320px;border-right:1px solid #ccc;padding-right:20px;"></div>
 
-  <div id="editor" style="flex:1;">
-    <textarea id="fmText" style="width:100%;height:200px;margin-bottom:20px;"></textarea>
+  <div id="editor" style="flex:1; display:none;">
     <form id="editForm"></form>
-    <div id="editButtons" style="margin-top:20px;display:none;">
+
+    <label for="frontMatterText">Front Matter:</label>
+    <textarea id="frontMatterText" style="width:100%;height:200px;margin-bottom:10px;"></textarea>
+
+    <div id="editButtons" style="margin-top:20px;">
       <button type="button" onclick="saveEdit()">Save</button>
       <button type="button" onclick="publishEdits()">Publish</button>
       <button type="button" onclick="dropEdits()">Drop Edits</button>
@@ -34,19 +37,26 @@ white-space:pre-wrap;
 "></div>
 
 <script type="module">
-  window.log = function(msg) {
+  // ===== Inline log helper =====
+  window.log = function(msg){
     const logDiv = document.getElementById("logDiv");
     if(logDiv){ logDiv.textContent += msg + "\\n"; logDiv.scrollTop = logDiv.scrollHeight; }
     console.log(msg);
-  }
+  };
   log("Step 1: generator script started");
 
+  // =====================
+  // Globals
+  // =====================
   let currentFile = null;
   let rawBody = "";
 
   let saveEdit, publishEdits, cancelEdit, dropEdits;
   let renderTreeFn, parseMarkdownFn, renderFormFn;
 
+  // =====================
+  // Load helper modules
+  // =====================
   async function loadHelpers() {
     try {
       try { const mod = await import('/js/webeditor/renderTree.js'); renderTreeFn = mod.renderTree; log("renderTree loaded"); }
@@ -59,43 +69,13 @@ white-space:pre-wrap;
       catch(e){ log("renderForm failed: "+e); }
 
       try { const mod = await import('/js/webeditor/editActions.js'); 
-            ({ saveEdit, publishEdit, cancelEdit, dropEdits } = mod.setupEditActions({value: currentFile}, {value: rawBody})); 
+            ({ saveEdit, publishEdits, cancelEdit, dropEdits } = mod.setupEditActions({value: currentFile}, {value: rawBody})); 
             log("editActions loaded"); }
       catch(e){ log("editActions failed: "+e); }
 
       log("All helpers attempted to load");
-    } catch(err) { log("loadHelpers fatal error: "+err); }
-  }
-
-  // =====================
-  // Frontmatter textarea sync
-  // =====================
-  const fmTextarea = document.getElementById("fmText");
-
-  function updateTextareaFromField(key, value) {
-    const lines = fmTextarea.value.split("\\n");
-    let found = false;
-    for (let i=0;i<lines.length;i++){
-      const [beforeComment, comment] = lines[i].split(/(?=#)/);
-      if(beforeComment.trim().startsWith(key+":") || beforeComment.trim().startsWith(key+"=")){
-        lines[i] = key + ": " + value + (comment || "");
-        found = true;
-        break;
-      }
-    }
-    if(!found) lines.push(key + ": " + value);
-    fmTextarea.value = lines.join("\\n");
-  }
-
-  function updateFieldFromTextarea(key, inputEl){
-    const lines = fmTextarea.value.split("\\n");
-    for(const line of lines){
-      const [beforeComment] = line.split(/(?=#)/);
-      const match = beforeComment.match(/^([\\w_]+)\\s*[:=]/);
-      if(match && match[1].trim()===key){
-        inputEl.value = line.split(/[:=]/)[1].trim();
-        break;
-      }
+    } catch(err) {
+      log("loadHelpers fatal error: " + err);
     }
   }
 
@@ -118,48 +98,44 @@ white-space:pre-wrap;
       if(!renderTreeFn) { log("renderTree function not available"); return; }
 
       treeContainer.appendChild(
-        renderTreeFn(tree, async (file)=>{
+        renderTreeFn(tree, async (file) => {
           try {
             currentFile = file;
-            document.getElementById("editButtons").style.display="block";
-            treeContainer.style.display="none";
+            document.getElementById("editButtons").style.display = "block";
+            document.getElementById("editor").style.display = "block";
+            document.getElementById("tree").style.display = "none";
 
             const res = await fetch("/.netlify/functions/start_edit", {
-              method:"POST",
-              headers:{"Content-Type":"application/json"},
-              body: JSON.stringify({file})
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ file })
             });
-            log("start_edit HTTP status: "+res.status);
-            if(!res.ok) throw new Error("HTTP "+res.status);
+            log("start_edit HTTP status: " + res.status);
+            if(!res.ok) throw new Error("HTTP " + res.status);
 
             const data = await res.json();
-            if(!parseMarkdownFn){ log("parseMarkdown not available"); return; }
-            const parsed = parseMarkdownFn(data.content);
+            const rawFrontMatter = data.rawFrontMatter || "";
+            rawBody = rawFrontMatter;
 
-            rawBody = parsed.rawBody || "";
-            fmTextarea.value = rawBody;
+            // populate textarea
+            const fmTextArea = document.getElementById("frontMatterText");
+            if(fmTextArea) fmTextArea.value = rawFrontMatter;
 
-            if(!renderFormFn){ log("renderForm not available"); return; }
-            // render fields and wire each field to sync back to textarea
-            await renderFormFn(parsed.frontMatter, (key, inputEl)=>{
-              inputEl.oninput = ()=>updateTextareaFromField(key, inputEl.value);
-            });
+            // parse for editor fields
+            if(parseMarkdownFn && renderFormFn){
+              const parsed = parseMarkdownFn(rawFrontMatter);
+              await renderFormFn(parsed.frontMatter);
 
-          } catch(e){ log("Tree click handler error: "+e); }
-        })
-      );
-
-    } catch(err){ log("loadTree error: "+err); }
-  }
-
-  (async()=>{
-    try{
-      await loadHelpers();
-      await loadTree();
-      log("Editor initialized");
-    }catch(e){ log("Initialization error: "+e); }
-  })();
-
-</script>
-`;
-}
+              // sync editor fields back to textarea on changes
+              const form = document.getElementById("editForm");
+              form.addEventListener("input", () => {
+                const updatedFields = parsed.frontMatter;
+                for(const key in updatedFields){
+                  const input = form.querySelector("[name='"+key+"']");
+                  if(input) updatedFields[key] = input.value;
+                }
+                const lines = rawFrontMatter.split(/\\r?\\n/).map(line=>{
+                  const match = line.match(/^([\\w_]+)\\s*[:=]/);
+                  if(match && updatedFields[match[1]] !== undefined){
+                    const comment = line.includes("#") ? line.slice(line.indexOf("#")) : "";
+                    return match[1]+": "+updatedFields[match[1]]+"
