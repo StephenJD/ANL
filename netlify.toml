@@ -3,6 +3,9 @@
 node build_scripts/generate_qr.js &&
 node build_scripts/buildSecureContent.js &&
 echo 'PWD:' && pwd &&
+echo '--- FUNCTIONS TREE ---' &&
+ls -R netlify/functions &&
+echo '--- END FUNCTIONS TREE ---' &&
 echo 'LS PRIVATE_HTML:' &&
 ( ls -R private_html || echo 'private_html missing' ) &&
 echo '--- COPYING PRIVATE_HTML ---' &&
