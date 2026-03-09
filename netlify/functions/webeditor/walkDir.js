@@ -1,7 +1,7 @@
 // netlify/functions/webeditor/walkDir.js
 import fs from "fs";
 import path from "path";
-import { qualifyTitle } from "../../../static/js/webeditor/qualifyTitle.js";
+import { qualifyTitle } from "./qualifyTitle.js";
 
 // Parses front matter for title and type
 function parseFrontMatter(md) {
