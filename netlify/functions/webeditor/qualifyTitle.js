@@ -1,4 +1,4 @@
-// static/js/webeditor/qualifyTitle.js
+// netlify/functions/webeditor/qualifyTitle.js
 export function qualifyTitle(node, parentType = null) {
   if (!node || !node.type) return node.name || "Untitled";
 
