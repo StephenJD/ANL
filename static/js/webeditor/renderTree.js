@@ -31,42 +31,60 @@ export function renderTree(
     }
 
     const li = document.createElement("li");
+    li.style.position = "relative";
 
     const displayTitle = node.qualifiedTitle || node.title || "Untitled";
 
-    const a = document.createElement("a");
-    a.href = "#";
-    a.textContent = displayTitle;
-    a.style.display = "block";
-    a.style.cursor = "pointer";
+    const titleSpan = document.createElement("span");
+    titleSpan.textContent = displayTitle;
+    titleSpan.style.display = "inline-block";
+    titleSpan.style.cursor = "pointer";
+    titleSpan.style.padding = "2px 4px";
 
-    a.onclick = e => {
+    // Highlight if selected
+    if (selectedNodePath && node.path === selectedNodePath) {
+      titleSpan.style.backgroundColor = "#def";
+    }
+
+    // Node click sets selection (but does NOT immediately edit)
+    titleSpan.onclick = e => {
       e.preventDefault();
-      if (node.path) {
-        console.log("[renderTree] Node clicked:", node.path);
-        const btn = document.getElementById(editButtonsId);
-        if (btn) btn.style.display = "block";
-
-        startEditCallback(node.path);
-
-        // update selectedNodePath and re-render parent
-        if (ul.parentElement && ul.parentElement.closest) {
-          // signal parent to re-render tree with new selection
-          // this relies on your main code to call renderTree again with updated selectedNodePath
-        }
+      console.log("[renderTree] Node clicked:", node.path);
+      // signal to re-render tree with this node selected
+      if (typeof renderTree.reRender === "function") {
+        renderTree.reRender(node.path);
       }
     };
 
-    li.appendChild(a);
+    li.appendChild(titleSpan);
 
-    // Add move buttons only if this is the selected node and a callback exists
-    if (selectedNodePath && node.path === selectedNodePath && typeof addMoveButtonsFn === "function") {
-      addMoveButtonsFn(li, node, nodes, renderTree, startEditCallback);
+    // Add edit icon only if selected
+    if (selectedNodePath && node.path === selectedNodePath) {
+      const editBtn = document.createElement("button");
+      editBtn.textContent = "✎";
+      editBtn.style.marginLeft = "6px";
+      editBtn.onclick = e => {
+        e.stopPropagation();
+        startEditCallback(node.path);
+      };
+      li.appendChild(editBtn);
+
+      // Add move buttons
+      if (typeof addMoveButtonsFn === "function") {
+        addMoveButtonsFn(li, node, nodes, renderTree, startEditCallback);
+      }
     }
 
+    // Render children recursively
     if (node.children && node.children.length) {
       li.appendChild(
-        renderTree(node.children, startEditCallback, editButtonsId, selectedNodePath, addMoveButtonsFn)
+        renderTree(
+          node.children,
+          startEditCallback,
+          editButtonsId,
+          selectedNodePath,
+          addMoveButtonsFn
+        )
       );
     }
 
