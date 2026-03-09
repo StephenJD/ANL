@@ -2,6 +2,7 @@
 
 export function moveNode(nodeObj, direction, treeData) {
   window.log(`[moveNode] Moving node: ${nodeObj.title}, direction: ${direction}`);
+  window.log("[moveNode] treeData BEFORE move:", JSON.stringify(treeData, null, 2));
 
   function findParentArray(arr) {
     const idx = arr.indexOf(nodeObj);
@@ -22,18 +23,22 @@ export function moveNode(nodeObj, direction, treeData) {
   }
 
   const idx = parentArray.indexOf(nodeObj);
+  window.log(`[moveNode] Node index in parentArray: ${idx}`);
+  window.log(`[moveNode] Parent array titles before move: ${parentArray.map(n => n.title).join(', ')}`);
 
   if (direction === 'up' && idx > 0) {
     parentArray.splice(idx, 1);
     parentArray.splice(idx - 1, 0, nodeObj);
-    window.log(`[moveNode] Node moved up, parentArray titles: ${parentArray.map(n => n.title).join(', ')}`);
+    window.log(`[moveNode] Node moved up, parentArray titles after move: ${parentArray.map(n => n.title).join(', ')}`);
+    window.log("[moveNode] treeData AFTER move:", JSON.stringify(treeData, null, 2));
     return true;
   }
 
   if (direction === 'down' && idx < parentArray.length - 1) {
     parentArray.splice(idx, 1);
     parentArray.splice(idx + 1, 0, nodeObj);
-    window.log(`[moveNode] Node moved down, parentArray titles: ${parentArray.map(n => n.title).join(', ')}`);
+    window.log(`[moveNode] Node moved down, parentArray titles after move: ${parentArray.map(n => n.title).join(', ')}`);
+    window.log("[moveNode] treeData AFTER move:", JSON.stringify(treeData, null, 2));
     return true;
   }
 
@@ -69,18 +74,33 @@ export function addMoveButtons(nodeEl, nodeObj, treeData, renderTreeFn, clickHan
     btn.onclick = (e) => {
       e.stopPropagation();
       window.log(`[treeMoveActions] Button clicked: ${dir} for node: ${nodeObj.title}`);
-      if (moveNode(nodeObj, dir, treeData)) {
-        window.log("[treeMoveActions] moveNode returned true, re-rendering tree");
+      window.log("[treeMoveActions] treeData BEFORE move:", JSON.stringify(treeData, null, 2));
+      window.log("[treeMoveActions] selectedNodePath BEFORE move:", window.selectedNodePath);
+
+      const moved = moveNode(nodeObj, dir, treeData);
+
+      if (moved) {
+        window.log("[treeMoveActions] moveNode returned true");
+        window.log("[treeMoveActions] treeData AFTER move:", JSON.stringify(treeData, null, 2));
+        window.log("[treeMoveActions] selectedNodePath AFTER move:", window.selectedNodePath);
+
         const container = nodeEl.closest('#tree');
+        window.log("[treeMoveActions] container element:", container);
+
         if (container) {
-          container.innerHTML = '';
-          container.appendChild(renderTreeFn(
+          const rendered = renderTreeFn(
             treeData,
             clickHandler,
             "editButtons",
-            window.selectedNodePath,  // current selection
+            window.selectedNodePath,
             addMoveButtons
-          ));
+          );
+          window.log("[treeMoveActions] rendered tree element:", rendered);
+
+          container.innerHTML = '';
+          container.appendChild(rendered);
+        } else {
+          window.log("[treeMoveActions] container not found, cannot re-render tree");
         }
       } else {
         window.log("[treeMoveActions] moveNode returned false, nothing moved");
@@ -90,4 +110,4 @@ export function addMoveButtons(nodeEl, nodeObj, treeData, renderTreeFn, clickHan
   });
 
   nodeEl.appendChild(btnContainer);
-            }
+                  }
