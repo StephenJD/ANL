@@ -34,7 +34,7 @@ white-space:pre-wrap;
 
 <script type="module">
   // ===== Inline log helper =====
-  function log(msg) {
+  window.log = function(...args) { {
     const logDiv = document.getElementById("logDiv");
     if(logDiv){ logDiv.textContent += msg + "\\n"; logDiv.scrollTop = logDiv.scrollHeight; }
     console.log(msg);
