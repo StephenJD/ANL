@@ -1,4 +1,4 @@
-// netlify/functions/webeditor/list_content_tree.js
+// netlify/functions/list_content_tree.js
 import path from "path";
 import { walkDir } from "./walkDir.js";
 
