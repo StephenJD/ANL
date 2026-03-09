@@ -1,9 +1,8 @@
 // static/js/webeditor/treeMoveActions.js
 
 export function moveNode(nodeObj, direction, treeData) {
-  console.log("[moveNode] Moving node:", nodeObj.title, "direction:", direction);
+  window.log(`[moveNode] Moving node: ${nodeObj.title}, direction: ${direction}`);
 
-  // Recursively find the parent array that contains this node
   function findParentArray(arr) {
     const idx = arr.indexOf(nodeObj);
     if (idx !== -1) return arr;
@@ -18,7 +17,7 @@ export function moveNode(nodeObj, direction, treeData) {
 
   const parentArray = findParentArray(treeData);
   if (!parentArray) {
-    console.log("[moveNode] Node not found in treeData");
+    window.log("[moveNode] Node not found in treeData");
     return false;
   }
 
@@ -27,28 +26,28 @@ export function moveNode(nodeObj, direction, treeData) {
   if (direction === 'up' && idx > 0) {
     parentArray.splice(idx, 1);
     parentArray.splice(idx - 1, 0, nodeObj);
-    console.log("[moveNode] Node moved up, parentArray titles:", parentArray.map(n => n.title));
+    window.log(`[moveNode] Node moved up, parentArray titles: ${parentArray.map(n => n.title).join(', ')}`);
     return true;
   }
 
   if (direction === 'down' && idx < parentArray.length - 1) {
     parentArray.splice(idx, 1);
     parentArray.splice(idx + 1, 0, nodeObj);
-    console.log("[moveNode] Node moved down, parentArray titles:", parentArray.map(n => n.title));
+    window.log(`[moveNode] Node moved down, parentArray titles: ${parentArray.map(n => n.title).join(', ')}`);
     return true;
   }
 
   if (direction === 'left') {
-    console.log("[moveNode] Left move not implemented yet");
+    window.log("[moveNode] Left move not implemented yet");
     return false;
   }
 
   if (direction === 'right') {
-    console.log("[moveNode] Right move not implemented yet");
+    window.log("[moveNode] Right move not implemented yet");
     return false;
   }
 
-  console.log("[moveNode] Move not possible");
+  window.log("[moveNode] Move not possible");
   return false;
 }
 
@@ -69,9 +68,9 @@ export function addMoveButtons(nodeEl, nodeObj, treeData, renderTreeFn, clickHan
     btn.style.marginLeft = '2px';
     btn.onclick = (e) => {
       e.stopPropagation();
-      console.log("[treeMoveActions] Button clicked:", dir, "for node:", nodeObj.title);
+      window.log(`[treeMoveActions] Button clicked: ${dir} for node: ${nodeObj.title}`);
       if (moveNode(nodeObj, dir, treeData)) {
-        console.log("[treeMoveActions] moveNode returned true, re-rendering tree");
+        window.log("[treeMoveActions] moveNode returned true, re-rendering tree");
         const container = nodeEl.closest('#tree');
         if (container) {
           container.innerHTML = '';
@@ -84,11 +83,11 @@ export function addMoveButtons(nodeEl, nodeObj, treeData, renderTreeFn, clickHan
           ));
         }
       } else {
-        console.log("[treeMoveActions] moveNode returned false, nothing moved");
+        window.log("[treeMoveActions] moveNode returned false, nothing moved");
       }
     };
     btnContainer.appendChild(btn);
   });
 
   nodeEl.appendChild(btnContainer);
-                  }
+            }
