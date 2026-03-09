@@ -12,10 +12,10 @@ export default async function generate_content_editor() {
   <div id="editor" style="flex:1;">
     <form id="editForm"></form>
     <div id="editButtons" style="margin-top:20px;display:none;">
-      <button type="button" onclick="saveEdit()">Save</button>
-      <button type="button" onclick="publishEdits()">Publish</button>
-      <button type="button" onclick="dropEdits()">Drop Edits</button>
-      <button type="button" onclick="cancelEdit()">Cancel</button>
+      <button id="btnSave" type="button">Save</button>
+      <button id="btnPublish" type="button">Publish</button>
+      <button id="btnDrop" type="button">Drop Edits</button>
+      <button id="btnCancel" type="button">Cancel</button>
     </div>
   </div>
 
@@ -34,7 +34,7 @@ white-space:pre-wrap;
 
 <script type="module">
   // ===== Inline log helper =====
-  window.log = function(...args) { {
+  function log(msg) {
     const logDiv = document.getElementById("logDiv");
     if(logDiv){ logDiv.textContent += msg + "\\n"; logDiv.scrollTop = logDiv.scrollHeight; }
     console.log(msg);
@@ -42,20 +42,19 @@ white-space:pre-wrap;
   log("Step 1: generator script started");
 
   // =====================
-  // Globals
+  // Scoped variables
   // =====================
   let currentFile = null;
   let rawBody = "";
 
   let saveEdit, publishEdits, cancelEdit, dropEdits;
-  let renderTreeFn, parseMarkdownFn, renderFormFn, qualifyTitleFn;
+  let renderTreeFn, parseMarkdownFn, renderFormFn;
 
   // =====================
   // Load helper modules
   // =====================
   async function loadHelpers() {
     try {
-      
       try { const mod = await import('/js/webeditor/renderTree.js'); renderTreeFn = mod.renderTree; log("renderTree loaded"); }
       catch(e){ log("renderTree failed: "+e); }
 
@@ -65,10 +64,22 @@ white-space:pre-wrap;
       try { const mod = await import('/js/webeditor/renderForm.js'); renderFormFn = mod.renderForm; log("renderForm loaded"); }
       catch(e){ log("renderForm failed: "+e); }
 
-      try { const mod = await import('/js/webeditor/editActions.js'); 
-            ({ saveEdit, publishEdits, cancelEdit, dropEdits } = mod.setupEditActions({value: currentFile}, {value: rawBody})); 
-            log("editActions loaded"); }
-      catch(e){ log("editActions failed: "+e); }
+      try {
+        const mod = await import('/js/webeditor/editActions.js'); 
+        ({ saveEdit, publishEdits, cancelEdit, dropEdits } = mod.setupEditActions({value: currentFile}, {value: rawBody}));
+        log("editActions loaded");
+
+        // ===== Wire buttons =====
+        document.getElementById("btnSave")?.addEventListener("click", saveEdit);
+        document.getElementById("btnPublish")?.addEventListener("click", publishEdits);
+        document.getElementById("btnDrop")?.addEventListener("click", dropEdits);
+        document.getElementById("btnCancel")?.addEventListener("click", () => {
+          cancelEdit();
+          document.getElementById("editButtons").style.display = "none";
+          document.getElementById("tree").style.display = "block";
+        });
+
+      } catch(e){ log("editActions failed: "+e); }
 
       log("All helpers attempted to load");
     } catch(err) {
@@ -88,8 +99,7 @@ white-space:pre-wrap;
 
       const tree = await res.json();
       log("Tree loaded successfully");
-      //log("RAW TREE DATA: " + JSON.stringify(tree, null, 2));
-    
+
       const treeContainer = document.getElementById("tree");
       treeContainer.innerHTML = "";
 
@@ -139,7 +149,6 @@ white-space:pre-wrap;
       log("Initialization error: "+e);
     }
   })();
-
 </script>
 `;
 }
