@@ -37,6 +37,8 @@ white-space:pre-wrap;
 "></div>
 
 <script type="module">
+  import { addMoveButtons, moveNode } from '/js/webeditor/treeMoveActions.js';
+
   window.log = function(msg){
     const logDiv = document.getElementById("logDiv");
     if(logDiv){ logDiv.textContent += msg + "\\n"; logDiv.scrollTop = logDiv.scrollHeight; }
@@ -49,6 +51,7 @@ white-space:pre-wrap;
   // =====================
   let currentFile = null;
   let rawBody = "";
+  let selectedNodePath = null;
 
   let saveEdit = ()=>log("saveEdit not loaded yet");
   let publishEdits = ()=>log("publishEdits not loaded yet");
@@ -58,6 +61,8 @@ white-space:pre-wrap;
   let renderTreeFn = null;
   let parseMarkdownFn = null;
   let renderFormFn = null;
+
+  let treeData = [];
 
   // =====================
   // Load helper modules
@@ -77,7 +82,6 @@ white-space:pre-wrap;
       try { const mod = await import('/js/webeditor/editActions.js'); 
             ({ saveEdit, publishEdits, cancelEdit, dropEdits } = mod.setupEditActions({value: currentFile}, {value: rawBody})); 
             log("editActions loaded"); }
-
       catch(e){ log("editActions load failed: " + e); }
 
       // attach listeners to buttons
@@ -87,11 +91,15 @@ white-space:pre-wrap;
         cancelEdit();
         document.getElementById("editorContainer").style.display = "none";
         document.getElementById("tree").style.display = "block";
+        selectedNodePath = null;
+        renderTreeInPlace();
       });
       document.getElementById("dropBtn").addEventListener("click", ()=>{
         dropEdits();
         document.getElementById("editorContainer").style.display = "none";
         document.getElementById("tree").style.display = "block";
+        selectedNodePath = null;
+        renderTreeInPlace();
       });
 
       log("Step 2: Helper loading complete");
@@ -101,7 +109,7 @@ white-space:pre-wrap;
   }
 
   // =====================
-  // Load and render tree
+  // Load tree and render
   // =====================
   async function loadTree() {
     log("Step 3: Loading tree...");
@@ -109,64 +117,65 @@ white-space:pre-wrap;
       const treeContainer = document.getElementById("tree");
       if(!treeContainer){ log("Tree container missing"); return; }
 
-      let tree = [];
-      if(renderTreeFn){
-        try {
-          const res = await fetch("/.netlify/functions/list_content_tree");
-          log("Tree HTTP status: " + res.status);
-          if(res.ok) tree = await res.json();
-          else log("Tree fetch failed with HTTP " + res.status);
-        } catch(e){
-          log("Tree fetch error: " + e);
-        }
-
-        try {
-          treeContainer.innerHTML = "";
-          treeContainer.appendChild(
-            renderTreeFn(tree, async (file)=>{
-              try {
-                currentFile = file;
-                document.getElementById("editorContainer").style.display = "block";
-                document.getElementById("tree").style.display = "none";
-
-                log("Clicked file: " + file);
-
-                const res = await fetch("/.netlify/functions/start_edit", {
-                  method: "POST",
-                  headers: {"Content-Type":"application/json"},
-                  body: JSON.stringify({file})
-                });
-
-                log("start_edit HTTP status: " + res.status);
-                if(!res.ok) throw new Error("start_edit failed HTTP " + res.status);
-
-                const data = await res.json();
-                rawBody = data.rawFrontMatter || "";
-                const fmTextArea = document.getElementById("frontMatterText");
-                if(fmTextArea) fmTextArea.value = rawBody;
-
-                log("Front matter loaded for edit");
-
-              } catch(e){
-                log("Error handling file click: " + e);
-              }
-            })
-          );
-          log("Tree rendered");
-        } catch(e){
-          log("Tree rendering failed: " + e);
-        }
-      } else {
-        log("renderTree function not available, tree cannot be displayed");
+      try {
+        const res = await fetch("/.netlify/functions/list_content_tree");
+        log("Tree HTTP status: " + res.status);
+        if(res.ok) treeData = await res.json();
+        else log("Tree fetch failed with HTTP " + res.status);
+      } catch(e){
+        log("Tree fetch error: " + e);
       }
+
+      renderTreeInPlace();
 
     } catch(err){
       log("loadTree fatal error: " + err);
     }
   }
 
+  function renderTreeInPlace() {
+    const container = document.getElementById("tree");
+    if(!container) return;
+    container.innerHTML = "";
+    if(!renderTreeFn) { log("renderTree not available"); return; }
+
+    container.appendChild(
+      renderTreeFn(treeData, wrappedStartEdit, "editButtons", (nodeEl, nodeObj) => {
+        if(selectedNodePath === nodeObj.path){
+          addMoveButtons(nodeEl, nodeObj, treeData, renderTreeFn, wrappedStartEdit);
+        }
+      })
+    );
+  }
+
   // =====================
-  // Initialize editor page
+  // Node click callback
+  // =====================
+  const wrappedStartEdit = (node) => {
+    selectedNodePath = node.path;
+    document.getElementById("editorContainer").style.display = "block";
+    document.getElementById("tree").style.display = "none";
+
+    fetch("/.netlify/functions/start_edit", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ file: node.path })
+    })
+    .then(res => {
+      if(!res.ok) throw new Error("HTTP "+res.status);
+      return res.json();
+    })
+    .then(data => {
+      rawBody = data.rawFrontMatter || "";
+      document.getElementById("frontMatterText").value = rawBody;
+      log("Front matter loaded for edit");
+      renderTreeInPlace();
+    })
+    .catch(err => log("Error handling file click: "+err));
+  };
+
+  // =====================
+  // Initialize editor
   // =====================
   async function init() {
     log("Step 0: Initializing editor");
@@ -176,6 +185,7 @@ white-space:pre-wrap;
   }
 
   init();
+
 </script>
 `;
 }
