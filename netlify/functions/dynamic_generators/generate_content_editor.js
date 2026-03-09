@@ -1,5 +1,5 @@
 // netlify/functions/dynamic_generators/generate_content_editor.js
-export async function generate_content_editor() {
+export default async function generate_content_editor() {
   return `
 <div class="wide-content">
 
