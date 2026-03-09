@@ -3,7 +3,7 @@ import fs from "fs";
 import path from "path";
 import { qualifyTitle } from "./qualifyTitle.js";
 
-export async function walkDir(dir, parentType = null) {
+export async function walkDir(dir, parentType = null, rootDir = dir) {
     console.log(`[walkDir] Entering: ${dir} | parentType: ${parentType}`);
 
     const entries = fs.readdirSync(dir, { withFileTypes: true });
@@ -14,6 +14,7 @@ export async function walkDir(dir, parentType = null) {
 
     for (const entry of entries) {
         const fullPath = path.join(dir, entry.name);
+        const relativePath = path.relative(rootDir, fullPath); // <-- relative to content root
 
         if (entry.isDirectory()) {
             const indexPath = path.join(fullPath, "_index.md");
@@ -28,7 +29,7 @@ export async function walkDir(dir, parentType = null) {
 
             const folderNode = {
                 name: path.basename(fullPath),
-                path: fullPath,
+                path: relativePath.replace(/\\/g, "/"), // always forward slashes for URLs
                 title: fm.title || path.basename(fullPath),
                 type,
                 children: []
@@ -42,7 +43,7 @@ export async function walkDir(dir, parentType = null) {
                 path: folderNode.path
             });
 
-            folderNode.children = await walkDir(fullPath, type);
+            folderNode.children = await walkDir(fullPath, type, rootDir);
 
             if (type === "home" && !parentType) {
                 homeNode = folderNode;
@@ -57,7 +58,7 @@ export async function walkDir(dir, parentType = null) {
 
             const node = {
                 name: path.basename(entry.name, ".md"),
-                path: fullPath,
+                path: relativePath.replace(/\\/g, "/"),
                 title: fm.title || path.basename(entry.name, ".md"),
                 type: fm.type || "document"
             };
@@ -133,4 +134,4 @@ function readFrontMatter(filePath) {
 
     console.log(`[FM] Parsed frontmatter object:`, fm);
     return fm;
-          }
+                                                 }
