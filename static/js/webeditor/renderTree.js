@@ -5,7 +5,8 @@ export function renderTree(
   startEditCallback,
   editButtonsId = "editButtons",
   selectedNodePath = null,
-  addMoveButtonsFn = null
+  addMoveButtonsFn = null,
+  fullTreeRoot = null // NEW: always keep reference to the full tree
 ) {
   console.log("[renderTree] Called with nodes:", nodes);
 
@@ -19,6 +20,8 @@ export function renderTree(
     nodes = Array.isArray(nodes.children) ? nodes.children : [nodes];
     console.log("[renderTree] nodes coerced to array:", nodes);
   }
+
+  if (!fullTreeRoot) fullTreeRoot = nodes; // set fullTreeRoot on first call
 
   const ul = document.createElement("ul");
   ul.style.listStyle = "none";
@@ -41,16 +44,13 @@ export function renderTree(
     titleSpan.style.cursor = "pointer";
     titleSpan.style.padding = "2px 4px";
 
-    // Highlight if selected
     if (selectedNodePath && node.path === selectedNodePath) {
       titleSpan.style.backgroundColor = "#def";
     }
 
-    // Node click sets selection (but does NOT immediately edit)
     titleSpan.onclick = e => {
       e.preventDefault();
       console.log("[renderTree] Node clicked:", node.path);
-      // signal to re-render tree with this node selected
       if (typeof renderTree.reRender === "function") {
         renderTree.reRender(node.path);
       }
@@ -58,7 +58,6 @@ export function renderTree(
 
     li.appendChild(titleSpan);
 
-    // Add edit icon only if selected
     if (selectedNodePath && node.path === selectedNodePath) {
       const editBtn = document.createElement("button");
       editBtn.textContent = "✎";
@@ -69,13 +68,12 @@ export function renderTree(
       };
       li.appendChild(editBtn);
 
-      // Add move buttons
       if (typeof addMoveButtonsFn === "function") {
-        addMoveButtonsFn(li, node, nodes, renderTree, startEditCallback);
+        // Pass fullTreeRoot here instead of nodes at recursion level
+        addMoveButtonsFn(li, node, fullTreeRoot, renderTree, startEditCallback);
       }
     }
 
-    // Render children recursively
     if (node.children && node.children.length) {
       li.appendChild(
         renderTree(
@@ -83,7 +81,8 @@ export function renderTree(
           startEditCallback,
           editButtonsId,
           selectedNodePath,
-          addMoveButtonsFn
+          addMoveButtonsFn,
+          fullTreeRoot // propagate full tree through recursion
         )
       );
     }
@@ -93,4 +92,4 @@ export function renderTree(
 
   console.log("[renderTree] Tree UL built successfully");
   return ul;
-}
+  }
