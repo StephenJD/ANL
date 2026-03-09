@@ -70,9 +70,9 @@ export function walkDir(dir, parentType = null) {
       }
     }
 
-    if (folderNode) folderNode.children = children;
-    return folderNode || (children.length ? { children } : null);
-  } catch (err) {
+    if (folderNode) return [folderNode];
+    if (children.length) return children;
+return [];} catch (err) {
     console.error("[walkDir] Error reading dir:", dir, err);
     return null;
   }
