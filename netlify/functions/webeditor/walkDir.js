@@ -3,19 +3,7 @@ import fs from "fs";
 import path from "path";
 import { qualifyTitle } from "./qualifyTitle.js";
 
-function parseFrontMatter(md) {
-  const fm = {};
-  const parts = md.split("---");
-  if (parts.length < 3) return fm;
 
-  parts[1].split("\n").forEach(line => {
-    const [k, ...rest] = line.split(":");
-    if (!k) return;
-    fm[k.trim()] = rest.join(":").split("#")[0].trim();
-  });
-
-  return fm;
-}
 
 function sortEntries(entries) {
   const priority = n =>
@@ -28,6 +16,31 @@ function sortEntries(entries) {
     const pb = priority(b.name);
     return pa !== pb ? pa - pb : a.name.localeCompare(b.name);
   });
+}
+
+function parseFrontMatter(md) {
+  const fm = { title: null, type: null };
+
+  const match = md.match(/^---\s*([\s\S]*?)\s*---/);
+  if (!match) return fm;
+
+  const front = match[1];
+
+  front.split("\n").forEach(line => {
+    const i = line.indexOf(":");
+    if (i === -1) return;
+
+    const key = line.slice(0, i).trim();
+    let value = line.slice(i + 1).trim();
+
+    const comment = value.indexOf("#");
+    if (comment >= 0) value = value.slice(0, comment).trim();
+
+    if (key === "title") fm.title = value;
+    if (key === "type") fm.type = value;
+  });
+
+  return fm;
 }
 
 export function walkDir(dir, parentType = null) {
