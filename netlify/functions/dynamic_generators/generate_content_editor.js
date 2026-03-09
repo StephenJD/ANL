@@ -146,36 +146,156 @@ white-space:pre-wrap;
     } catch(err) {
       log("loadHelpers fatal error: " + err);
     }
+// Inside <script type="module"> of generate_content_editor.js
+
+// =====================
+// Globals
+// =====================
+let currentFile = null;
+let rawBody = "";
+let selectedNodePath = null;   // <-- track currently selected node
+
+let saveEdit = ()=>log("saveEdit not loaded yet");
+let publishEdits = ()=>log("publishEdits not loaded yet");
+let cancelEdit = ()=>log("cancelEdit not loaded yet");
+let dropEdits = ()=>log("dropEdits not loaded yet");
+
+let renderTreeFn = null;
+let parseMarkdownFn = null;
+let renderFormFn = null;
+let addMoveButtonsFn = null;  // reference to your move buttons handler
+
+// =====================
+// Load helpers
+// =====================
+async function loadHelpers() {
+  log("Step 2: Loading helpers...");
+  try {
+    try { const mod = await import('/js/webeditor/renderTree.js'); renderTreeFn = mod.renderTree; log("renderTree loaded"); } 
+    catch(e){ log("renderTree load failed: " + e); }
+
+    try { const mod = await import('/js/webeditor/parseMarkdown.js'); parseMarkdownFn = mod.parseMarkdown; log("parseMarkdown loaded"); }
+    catch(e){ log("parseMarkdown load failed: " + e); }
+
+    try { const mod = await import('/js/webeditor/renderForm.js'); renderFormFn = mod.renderForm; log("renderForm loaded"); }
+    catch(e){ log("renderForm load failed: " + e); }
+
+    try { const mod = await import('/js/webeditor/editActions.js'); 
+          ({ saveEdit, publishEdits, cancelEdit, dropEdits } = mod.setupEditActions({value: currentFile}, {value: rawBody})); 
+          log("editActions loaded"); }
+    catch(e){ log("editActions load failed: " + e); }
+
+    try { const mod = await import('/js/webeditor/treeMoveActions.js');
+          addMoveButtonsFn = mod.addMoveButtons;
+          log("treeMoveActions loaded"); }
+    catch(e){ log("treeMoveActions load failed: " + e); }
+
+    // Attach button listeners
+    document.getElementById("saveBtn").addEventListener("click", saveEdit);
+    document.getElementById("publishBtn").addEventListener("click", publishEdits);
+    document.getElementById("cancelBtn").addEventListener("click", ()=>{
+      cancelEdit();
+      document.getElementById("editorContainer").style.display = "none";
+      document.getElementById("tree").style.display = "block";
+    });
+    document.getElementById("dropBtn").addEventListener("click", ()=>{
+      dropEdits();
+      document.getElementById("editorContainer").style.display = "none";
+      document.getElementById("tree").style.display = "block";
+    });
+
+    log("Step 2: Helper loading complete");
+  } catch(err) {
+    log("loadHelpers fatal error: " + err);
   }
+}
 
-  // =====================
-  // Load and render tree
-  // =====================
-  async function loadTree() {
-    log("Step 3: Loading tree...");
-    try {
-      const res = await fetch("/.netlify/functions/list_content_tree");
-      log("Tree HTTP status: " + res.status);
-      if(res.ok) treeData = await res.json();
-      else log("Tree fetch failed with HTTP " + res.status);
+// =====================
+// Load and render tree
+// =====================
+async function loadTree() {
+  log("Step 3: Loading tree...");
+  try {
+    const treeContainer = document.getElementById("tree");
+    if(!treeContainer){ log("Tree container missing"); return; }
 
-      reRenderTree();
-    } catch(err){
-      log("loadTree fatal error: " + err);
+    let tree = [];
+    if(renderTreeFn){
+      try {
+        const res = await fetch("/.netlify/functions/list_content_tree");
+        log("Tree HTTP status: " + res.status);
+        if(res.ok) tree = await res.json();
+        else log("Tree fetch failed with HTTP " + res.status);
+      } catch(e){
+        log("Tree fetch error: " + e);
+      }
+
+      // Define reRender function on renderTreeFn
+      renderTreeFn.reRender = (path) => {
+        selectedNodePath = path;
+        treeContainer.innerHTML = "";
+        treeContainer.appendChild(
+          renderTreeFn(tree, startEditCallback, "editButtons", selectedNodePath, addMoveButtonsFn)
+        );
+      };
+
+      // Initial render
+      treeContainer.innerHTML = "";
+      treeContainer.appendChild(
+        renderTreeFn(tree, startEditCallback, "editButtons", selectedNodePath, addMoveButtonsFn)
+      );
+
+      log("Tree rendered");
+    } else {
+      log("renderTree function not available, tree cannot be displayed");
     }
+  } catch(err){
+    log("loadTree fatal error: " + err);
   }
+}
 
-  // =====================
-  // Initialize editor page
-  // =====================
-  async function init() {
-    log("Step 0: Initializing editor");
-    await loadHelpers();
-    await loadTree();
-    log("Step 4: Initialization complete");
+// =====================
+// Node edit callback
+// =====================
+async function startEditCallback(file) {
+  currentFile = file;
+  document.getElementById("editorContainer").style.display = "block";
+  document.getElementById("tree").style.display = "none";
+
+  log("Editing file: " + file);
+
+  try {
+    const res = await fetch("/.netlify/functions/start_edit", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({file})
+    });
+
+    log("start_edit HTTP status: " + res.status);
+    if(!res.ok) throw new Error("start_edit failed HTTP " + res.status);
+
+    const data = await res.json();
+    rawBody = data.rawFrontMatter || "";
+    const fmTextArea = document.getElementById("frontMatterText");
+    if(fmTextArea) fmTextArea.value = rawBody;
+
+    log("Front matter loaded for edit");
+  } catch(e){
+    log("Error in startEditCallback: " + e);
   }
+}
 
-  init();
+// =====================
+// Initialize
+// =====================
+async function init() {
+  log("Step 0: Initializing editor");
+  await loadHelpers();
+  await loadTree();
+  log("Step 4: Initialization complete");
+}
+
+init();
 </script>
 `;
 }
