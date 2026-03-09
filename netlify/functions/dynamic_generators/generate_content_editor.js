@@ -84,7 +84,7 @@ white-space:pre-wrap;
   async function loadTree() {
     try {
       log("Loading tree...");
-      const res = await fetch("/.netlify/functions/webeditor/list_content_tree");
+      const res = await fetch("/.netlify/functions/list_content_tree");
       log("Tree HTTP status: " + res.status);
       if(!res.ok) throw new Error("HTTP "+res.status);
 
