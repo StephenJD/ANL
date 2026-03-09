@@ -6,88 +6,85 @@ import { qualifyTitle } from "./qualifyTitle.js";
 export async function walkDir(dir, parentType = null) {
     console.log(`[walkDir] Entering: ${dir} | parentType: ${parentType}`);
 
-    const children = [];
-
     const entries = fs.readdirSync(dir, { withFileTypes: true });
-
-    let folders = [];
-    let files = [];
+    const folderNodes = [];
+    const fileNodes = [];
+    let homeNode = null;
+    let loginNodes = [];
 
     for (const entry of entries) {
-        if (entry.isDirectory()) folders.push(entry);
-        else if (entry.isFile() && entry.name.endsWith(".md")) files.push(entry);
-    }
-
-    folders.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
-    files.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
-
-    const homeIndex = folders.findIndex(f => f.name === "home");
-    if (homeIndex > -1) {
-        const [homeFolder] = folders.splice(homeIndex, 1);
-        folders.unshift(homeFolder);
-    }
-
-    const userLoginIndex = files.findIndex(f => f.name === "user-login.md");
-    if (userLoginIndex > -1) {
-        const [userLoginFile] = files.splice(userLoginIndex, 1);
-        files.unshift(userLoginFile);
-    }
-
-    for (const entry of folders) {
         const fullPath = path.join(dir, entry.name);
-        console.log(`[walkDir] Entering folder: ${fullPath}`);
 
-        const indexPath = path.join(fullPath, "_index.md");
-        let fm = {};
-        let type = "document-folder";
+        if (entry.isDirectory()) {
+            const indexPath = path.join(fullPath, "_index.md");
+            let fm = {};
+            let type = "document-folder";
 
-        if (fs.existsSync(indexPath)) {
-            console.log(`[walkDir] Reading file: ${indexPath}`);
-            fm = readFrontMatter(indexPath);
-            type = fm.type || type;
+            if (fs.existsSync(indexPath)) {
+                console.log(`[walkDir] Reading file: ${indexPath}`);
+                fm = readFrontMatter(indexPath);
+                type = fm.type || type;
+            }
+
+            const folderNode = {
+                name: path.basename(fullPath),
+                path: fullPath,
+                title: fm.title || path.basename(fullPath),
+                type,
+                children: []
+            };
+
+            folderNode.qualifiedTitle = qualifyTitle(folderNode, parentType);
+            console.log(`[walkDir] Raw title: ${folderNode.title}`);
+            console.log(`[walkDir] Qualified title: ${folderNode.qualifiedTitle}`);
+
+            folderNode.children = await walkDir(fullPath, type);
+
+            if (type === "home" && !parentType) {
+                homeNode = folderNode;
+            } else {
+                folderNodes.push(folderNode);
+            }
         }
+        else if (entry.isFile() && entry.name.endsWith(".md")) {
+            if (entry.name === "_index.md") continue;
 
-        const folderNode = {
-            name: path.basename(fullPath),
-            path: fullPath,
-            title: fm.title || path.basename(fullPath),
-            type,
-            children: []
-        };
+            console.log(`[walkDir] Reading file: ${fullPath}`);
+            const fm = readFrontMatter(fullPath);
 
-        console.log(`[walkDir] Passing to qualifyTitle | nodeType: ${folderNode.type}, parentType: ${parentType}`);
-        folderNode.qualifiedTitle = qualifyTitle(folderNode, parentType);
-        console.log(`[walkDir] Raw title: ${folderNode.title}`);
-        console.log(`[walkDir] Qualified title: ${folderNode.qualifiedTitle}`);
+            const node = {
+                name: path.basename(entry.name, ".md"),
+                path: fullPath,
+                title: fm.title || path.basename(entry.name, ".md"),
+                type: fm.type || "document"
+            };
 
-        folderNode.children = await walkDir(fullPath, type);
+            node.qualifiedTitle = qualifyTitle(node, parentType);
+            console.log(`[walkDir] Raw title: ${node.title}`);
+            console.log(`[walkDir] Qualified title: ${node.qualifiedTitle}`);
 
-        children.push(folderNode);
+            if (!parentType && node.type === "login") {
+                loginNodes.push(node);
+            } else {
+                fileNodes.push(node);
+            }
+        }
     }
 
-    for (const entry of files) {
-        const fullPath = path.join(dir, entry.name);
-        if (entry.name === "_index.md") continue;
+    folderNodes.sort((a, b) => a.name.localeCompare(b.name));
+    fileNodes.sort((a, b) => a.name.localeCompare(b.name));
+    loginNodes.sort((a, b) => a.name.localeCompare(b.name));
 
-        console.log(`[walkDir] Reading file: ${fullPath}`);
-        const fm = readFrontMatter(fullPath);
+    const result = [];
 
-        const node = {
-            name: path.basename(entry.name, ".md"),
-            path: fullPath,
-            title: fm.title || path.basename(entry.name, ".md"),
-            type: fm.type || "document"
-        };
-
-        console.log(`[walkDir] Passing to qualifyTitle | nodeType: ${node.type}, parentType: ${parentType}`);
-        node.qualifiedTitle = qualifyTitle(node, parentType);
-        console.log(`[walkDir] Raw title: ${node.title}`);
-        console.log(`[walkDir] Qualified title: ${node.qualifiedTitle}`);
-
-        children.push(node);
+    if (!parentType) {
+        if (homeNode) result.push(homeNode);
+        result.push(...loginNodes);
     }
 
-    return children;
+    result.push(...folderNodes, ...fileNodes);
+
+    return result;
 }
 
 function readFrontMatter(filePath) {
@@ -114,4 +111,4 @@ function readFrontMatter(filePath) {
 
     console.log(`[FM] Result:`, fm);
     return fm;
-                                }
+              }
