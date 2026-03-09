@@ -9,14 +9,10 @@ export async function handler(event) {
     console.info("[start_edit] Received event");
 
     try {
-        // Read the raw body
-        let rawBody = event.body;
-        console.info("[start_edit] RAW body string:", rawBody);
-
-        // Parse JSON safely
+        // Read and parse the JSON body
         let body;
         try {
-            body = JSON.parse(rawBody);
+            body = JSON.parse(event.body);
         } catch (e) {
             console.error("[start_edit] JSON parse error:", e);
             return { statusCode: 400, body: "Invalid JSON" };
@@ -24,33 +20,36 @@ export async function handler(event) {
         console.info("[start_edit] Parsed body:", body);
 
         const file = body.file;
-        console.info("[start_edit] Received file:", file);
-
         if (!file) {
             console.error("[start_edit] No file provided");
             return { statusCode: 400, body: "No file provided" };
         }
+        console.info("[start_edit] Received file:", file);
 
-        // Strip leading "content/" if present
-        let relativeFile = file.startsWith("content/") ? file.slice("content/".length) : file;
+        // Determine source path
+        const src = path.isAbsolute(file) ? file : path.join(contentRoot, file);
+        if (!fs.existsSync(src)) {
+            console.error("[start_edit] Source file does not exist:", src);
+            return { statusCode: 404, body: "File not found" };
+        }
 
-        const src = path.join(contentRoot, relativeFile);
-        const dst = path.join(editsRoot, relativeFile);
-
+        // Destination path in /tmp/edits mirrors relative content tree
+        const dst = path.join(editsRoot, path.relative(contentRoot, src));
         console.info("[start_edit] Source path:", src);
         console.info("[start_edit] Destination path:", dst);
 
         // Ensure destination folder exists
         fs.mkdirSync(path.dirname(dst), { recursive: true });
 
-        // Copy the file to edits
+        // Copy file to /tmp/edits
         fs.copyFileSync(src, dst);
 
+        // Read file content for editor
         const content = fs.readFileSync(dst, "utf8");
 
         return {
             statusCode: 200,
-            body: JSON.stringify({ file: relativeFile, content })
+            body: JSON.stringify({ file: path.relative(contentRoot, src), content })
         };
 
     } catch (err) {
