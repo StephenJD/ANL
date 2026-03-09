@@ -88,7 +88,7 @@ white-space:pre-wrap;
 
       const tree = await res.json();
       log("Tree loaded successfully");
-      log("RAW TREE DATA: " + JSON.stringify(tree, null, 2));
+      //log("RAW TREE DATA: " + JSON.stringify(tree, null, 2));
     
       const treeContainer = document.getElementById("tree");
       treeContainer.innerHTML = "";
