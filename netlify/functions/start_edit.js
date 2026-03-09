@@ -1,59 +1,73 @@
-// netlify/functions/webeditor/start_edit.js
+// netlify/functions/start_edit.js
 import fs from "fs";
 import path from "path";
 
 const contentRoot = path.join(process.cwd(), "content");
-const editsRoot = path.join("/tmp/edits");
 
 export async function handler(event) {
     console.info("[start_edit] Received event");
 
     try {
-        // Read and parse the JSON body
-        let body;
-        try {
-            body = JSON.parse(event.body);
-        } catch (e) {
-            console.error("[start_edit] JSON parse error:", e);
-            return { statusCode: 400, body: "Invalid JSON" };
-        }
-        console.info("[start_edit] Parsed body:", body);
-
+        const body = JSON.parse(event.body);
         const file = body.file;
-        if (!file) {
-            console.error("[start_edit] No file provided");
-            return { statusCode: 400, body: "No file provided" };
-        }
-        console.info("[start_edit] Received file:", file);
+        if (!file) return { statusCode: 400, body: "No file provided" };
 
-        // Determine source path
-        const src = path.isAbsolute(file) ? file : path.join(contentRoot, file);
+        // Strip leading "content/" if present
+        const relativeFile = file.startsWith("content/") ? file.slice("content/".length) : file;
+        const src = path.join(contentRoot, relativeFile);
+        console.info("[start_edit] Reading file:", src);
+
         if (!fs.existsSync(src)) {
-            console.error("[start_edit] Source file does not exist:", src);
             return { statusCode: 404, body: "File not found" };
         }
 
-        // Destination path in /tmp/edits mirrors relative content tree
-        const dst = path.join(editsRoot, path.relative(contentRoot, src));
-        console.info("[start_edit] Source path:", src);
-        console.info("[start_edit] Destination path:", dst);
+        const content = fs.readFileSync(src, "utf8");
+        const lines = content.split(/\r?\n/);
 
-        // Ensure destination folder exists
-        fs.mkdirSync(path.dirname(dst), { recursive: true });
+        let inFrontMatter = false;
+        const rawFrontMatterLines = [];
+        const frontMatterObject = {};
 
-        // Copy file to /tmp/edits
-        fs.copyFileSync(src, dst);
+        for (let line of lines) {
+            const trimmed = line.trim();
+            if (trimmed === "---") {
+                if (!inFrontMatter) {
+                    inFrontMatter = true;
+                } else {
+                    break; // end of front matter
+                }
+                continue;
+            }
 
-        // Read file content for editor
-        const content = fs.readFileSync(dst, "utf8");
+            if (inFrontMatter) {
+                rawFrontMatterLines.push(line);
+
+                // parse key: value or key = value
+                const match = line.match(/^([\w_]+)\s*[:=]\s*(.+)$/);
+                if (match) {
+                    let [, key, value] = match;
+                    key = key.trim();
+                    value = value.trim();
+                    if ((value.startsWith('"') && value.endsWith('"')) ||
+                        (value.startsWith("'") && value.endsWith("'"))) {
+                        value = value.slice(1, -1);
+                    }
+                    frontMatterObject[key] = value;
+                }
+            }
+        }
 
         return {
             statusCode: 200,
-            body: JSON.stringify({ file: path.relative(contentRoot, src), content })
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                rawFrontMatter: rawFrontMatterLines.join("\n"),
+                frontMatter: frontMatterObject
+            })
         };
 
     } catch (err) {
-        console.error("[start_edit] start_edit error:", err);
+        console.error("[start_edit] Error:", err);
         return { statusCode: 500, body: "Server error" };
     }
-}
+      }
