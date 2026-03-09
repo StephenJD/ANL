@@ -1,5 +1,4 @@
 // static/js/webeditor/renderTree.js
-import { qualifyTitle } from "./qualifyTitle.js";
 
 export function renderTree(nodes, startEditCallback, editButtonsId = "editButtons") {
   const ul = document.createElement("ul");
@@ -9,13 +8,12 @@ export function renderTree(nodes, startEditCallback, editButtonsId = "editButton
   nodes.forEach(node => {
     const li = document.createElement("li");
 
-    // Assign qualified title
-    node.qualifiedTitle = qualifyTitle(node, node.parentType || null);
+    // Use qualifiedTitle from server
+    const displayTitle = node.qualifiedTitle || node.title || "Untitled";
 
-    // Node label
     const a = document.createElement("a");
     a.href = "#";
-    a.textContent = node.qualifiedTitle;
+    a.textContent = displayTitle;
     a.style.display = "block";
     a.style.cursor = "pointer";
 
@@ -29,7 +27,6 @@ export function renderTree(nodes, startEditCallback, editButtonsId = "editButton
 
     li.appendChild(a);
 
-    // Render children recursively
     if (node.children && node.children.length) {
       li.appendChild(renderTree(node.children, startEditCallback, editButtonsId));
     }
