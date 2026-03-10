@@ -1,18 +1,19 @@
 // static/js/webeditor/renderTree.js
 
-import { moveNode } from './treeMoveActions.js';
+import { moveNode } from "./treeMoveActions.js"; // must exist
+import { dropMove } from "./treeMoveActions.js"; // must exist
+import { moveAfterNextSelected } from "./treeMoveActions.js"; // must exist
+import { saveNode, publishNode, copyNodeUrl } from "./treeMoveActions.js"; // must exist
 
 export function renderTree(
   nodes,
   startEditCallback,
-  editButtonsId = "editButtons",
+  editButtonsContainerId = "editButtons",
   selectedNodePath = null,
-  addMoveButtonsFn = null,
-  fullTreeRoot = null,
-  treeData = null
+  fullTreeRoot = null
 ) {
+  if (!nodes) return document.createTextNode("Tree data missing");
   if (!fullTreeRoot) fullTreeRoot = nodes;
-  if (!treeData) treeData = fullTreeRoot;
 
   const ul = document.createElement("ul");
   ul.style.listStyle = "none";
@@ -31,134 +32,83 @@ export function renderTree(
     titleSpan.style.cursor = "pointer";
     titleSpan.style.padding = "2px 4px";
 
-    // color based on edit
-    if (!node.edit) {
-      titleSpan.style.color = "black";
-    } else if (node.edit.includes("moved")) {
+    // Colour based on edit flags
+    if (node.edit && node.edit.moved) {
       titleSpan.style.color = "orange";
-    } else {
+    } else if (node.edit) {
       titleSpan.style.color = "blue";
+    } else {
+      titleSpan.style.color = "black";
     }
 
-    // bold if selected
-    if (selectedNodePath && node.path === selectedNodePath) {
+    if (selectedNodePath === node.path) {
       titleSpan.style.fontWeight = "bold";
+      titleSpan.style.backgroundColor = "#def";
     }
 
-    titleSpan.onclick = e => {
+    titleSpan.onclick = (e) => {
       e.preventDefault();
       window.selectedNodePath = node.path;
-      if (typeof renderTree.reRender === "function") {
-        renderTree.reRender(node.path);
-      }
+      if (typeof renderTree.reRender === "function") renderTree.reRender(node.path);
     };
 
     li.appendChild(titleSpan);
 
     if (node.children && node.children.length) {
       li.appendChild(
-        renderTree(
-          node.children,
-          startEditCallback,
-          editButtonsId,
-          selectedNodePath,
-          addMoveButtonsFn,
-          fullTreeRoot,
-          treeData
-        )
+        renderTree(node.children, startEditCallback, editButtonsContainerId, selectedNodePath, fullTreeRoot)
       );
     }
 
     ul.appendChild(li);
   });
 
-  // Bottom fixed button panel
-  let bottomBtnContainer = document.getElementById('bottomTreeButtons');
-  if (!bottomBtnContainer) {
-    bottomBtnContainer = document.createElement('div');
-    bottomBtnContainer.id = 'bottomTreeButtons';
-    bottomBtnContainer.style.position = 'fixed';
-    bottomBtnContainer.style.bottom = '0';
-    bottomBtnContainer.style.left = '0';
-    bottomBtnContainer.style.right = '0';
-    bottomBtnContainer.style.backgroundColor = '#f0f0f0';
-    bottomBtnContainer.style.borderTop = '1px solid #ccc';
-    bottomBtnContainer.style.padding = '6px';
-    bottomBtnContainer.style.display = 'flex';
-    bottomBtnContainer.style.flexWrap = 'wrap';
-    bottomBtnContainer.style.alignItems = 'center';
-    bottomBtnContainer.style.zIndex = '9999';
-    document.body.appendChild(bottomBtnContainer);
+  // Bottom bar buttons
+  const btnContainer = document.getElementById(editButtonsContainerId);
+  if (btnContainer) {
+    btnContainer.innerHTML = "";
+
+    const isNodeSelected = !!selectedNodePath;
+    const buttons = [
+      { id: "up", label: "↑", action: (n) => moveNode(n, "up", fullTreeRoot) },
+      { id: "down", label: "↓", action: (n) => moveNode(n, "down", fullTreeRoot) },
+      { id: "left", label: "←", action: (n) => moveNode(n, "left", fullTreeRoot) },
+      { id: "right", label: "→", action: (n) => moveNode(n, "right", fullTreeRoot) },
+      { id: "after", label: "→|", action: (n) => moveAfterNextSelected(n, fullTreeRoot, window.nextSelectedPath) },
+      { id: "copyUrl", label: "Copy URL", action: (n) => copyNodeUrl(n) },
+      { id: "edit", label: "✎", action: (n) => startEditCallback(n.path) },
+      { id: "save", label: "💾", action: (n) => saveNode(n) },
+      { id: "drop", label: "↺", action: (n) => dropMove(n) },
+      { id: "publish", label: "📤", action: (n) => publishNode(n) },
+    ];
+
+    buttons.forEach((btn) => {
+      const b = document.createElement("button");
+      b.textContent = btn.label;
+      b.disabled = !isNodeSelected;
+      b.onclick = (e) => {
+        e.stopPropagation();
+        if (!isNodeSelected) return;
+        const node = findNodeByPath(fullTreeRoot, selectedNodePath);
+        if (!node) return;
+        btn.action(node);
+        if (typeof renderTree.reRender === "function") renderTree.reRender(selectedNodePath);
+      };
+      btnContainer.appendChild(b);
+    });
   }
-
-  const buttons = [
-    { dir: 'up', label: '↑' },
-    { dir: 'down', label: '↓' },
-    { dir: 'left', label: '←' },
-    { dir: 'right', label: '→' },
-    { action: 'afterNext', label: '⇨' },
-    { action: 'copyURL', label: '🔗' },
-    { action: 'edit', label: '✎' },
-    { action: 'save', label: '💾' },
-    { action: 'drop', label: '✗' },
-    { action: 'publish', label: '📤' }
-  ];
-
-  bottomBtnContainer.innerHTML = '';
-  buttons.forEach(btnInfo => {
-    const btn = document.createElement('button');
-    btn.textContent = btnInfo.label;
-    btn.style.margin = '2px';
-    btn.disabled = !window.selectedNodePath;
-
-    btn.onclick = e => {
-      e.preventDefault();
-      e.stopPropagation();
-      if (!window.selectedNodePath) return;
-      const nodeObj = findNodeByPath(window.selectedNodePath, treeData);
-      if (!nodeObj) return;
-
-      if (btnInfo.dir) {
-        if (moveNode(nodeObj, btnInfo.dir, treeData)) {
-          // mark moved in edit flag
-          nodeObj.edit = nodeObj.edit ? [...new Set([...nodeObj.edit, 'moved'])] : ['moved'];
-        }
-      } else if (btnInfo.action === 'afterNext') {
-        // implement move after next selected node logic if required
-      } else if (btnInfo.action === 'copyURL') {
-        navigator.clipboard.writeText(window.location.href + '#' + nodeObj.path);
-      } else if (btnInfo.action === 'edit') {
-        startEditCallback(nodeObj.path);
-      } else if (btnInfo.action === 'save') {
-        saveNode(nodeObj);
-      } else if (btnInfo.action === 'drop') {
-        dropChanges(nodeObj);
-      } else if (btnInfo.action === 'publish') {
-        publishNode(nodeObj);
-      }
-
-      // Re-render tree to reflect changes and maintain selection
-      const container = document.getElementById('tree');
-      if (container) {
-        container.innerHTML = '';
-        container.appendChild(renderTree(treeData, startEditCallback, editButtonsId, window.selectedNodePath, addMoveButtonsFn, fullTreeRoot, treeData));
-      }
-    };
-
-    bottomBtnContainer.appendChild(btn);
-  });
 
   return ul;
 }
 
-// helper to find node by path
-function findNodeByPath(path, nodes) {
-  for (const node of nodes) {
-    if (node.path === path) return node;
-    if (node.children && node.children.length) {
-      const found = findNodeByPath(path, node.children);
+// utility to find node by path
+function findNodeByPath(nodes, path) {
+  for (const n of nodes) {
+    if (n.path === path) return n;
+    if (n.children && n.children.length) {
+      const found = findNodeByPath(n.children, path);
       if (found) return found;
     }
   }
-  return null;
+  return null  
 }
