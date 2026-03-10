@@ -1,135 +1,84 @@
-// static/js/webeditor/editButtons.js
-import { moveNode, dropMove, moveAfterNextSelected } from "./treeMoveActions.js";
+// /js/webeditor/editButtons.js
 window.log("editButtons FILE LOADED 2026-03-10");
 
-let treeRootRef = null;
-let startEditCallbackRef = null;
+let buttonsWrapper = null;
+let buttons = {};
+let selectedNodePath = null;
 
-export function initEditButtons(containerId, treeRoot, startEditCallback) {
-
-  treeRootRef = treeRoot;
-  startEditCallbackRef = startEditCallback;
+export function initEditButtons(containerId = "editButtons", treeData = [], startEditCallback) {
 
   const container = document.getElementById(containerId);
-  window.log(`[editButtons] container lookup = ${container ? "FOUND" : "NOT FOUND"}`);
-  if (!container) return;
+  if (!container) {
+    window.log(`[editButtons] ERROR: container ${containerId} not found`);
+    return;
+  }
+  window.log("[editButtons] container lookup = FOUND");
 
-  // Defer initialization until browser has rendered layout
-  requestAnimationFrame(() => {
-
-    container.style.display = "flex";
-    container.style.flexWrap = "wrap";
-    container.style.justifyContent = "flex-start";
-    container.style.alignItems = "center";
-    container.style.gap = "4px";
-    container.style.padding = "2px";
-    container.style.minHeight = "40px";
-    container.style.width = "100%";
-
-    logAncestors(container);
-
+  // Wait for layout before inserting buttons
+  function waitForLayout(callback, attempt = 0) {
     const rect = container.getBoundingClientRect();
-    window.log(`[editButtons] container rect after styles height=${rect.height} width=${rect.width}`);
-    window.log(`[editButtons] container display=${container.style.display}`);
-    window.log(`[editButtons] children BEFORE=${container.children.length}`);
+    window.log(`[editButtons] container rect attempt=${attempt} height=${rect.height} width=${rect.width}`);
+    if (rect.height > 0 && rect.width > 0) {
+      callback();
+    } else if (attempt < 30) { // max ~500ms wait (30*16ms)
+      requestAnimationFrame(() => waitForLayout(callback, attempt + 1));
+    } else {
+      window.log("[editButtons] WARNING: container still has zero size, inserting buttons anyway");
+      callback();
+    }
+  }
 
-    container.innerHTML = "";
+  waitForLayout(() => {
+    container.style.display = "flex";
 
-    const buttons = [
-      { id:"up", label:"↑", action:(n)=>moveNode(n,"up",treeRootRef) },
-      { id:"down", label:"↓", action:(n)=>moveNode(n,"down",treeRootRef) },
-      { id:"left", label:"←", action:(n)=>moveNode(n,"left",treeRootRef) },
-      { id:"right", label:"→", action:(n)=>moveNode(n,"right",treeRootRef) },
-      { id:"after", label:"→|", action:(n)=>moveAfterNextSelected(n,treeRootRef,window.nextSelectedPath) },
-      { id:"copyUrl", label:"🔗", action:(n)=>copyNodeUrl(n) },
-      { id:"edit", label:"✎", action:(n)=>startEditCallbackRef(n.path) },
-      { id:"save", label:"💾", action:(n)=>saveNode(n) },
-      { id:"drop", label:"↺", action:(n)=>dropMove(n) },
-      { id:"publish", label:"📤", action:(n)=>publishNode(n) }
+    // Clear any existing buttons wrapper
+    if (buttonsWrapper) container.removeChild(buttonsWrapper);
+
+    buttonsWrapper = document.createElement("div");
+    buttonsWrapper.className = "edit-buttons-wrapper";
+    buttonsWrapper.style.display = "flex";
+    buttonsWrapper.style.gap = "6px";
+    container.appendChild(buttonsWrapper);
+
+    // Define button list
+    const btnDefs = [
+      "up","down","left","right","after",
+      "copyUrl","edit","save","drop","publish"
     ];
 
-    buttons.forEach(btn => {
-      window.log(`[editButtons] create button ${btn.id}`);
-      const b = document.createElement("button");
-      b.id = btn.id;
-      b.textContent = btn.label;
-      b.disabled = true;
-      b.style.flex = "1 0 auto";
-      b.style.minWidth = "36px";
-      b.style.height = "36px";
-      b.style.fontSize = "16px";
-
-      b.onclick = () => {
-        window.log(`[editButtons] BUTTON CLICK ${btn.id}`);
-        const node = findNodeByPath(treeRootRef, window.selectedNodePath);
-        if (!node) {
-          window.log("[editButtons] ERROR selected node not found");
-          return;
-        }
-        btn.action(node);
-        updateEditButtons();
-        if (typeof window.renderTree?.reRender === "function") {
-          window.renderTree.reRender(window.selectedNodePath);
-        }
-      };
-
-      container.appendChild(b);
+    buttons = {};
+    btnDefs.forEach(id => {
+      const btn = document.createElement("button");
+      btn.id = id;
+      btn.textContent = id;
+      btn.disabled = true;
+      buttonsWrapper.appendChild(btn);
+      buttons[id] = btn;
     });
 
-    window.log(`[editButtons] children AFTER wrapper=${container.children.length}`);
+    window.log(`[editButtons] children AFTER wrapper=${buttonsWrapper.children.length}`);
+
     updateEditButtons();
     window.log("[editButtons] initEditButtons COMPLETE");
-
   });
 }
 
-export function updateEditButtons() {
-  const selected = !!window.selectedNodePath;
-  window.log(`[editButtons] update buttons selected=${selected}`);
+export function updateEditButtons(selectedPath = window.selectedNodePath) {
+  selectedNodePath = selectedPath;
 
-  const ids = ["up","down","left","right","after","copyUrl","edit","save","drop","publish"];
-  ids.forEach(id => {
-    const btn = document.getElementById(id);
-    if (!btn) {
-      window.log(`[editButtons] button missing id=${id}`);
-      return;
-    }
-    btn.disabled = !selected;
-    window.log(`[editButtons] button ${id} disabled=${btn.disabled}`);
-  });
-}
+  if (!buttons || Object.keys(buttons).length === 0) {
+    window.log("[editButtons] update called but buttons not created yet");
+    return;
+  }
 
-/* --------------------------------------------------
-STUB ACTIONS
--------------------------------------------------- */
-function copyNodeUrl(node){ window.log(`[stub] copy URL ${node.path}`); }
-function saveNode(node){ window.log(`[stub] save ${node.path}`); }
-function publishNode(node){ window.log(`[stub] publish ${node.path}`); }
-
-/* --------------------------------------------------
-HELPER NODE SEARCH
--------------------------------------------------- */
-function findNodeByPath(nodes, path) {
-  for (const n of nodes) {
-    if (n.path === path) return n;
-    if (n.children) {
-      const r = findNodeByPath(n.children, path);
-      if (r) return r;
+  const anySelected = !!selectedNodePath;
+  for (const id in buttons) {
+    if (buttons.hasOwnProperty(id)) {
+      buttons[id].disabled = !anySelected;
+      if (!anySelected) window.log(`[editButtons] button ${id} disabled=true`);
     }
   }
-  return null;
-}
 
-/* --------------------------------------------------
-HELPER: Log container ancestors
--------------------------------------------------- */
-function logAncestors(el) {
-  let ancestor = el;
-  let depth = 0;
-  while (ancestor) {
-    const rect = ancestor.getBoundingClientRect();
-    window.log(`[editButtons] ancestor depth=${depth} tag=${ancestor.tagName} height=${rect.height} width=${rect.width}`);
-    ancestor = ancestor.parentElement;
-    depth++;
-  }
-        }
+  if (anySelected) window.log(`[editButtons] update buttons selected=true`);
+  else window.log(`[editButtons] update buttons selected=false`);
+}
