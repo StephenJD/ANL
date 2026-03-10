@@ -1,6 +1,18 @@
 // static/js/webeditor/renderTree.js
 
-import { moveNode, dropMove, moveAfterNextSelected, saveNode, publishNode, copyNodeUrl } from "./treeMoveActions.js";
+// Only import move-related functions
+import { moveNode, dropMove, moveAfterNextSelected } from "./treeMoveActions.js";
+
+// Stub actions in renderTree itself
+function copyNodeUrl(node) {
+    console.log(`[stub] Copy URL for node: ${node.path}`);
+}
+function saveNode(node) {
+    console.log(`[stub] Save node: ${node.path}`);
+}
+function publishNode(node) {
+    console.log(`[stub] Publish node: ${node.path}`);
+}
 
 export function renderTree(
   nodes,
