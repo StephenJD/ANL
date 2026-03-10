@@ -6,7 +6,7 @@ export function renderTree(
   editButtonsId = "editButtons",
   selectedNodePath = null,
   addMoveButtonsFn = null,
-  fullTreeRoot = null // NEW: always keep reference to the full tree
+  fullTreeRoot = null
 ) {
   console.log("[renderTree] Called with nodes:", nodes);
 
@@ -21,7 +21,7 @@ export function renderTree(
     console.log("[renderTree] nodes coerced to array:", nodes);
   }
 
-  if (!fullTreeRoot) fullTreeRoot = nodes; // set fullTreeRoot on first call
+  if (!fullTreeRoot) fullTreeRoot = nodes; // keep top-level reference
 
   const ul = document.createElement("ul");
   ul.style.listStyle = "none";
@@ -36,8 +36,7 @@ export function renderTree(
     const li = document.createElement("li");
     li.style.position = "relative";
 
-    const displayTitle = node.qualifiedTitle || node.title || "Untitled";
-
+    const displayTitle = node.qualification + " " + (node.title || node.rawName);
     const titleSpan = document.createElement("span");
     titleSpan.textContent = displayTitle;
     titleSpan.style.display = "inline-block";
@@ -69,7 +68,6 @@ export function renderTree(
       li.appendChild(editBtn);
 
       if (typeof addMoveButtonsFn === "function") {
-        // Pass fullTreeRoot here instead of nodes at recursion level
         addMoveButtonsFn(li, node, fullTreeRoot, renderTree, startEditCallback);
       }
     }
@@ -82,7 +80,7 @@ export function renderTree(
           editButtonsId,
           selectedNodePath,
           addMoveButtonsFn,
-          fullTreeRoot // propagate full tree through recursion
+          fullTreeRoot
         )
       );
     }
@@ -92,4 +90,4 @@ export function renderTree(
 
   console.log("[renderTree] Tree UL built successfully");
   return ul;
-  }
+          }
