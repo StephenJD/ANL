@@ -6,8 +6,14 @@ let treeRoot = null;
 let startEditCallbackRef = null;
 let buttonsInitialised = false;
 
-export function renderTree(nodes, startEditCallback, editButtonsContainerId = "editButtons", selectedNodePath = null, fullTreeRoot = null, depth = 0) {
-
+export function renderTree(
+  nodes,
+  startEditCallback,
+  editButtonsContainerId = "editButtons",
+  selectedNodePath = null,
+  fullTreeRoot = null,
+  depth = 0
+) {
   if (!nodes) {
     window.log("[renderTree] ERROR: nodes missing");
     return document.createTextNode("Tree missing");
@@ -56,11 +62,15 @@ export function renderTree(nodes, startEditCallback, editButtonsContainerId = "e
     ul.appendChild(li);
   });
 
+  // initialise buttons only at top-level
   if (depth === 0 && !buttonsInitialised) {
     window.log("[renderTree] TOP LEVEL COMPLETE → initialise buttons");
-    initEditButtons(editButtonsContainerId, treeRoot, startEditCallbackRef);
-    buttonsInitialised = true;
+    // wait until next paint so container has non-zero height
+    requestAnimationFrame(() => {
+      initEditButtons(editButtonsContainerId, treeRoot, startEditCallbackRef);
+      buttonsInitialised = true;
+    });
   }
 
   return ul;
-}
+                          }
