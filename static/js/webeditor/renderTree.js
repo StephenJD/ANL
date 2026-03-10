@@ -6,9 +6,9 @@ let treeRoot = null;
 let startEditCallbackRef = null;
 let buttonsInitialised = false;
 
-/* ---------------------------
-   Tree Rendering
-----------------------------*/
+/* --------------------------------------------------
+TREE RENDER
+-------------------------------------------------- */
 
 export function renderTree(
   nodes,
@@ -19,12 +19,15 @@ export function renderTree(
   depth = 0
 ) {
 
-  if (!nodes) return document.createTextNode("Tree data missing");
+  if (!nodes) {
+    window.log("[renderTree] ERROR: nodes missing");
+    return document.createTextNode("Tree missing");
+  }
 
   if (!treeRoot) treeRoot = fullTreeRoot || nodes;
   if (!startEditCallbackRef) startEditCallbackRef = startEditCallback;
 
-  window.log(`[renderTree] Called with nodes at depth ${depth}:`);
+  window.log(`[renderTree] Called depth=${depth} nodes=${nodes.length}`);
 
   const ul = document.createElement("ul");
   ul.style.listStyle = "none";
@@ -34,41 +37,35 @@ export function renderTree(
 
     const li = document.createElement("li");
 
-    const titleSpan = document.createElement("span");
-    const displayTitle = node.qualification + " " + (node.title || node.rawName);
+    const span = document.createElement("span");
 
-    titleSpan.textContent = displayTitle;
-    titleSpan.style.cursor = "pointer";
-    titleSpan.style.padding = "2px 4px";
+    const displayTitle =
+      (node.qualification ? node.qualification + " " : "") +
+      (node.title || node.rawName);
 
-    /* -------- colour logic -------- */
+    span.textContent = displayTitle;
+    span.style.cursor = "pointer";
+    span.style.padding = "2px 4px";
 
     if (node.edit && node.edit.moved) {
-      titleSpan.style.color = "orange";
+      span.style.color = "orange";
       window.log(`[renderTree] Node ${node.path} moved → orange`);
-    }
-    else {
-      titleSpan.style.color = "blue";
+    } else {
+      span.style.color = "blue";
       window.log(`[renderTree] Node ${node.path} normal → blue`);
     }
 
-    /* -------- selected node -------- */
-
     if (selectedNodePath === node.path) {
-      titleSpan.style.fontWeight = "bold";
-      titleSpan.style.backgroundColor = "#def";
-      window.log(`[renderTree] Node ${node.path} is selected`);
+      span.style.fontWeight = "bold";
+      span.style.backgroundColor = "#def";
+      window.log(`[renderTree] Node ${node.path} selected`);
     }
 
-    /* -------- click handler -------- */
-
-    titleSpan.onclick = (e) => {
-
-      e.preventDefault();
+    span.onclick = () => {
 
       window.selectedNodePath = node.path;
 
-      window.log(`[renderTree] Node clicked: ${node.path}`);
+      window.log(`[renderTree] CLICK node=${node.path}`);
 
       updateEditButtons();
 
@@ -77,13 +74,11 @@ export function renderTree(
       }
     };
 
-    li.appendChild(titleSpan);
-
-    /* -------- children -------- */
+    li.appendChild(span);
 
     if (node.children && node.children.length) {
 
-      const children = renderTree(
+      const childTree = renderTree(
         node.children,
         startEditCallback,
         editButtonsContainerId,
@@ -92,17 +87,18 @@ export function renderTree(
         depth + 1
       );
 
-      li.appendChild(children);
+      li.appendChild(childTree);
     }
 
     ul.appendChild(li);
-
   });
 
-  /* initialise buttons once after top-level render */
-
   if (depth === 0 && !buttonsInitialised) {
+
+    window.log("[renderTree] TOP LEVEL COMPLETE → initialise buttons");
+
     setupEditButtons(editButtonsContainerId);
+
     buttonsInitialised = true;
   }
 
@@ -110,20 +106,29 @@ export function renderTree(
 }
 
 
-/* ---------------------------
-   Button Creation
-----------------------------*/
+/* --------------------------------------------------
+BUTTON SETUP
+-------------------------------------------------- */
 
 function setupEditButtons(containerId) {
 
+  window.log(`[renderTree] setupEditButtons START id=${containerId}`);
+
   const container = document.getElementById(containerId);
 
-  if (!container) {
-    window.log(`[renderTree] WARNING: button container not found: ${containerId}`);
-    return;
-  }
+  window.log(`[renderTree] container lookup = ${container ? "FOUND" : "NOT FOUND"}`);
 
-  window.log("[renderTree] Creating editor buttons");
+  if (!container) return;
+
+  const rect = container.getBoundingClientRect();
+  const style = window.getComputedStyle(container);
+
+  window.log(`[renderTree] container display=${style.display}`);
+  window.log(`[renderTree] container visibility=${style.visibility}`);
+  window.log(`[renderTree] container height=${rect.height}`);
+  window.log(`[renderTree] container width=${rect.width}`);
+
+  window.log(`[renderTree] children BEFORE=${container.children.length}`);
 
   container.innerHTML = "";
 
@@ -143,7 +148,9 @@ function setupEditButtons(containerId) {
 
   ];
 
-  buttons.forEach(btn => {
+  buttons.forEach((btn) => {
+
+    window.log(`[renderTree] create button ${btn.id}`);
 
     const b = document.createElement("button");
 
@@ -151,15 +158,16 @@ function setupEditButtons(containerId) {
     b.textContent = btn.label;
     b.disabled = true;
 
-    b.onclick = (e) => {
+    b.onclick = () => {
 
-      e.stopPropagation();
+      window.log(`[renderTree] BUTTON CLICK ${btn.id}`);
 
       const node = findNodeByPath(treeRoot, window.selectedNodePath);
 
-      if (!node) return;
-
-      window.log(`[renderTree] Button ${btn.id} clicked for ${node.path}`);
+      if (!node) {
+        window.log("[renderTree] ERROR selected node not found");
+        return;
+      }
 
       btn.action(node);
 
@@ -168,82 +176,89 @@ function setupEditButtons(containerId) {
       if (typeof renderTree.reRender === "function") {
         renderTree.reRender(window.selectedNodePath);
       }
-
     };
 
     container.appendChild(b);
 
   });
 
+  window.log(`[renderTree] children AFTER=${container.children.length}`);
+
+  window.log(`[renderTree] container HTML snapshot:`);
+
+  window.log(container.innerHTML);
+
   updateEditButtons();
+
+  window.log("[renderTree] setupEditButtons COMPLETE");
 }
 
 
-/* ---------------------------
-   Enable / Disable Buttons
-----------------------------*/
+/* --------------------------------------------------
+BUTTON STATE
+-------------------------------------------------- */
 
 function updateEditButtons() {
 
   const selected = !!window.selectedNodePath;
+
+  window.log(`[renderTree] update buttons selected=${selected}`);
 
   const ids = [
     "up","down","left","right","after",
     "copyUrl","edit","save","drop","publish"
   ];
 
-  ids.forEach(id => {
+  ids.forEach((id) => {
 
     const btn = document.getElementById(id);
 
-    if (!btn) return;
+    if (!btn) {
+      window.log(`[renderTree] button missing id=${id}`);
+      return;
+    }
 
     btn.disabled = !selected;
 
-    window.log(`[renderTree] Button ${id} disabled: ${btn.disabled}`);
-
+    window.log(`[renderTree] button ${id} disabled=${btn.disabled}`);
   });
-
 }
 
 
-/* ---------------------------
-   Node Lookup
-----------------------------*/
+/* --------------------------------------------------
+NODE SEARCH
+-------------------------------------------------- */
 
-function findNodeByPath(nodes,path){
+function findNodeByPath(nodes, path) {
 
-  for(const n of nodes){
+  for (const n of nodes) {
 
-    if(n.path===path) return n;
+    if (n.path === path) return n;
 
-    if(n.children){
+    if (n.children) {
 
-      const r=findNodeByPath(n.children,path);
+      const r = findNodeByPath(n.children, path);
 
-      if(r) return r;
-
+      if (r) return r;
     }
-
   }
 
   return null;
-
 }
 
 
-/* ---------------------------
-   Stub Actions
-----------------------------*/
+/* --------------------------------------------------
+STUB ACTIONS
+-------------------------------------------------- */
 
 function copyNodeUrl(node){
-  window.log(`[stub] copy URL for ${node.path}`);
+  window.log(`[stub] copy URL ${node.path}`);
 }
 
 function saveNode(node){
-  window.log(`[stub] save node ${node.path}`);
+  window.log(`[stub] save ${node.path}`);
 }
 
 function publishNode(node){
-  window.log(`[stub] publish node ${node.path}`);
-     }
+  window.log(`[stub] publish ${node.path}`);
+                     }
