@@ -19,7 +19,7 @@ export async function walkDir(dir, parentType = null, rootDir = dir, parentNode 
         if (entry.isDirectory()) {
             const indexPath = path.join(fullPath, "_index.md");
             let fm = {};
-            let type = "document-folder";
+            let type = "document";
 
             if (fs.existsSync(indexPath)) {
                 console.log(`[walkDir] Reading _index.md: ${indexPath}`);
@@ -31,7 +31,7 @@ export async function walkDir(dir, parentType = null, rootDir = dir, parentNode 
                 parent: parentNode,
                 rawName: path.basename(fullPath),
                 title: fm.title || "",
-                qualification: qualification(fm.title, parentType),
+                qualification: qualification(type, parentType),
                 path: relativePath,
                 children: []
             };
