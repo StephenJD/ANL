@@ -1,9 +1,6 @@
 // static/js/webeditor/renderTree.js
 
-import { moveNode } from "./treeMoveActions.js"; // must exist
-import { dropMove } from "./treeMoveActions.js"; // must exist
-import { moveAfterNextSelected } from "./treeMoveActions.js"; // must exist
-import { saveNode, publishNode, copyNodeUrl } from "./treeMoveActions.js"; // must exist
+import { moveNode, dropMove, moveAfterNextSelected, saveNode, publishNode, copyNodeUrl } from "./treeMoveActions.js";
 
 export function renderTree(
   nodes,
@@ -54,48 +51,56 @@ export function renderTree(
 
     li.appendChild(titleSpan);
 
+    // Recursively append children UL
     if (node.children && node.children.length) {
-      li.appendChild(
-        renderTree(node.children, startEditCallback, editButtonsContainerId, selectedNodePath, fullTreeRoot)
-      );
+      const childUl = document.createElement("ul");
+      childUl.style.listStyle = "none";
+      childUl.style.paddingLeft = "15px";
+      node.children.forEach((child) => {
+        const childLi = renderTree([child], startEditCallback, null, selectedNodePath, fullTreeRoot);
+        if (childLi) childUl.appendChild(childLi);
+      });
+      li.appendChild(childUl);
     }
 
     ul.appendChild(li);
   });
 
-  // Bottom bar buttons
-  const btnContainer = document.getElementById(editButtonsContainerId);
-  if (btnContainer) {
-    btnContainer.innerHTML = "";
+  // Only add bottom buttons at top-level call
+  if (editButtonsContainerId) {
+    const btnContainer = document.getElementById(editButtonsContainerId);
+    if (btnContainer) {
+      btnContainer.innerHTML = "";
 
-    const isNodeSelected = !!selectedNodePath;
-    const buttons = [
-      { id: "up", label: "↑", action: (n) => moveNode(n, "up", fullTreeRoot) },
-      { id: "down", label: "↓", action: (n) => moveNode(n, "down", fullTreeRoot) },
-      { id: "left", label: "←", action: (n) => moveNode(n, "left", fullTreeRoot) },
-      { id: "right", label: "→", action: (n) => moveNode(n, "right", fullTreeRoot) },
-      { id: "after", label: "→|", action: (n) => moveAfterNextSelected(n, fullTreeRoot, window.nextSelectedPath) },
-      { id: "copyUrl", label: "Copy URL", action: (n) => copyNodeUrl(n) },
-      { id: "edit", label: "✎", action: (n) => startEditCallback(n.path) },
-      { id: "save", label: "💾", action: (n) => saveNode(n) },
-      { id: "drop", label: "↺", action: (n) => dropMove(n) },
-      { id: "publish", label: "📤", action: (n) => publishNode(n) },
-    ];
+      const isNodeSelected = !!selectedNodePath;
+      const buttons = [
+        { id: "up", label: "↑", action: (n) => moveNode(n, "up", fullTreeRoot) },
+        { id: "down", label: "↓", action: (n) => moveNode(n, "down", fullTreeRoot) },
+        { id: "left", label: "←", action: (n) => moveNode(n, "left", fullTreeRoot) },
+        { id: "right", label: "→", action: (n) => moveNode(n, "right", fullTreeRoot) },
+        { id: "after", label: "→|", action: (n) => moveAfterNextSelected(n, fullTreeRoot, window.nextSelectedPath) },
+        { id: "copyUrl", label: "Copy URL", action: (n) => copyNodeUrl(n) },
+        { id: "edit", label: "✎", action: (n) => startEditCallback(n.path) },
+        { id: "save", label: "💾", action: (n) => saveNode(n) },
+        { id: "drop", label: "↺", action: (n) => dropMove(n) },
+        { id: "publish", label: "📤", action: (n) => publishNode(n) },
+      ];
 
-    buttons.forEach((btn) => {
-      const b = document.createElement("button");
-      b.textContent = btn.label;
-      b.disabled = !isNodeSelected;
-      b.onclick = (e) => {
-        e.stopPropagation();
-        if (!isNodeSelected) return;
-        const node = findNodeByPath(fullTreeRoot, selectedNodePath);
-        if (!node) return;
-        btn.action(node);
-        if (typeof renderTree.reRender === "function") renderTree.reRender(selectedNodePath);
-      };
-      btnContainer.appendChild(b);
-    });
+      buttons.forEach((btn) => {
+        const b = document.createElement("button");
+        b.textContent = btn.label;
+        b.disabled = !isNodeSelected;
+        b.onclick = (e) => {
+          e.stopPropagation();
+          if (!isNodeSelected) return;
+          const node = findNodeByPath(fullTreeRoot, selectedNodePath);
+          if (!node) return;
+          btn.action(node);
+          if (typeof renderTree.reRender === "function") renderTree.reRender(selectedNodePath);
+        };
+        btnContainer.appendChild(b);
+      });
+    }
   }
 
   return ul;
@@ -110,5 +115,5 @@ function findNodeByPath(nodes, path) {
       if (found) return found;
     }
   }
-  return null  
+  return null;
 }
