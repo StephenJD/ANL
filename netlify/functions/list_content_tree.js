@@ -1,4 +1,5 @@
 // netlify/functions/list_content_tree.js
+import path from "path";
 import { walkDir } from "./webeditor/walkDir.js";
 
 export async function handler(event, context) {
