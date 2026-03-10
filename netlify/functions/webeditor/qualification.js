@@ -9,6 +9,7 @@ export function qualification (type, parentType = null) {
 
   switch(type){
     case "dynamic":
+    case "form":
     case "document":
       return `Content:`;
     case "home":
