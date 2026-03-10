@@ -31,7 +31,7 @@ export async function walkDir(dir, parentType = null, rootDir = dir, parentNode 
                 parent: parentNode,
                 rawName: path.basename(fullPath),
                 title: fm.title || "",
-                qualification: qualification({ title: fm.title || "", rawName: path.basename(fullPath) }, parentType),
+                qualification: qualification(fm.title, parentType),
                 path: relativePath,
                 children: []
             };
