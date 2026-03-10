@@ -35,6 +35,10 @@ export function moveNode(nodeObj, direction, treeData) {
             window.log("[moveNode] Cannot move right, no previous sibling");
             return false;
         }
+        if (newParent.qualification !== 'navigation' && newParent.qualification !== 'collated') {
+          window.log(`[moveNode] Cannot move right, previous sibling is not navigation or collated (qualification: ${newParent.qualification})`);
+          return false;
+        }
         const newParent = parentArray[idx - 1];
         if (!newParent.children) newParent.children = [];
         parentArray.splice(idx, 1);
