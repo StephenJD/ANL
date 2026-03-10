@@ -121,9 +121,9 @@ function readFrontMatter(filePath) {
     }
   }
 
-  console.log(`[FM] Raw frontmatter lines for ${filePath}:`);
-  rawLines.forEach((l, i) => console.log(`  ${i + 1}: ${l}`));
+  //console.log(`[FM] Raw frontmatter lines for ${filePath}:`);
+  //rawLines.forEach((l, i) => console.log(`  ${i + 1}: ${l}`));
 
-  console.log(`[FM] Parsed frontmatter object:`, fm);
+  //console.log(`[FM] Parsed frontmatter object:`, fm);
   return fm;
                                      }
