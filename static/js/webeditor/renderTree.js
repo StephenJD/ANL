@@ -2,7 +2,6 @@
 
 import { moveNode, dropMove, moveAfterNextSelected } from "./treeMoveActions.js";
 
-// Stub actions
 function copyNodeUrl(node) { window.log(`[stub] Copy URL for node: ${node.path}`); }
 function saveNode(node) { window.log(`[stub] Save node: ${node.path}`); }
 function publishNode(node) { window.log(`[stub] Publish node: ${node.path}`); }
@@ -12,9 +11,10 @@ export function renderTree(
   startEditCallback,
   editButtonsContainerId = "editButtons",
   selectedNodePath = null,
-  fullTreeRoot = null
+  fullTreeRoot = null,
+  depth = 0
 ) {
-  window.log("[renderTree] Called with nodes:", nodes);
+  window.log(`[renderTree] Called with nodes at depth ${depth}:`, nodes);
 
   if (!nodes) return document.createTextNode("Tree data missing");
   if (!fullTreeRoot) fullTreeRoot = nodes;
@@ -23,7 +23,7 @@ export function renderTree(
   ul.style.listStyle = "none";
   ul.style.paddingLeft = "15px";
 
-  nodes.forEach((node) => {
+  nodes.forEach((node, idx) => {
     if (!node) return;
 
     const li = document.createElement("li");
@@ -39,21 +39,25 @@ export function renderTree(
     // Colour based on edit flags
     if (node.edit && node.edit.moved) {
       titleSpan.style.color = "orange";
+      window.log(`[renderTree] Node ${node.path} is moved → orange`);
     } else if (node.edit) {
       titleSpan.style.color = "blue";
+      window.log(`[renderTree] Node ${node.path} edited → blue`);
     } else {
       titleSpan.style.color = "black";
+      window.log(`[renderTree] Node ${node.path} normal → black`);
     }
 
     if (selectedNodePath === node.path) {
       titleSpan.style.fontWeight = "bold";
       titleSpan.style.backgroundColor = "#def";
+      window.log(`[renderTree] Node ${node.path} is selected`);
     }
 
     titleSpan.onclick = (e) => {
       e.preventDefault();
       window.selectedNodePath = node.path;
-      window.log("[renderTree] Node clicked:", node.path);
+      window.log(`[renderTree] Node clicked: ${node.path}`);
       updateButtonStates(fullTreeRoot, editButtonsContainerId);
       if (typeof renderTree.reRender === "function") renderTree.reRender(node.path);
     };
@@ -63,18 +67,21 @@ export function renderTree(
     // Recursively render children
     if (node.children && node.children.length) {
       li.appendChild(
-        renderTree(node.children, startEditCallback, editButtonsContainerId, selectedNodePath, fullTreeRoot)
+        renderTree(node.children, startEditCallback, editButtonsContainerId, selectedNodePath, fullTreeRoot, depth + 1)
       );
     }
 
     ul.appendChild(li);
   });
 
-  // Only set up bottom-bar buttons once (top-level)
-  if (nodes === fullTreeRoot) {
+  // Bottom-bar buttons only at top-level
+  if (depth === 0) {
     const btnContainer = document.getElementById(editButtonsContainerId);
-    if (btnContainer && !btnContainer.hasChildNodes()) {
+    if (!btnContainer) {
+      window.log(`[renderTree] ERROR: button container '${editButtonsContainerId}' not found`);
+    } else if (!btnContainer.hasChildNodes()) {
       window.log("[renderTree] Setting up bottom-bar buttons");
+      const isNodeSelected = !!selectedNodePath;
 
       const buttons = [
         { id: "up", label: "↑", action: (n) => moveNode(n, "up", fullTreeRoot) },
@@ -93,12 +100,15 @@ export function renderTree(
       buttons.forEach((btn) => {
         const b = document.createElement("button");
         b.textContent = btn.label;
-        b.disabled = true;  // initially disabled
+        b.disabled = !isNodeSelected;
         b.id = `btn_${btn.id}`;
         b.onclick = (e) => {
           e.stopPropagation();
           const node = findNodeByPath(fullTreeRoot, window.selectedNodePath);
-          if (!node) return;
+          if (!node) {
+            window.log(`[renderTree] ERROR: selected node not found for button ${btn.id}`);
+            return;
+          }
           window.log(`[renderTree] Button ${btn.id} clicked on node ${node.path}`);
           btn.action(node);
           if (typeof renderTree.reRender === "function") renderTree.reRender(window.selectedNodePath);
@@ -123,12 +133,13 @@ function findNodeByPath(nodes, path) {
   return null;
 }
 
-// Enable/disable bottom-bar buttons based on selection
+// Update bottom-bar buttons enabled/disabled
 function updateButtonStates(fullTreeRoot, editButtonsContainerId) {
   const selected = !!window.selectedNodePath;
   window.log(`[renderTree] Node selected: ${selected}`);
   ["up","down","left","right","after","copyUrl","edit","save","drop","publish"].forEach(id => {
     const b = document.getElementById(`btn_${id}`);
-    if (b) b.disabled = !selected;
+    if (!b) window.log(`[renderTree] Button ${id} not found`);
+    else b.disabled = !selected;
   });
-         }
+        }
