@@ -7,7 +7,7 @@ export function qualification (type, parentType = null) {
     case "login":
     case "form":
     case "document":
-      if (parentType === "collated_page") {
+      if (parentType === "collated_page" || parentType === "home" ) {
           return `Section:`;
       }
       return `Content:`;
