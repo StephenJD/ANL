@@ -18,7 +18,7 @@ export function renderTree(
   ul.style.listStyle = "none";
   ul.style.paddingLeft = "15px";
 
-  nodes.forEach((node, idx) => {
+  nodes.forEach((node) => {
     if (!node) return;
 
     const li = document.createElement("li");
@@ -72,7 +72,7 @@ export function renderTree(
     ul.appendChild(li);
   });
 
-  // render bottom-fixed buttons
+  // Bottom fixed button panel
   let bottomBtnContainer = document.getElementById('bottomTreeButtons');
   if (!bottomBtnContainer) {
     bottomBtnContainer = document.createElement('div');
@@ -96,8 +96,8 @@ export function renderTree(
     { dir: 'down', label: '↓' },
     { dir: 'left', label: '←' },
     { dir: 'right', label: '→' },
-    { action: 'afterNext', label: 'After Next' },
-    { action: 'copyURL', label: 'Copy URL' },
+    { action: 'afterNext', label: '⇨' },
+    { action: 'copyURL', label: '🔗' },
     { action: 'edit', label: '✎' },
     { action: 'save', label: '💾' },
     { action: 'drop', label: '✗' },
@@ -119,7 +119,10 @@ export function renderTree(
       if (!nodeObj) return;
 
       if (btnInfo.dir) {
-        moveNode(nodeObj, btnInfo.dir, treeData);
+        if (moveNode(nodeObj, btnInfo.dir, treeData)) {
+          // mark moved in edit flag
+          nodeObj.edit = nodeObj.edit ? [...new Set([...nodeObj.edit, 'moved'])] : ['moved'];
+        }
       } else if (btnInfo.action === 'afterNext') {
         // implement move after next selected node logic if required
       } else if (btnInfo.action === 'copyURL') {
@@ -134,7 +137,7 @@ export function renderTree(
         publishNode(nodeObj);
       }
 
-      // Re-render tree to reflect changes
+      // Re-render tree to reflect changes and maintain selection
       const container = document.getElementById('tree');
       if (container) {
         container.innerHTML = '';
@@ -158,4 +161,4 @@ function findNodeByPath(path, nodes) {
     }
   }
   return null;
-    }
+}
