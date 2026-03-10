@@ -50,6 +50,7 @@ export function renderTree(
       titleSpan.style.color = "black";
     }
 
+    // Selection highlight
     if (selectedNodePath === node.path) {
       titleSpan.style.fontWeight = "bold";
       titleSpan.style.backgroundColor = "#def";
@@ -65,48 +66,52 @@ export function renderTree(
 
     // Recursively render children
     if (node.children && node.children.length) {
-      const childrenUl = renderTree(node.children, startEditCallback, editButtonsContainerId, selectedNodePath, fullTreeRoot);
+      const childrenUl = renderTree(
+        node.children,
+        startEditCallback,
+        editButtonsContainerId,
+        selectedNodePath,
+        fullTreeRoot
+      );
       li.appendChild(childrenUl);
     }
 
     ul.appendChild(li);
   });
 
-  // Only handle bottom-bar buttons at top level
-  if (!document.getElementById(editButtonsContainerId)?.hasChildNodes()) {
-    const btnContainer = document.getElementById(editButtonsContainerId);
-    if (btnContainer) {
-      btnContainer.innerHTML = "";
+  // Bottom-bar buttons (always recreated)
+  const btnContainer = document.getElementById(editButtonsContainerId);
+  if (btnContainer) {
+    btnContainer.innerHTML = "";
+    const isNodeSelected = !!selectedNodePath;
 
-      const isNodeSelected = !!selectedNodePath;
-      const buttons = [
-        { id: "up", label: "↑", action: (n) => moveNode(n, "up", fullTreeRoot) },
-        { id: "down", label: "↓", action: (n) => moveNode(n, "down", fullTreeRoot) },
-        { id: "left", label: "←", action: (n) => moveNode(n, "left", fullTreeRoot) },
-        { id: "right", label: "→", action: (n) => moveNode(n, "right", fullTreeRoot) },
-        { id: "after", label: "→|", action: (n) => moveAfterNextSelected(n, fullTreeRoot, window.nextSelectedPath) },
-        { id: "copyUrl", label: "🔗", action: (n) => copyNodeUrl(n) },
-        { id: "edit", label: "✎", action: (n) => startEditCallback(n.path) },
-        { id: "save", label: "💾", action: (n) => saveNode(n) },
-        { id: "drop", label: "↺", action: (n) => dropMove(n) },
-        { id: "publish", label: "📤", action: (n) => publishNode(n) },
-      ];
+    const buttons = [
+      { id: "up", label: "↑", action: (n) => moveNode(n, "up", fullTreeRoot) },
+      { id: "down", label: "↓", action: (n) => moveNode(n, "down", fullTreeRoot) },
+      { id: "left", label: "←", action: (n) => moveNode(n, "left", fullTreeRoot) },
+      { id: "right", label: "→", action: (n) => moveNode(n, "right", fullTreeRoot) },
+      { id: "after", label: "→|", action: (n) => moveAfterNextSelected(n, fullTreeRoot, window.nextSelectedPath) },
+      { id: "copyUrl", label: "🔗", action: (n) => copyNodeUrl(n) },
+      { id: "edit", label: "✎", action: (n) => startEditCallback(n.path) },
+      { id: "save", label: "💾", action: (n) => saveNode(n) },
+      { id: "drop", label: "↺", action: (n) => dropMove(n) },
+      { id: "publish", label: "📤", action: (n) => publishNode(n) },
+    ];
 
-      buttons.forEach((btn) => {
-        const b = document.createElement("button");
-        b.textContent = btn.label;
-        b.disabled = !isNodeSelected;
-        b.onclick = (e) => {
-          e.stopPropagation();
-          if (!isNodeSelected) return;
-          const node = findNodeByPath(fullTreeRoot, selectedNodePath);
-          if (!node) return;
-          btn.action(node);
-          if (typeof renderTree.reRender === "function") renderTree.reRender(selectedNodePath);
-        };
-        btnContainer.appendChild(b);
-      });
-    }
+    buttons.forEach((btn) => {
+      const b = document.createElement("button");
+      b.textContent = btn.label;
+      b.disabled = !isNodeSelected;
+      b.onclick = (e) => {
+        e.stopPropagation();
+        if (!isNodeSelected) return;
+        const node = findNodeByPath(fullTreeRoot, selectedNodePath);
+        if (!node) return;
+        btn.action(node);
+        if (typeof renderTree.reRender === "function") renderTree.reRender(selectedNodePath);
+      };
+      btnContainer.appendChild(b);
+    });
   }
 
   return ul;
@@ -122,4 +127,4 @@ function findNodeByPath(nodes, path) {
     }
   }
   return null;
-                }
+                                                                       }
