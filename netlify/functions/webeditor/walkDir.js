@@ -1,7 +1,7 @@
 // netlify/functions/webeditor/walkDir.js
-import fs from "fs";
-import path from "path";
-import { qualification } from "./qualification.js";
+const fs = require("fs");
+const path = require("path");
+const { qualification } = require("./qualification.js");
 
 export async function walkDir(dir, parentType = null, rootDir = dir, parentNode = null) {
     console.log(`[walkDir] Entering: ${dir} | parentType: ${parentType}`);
