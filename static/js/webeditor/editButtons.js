@@ -5,29 +5,17 @@ window.log("editButtons FILE LOADED 2026-03-10");
 let treeRootRef = null;
 let startEditCallbackRef = null;
 
-// ----------------------------
-// INIT BUTTONS
-// ----------------------------
 export function initEditButtons(containerId, treeRoot, startEditCallback) {
+
   treeRootRef = treeRoot;
   startEditCallbackRef = startEditCallback;
 
-  function tryInit() {
-    const container = document.getElementById(containerId);
-    if (!container) {
-      window.log(`[editButtons] container NOT FOUND, retrying...`);
-      requestAnimationFrame(tryInit);
-      return;
-    }
+  const container = document.getElementById(containerId);
+  window.log(`[editButtons] container lookup = ${container ? "FOUND" : "NOT FOUND"}`);
+  if (!container) return;
 
-    const rect = container.getBoundingClientRect();
-    if (rect.height === 0) {
-      window.log(`[editButtons] container height=0, waiting for layout...`);
-      requestAnimationFrame(tryInit);
-      return;
-    }
-
-    window.log(`[editButtons] container ready → creating buttons`);
+  // Defer initialization until browser has rendered layout
+  requestAnimationFrame(() => {
 
     container.style.display = "flex";
     container.style.flexWrap = "wrap";
@@ -35,6 +23,15 @@ export function initEditButtons(containerId, treeRoot, startEditCallback) {
     container.style.alignItems = "center";
     container.style.gap = "4px";
     container.style.padding = "2px";
+    container.style.minHeight = "40px";
+    container.style.width = "100%";
+
+    logAncestors(container);
+
+    const rect = container.getBoundingClientRect();
+    window.log(`[editButtons] container rect after styles height=${rect.height} width=${rect.width}`);
+    window.log(`[editButtons] container display=${container.style.display}`);
+    window.log(`[editButtons] children BEFORE=${container.children.length}`);
 
     container.innerHTML = "";
 
@@ -52,6 +49,7 @@ export function initEditButtons(containerId, treeRoot, startEditCallback) {
     ];
 
     buttons.forEach(btn => {
+      window.log(`[editButtons] create button ${btn.id}`);
       const b = document.createElement("button");
       b.id = btn.id;
       b.textContent = btn.label;
@@ -62,8 +60,12 @@ export function initEditButtons(containerId, treeRoot, startEditCallback) {
       b.style.fontSize = "16px";
 
       b.onclick = () => {
+        window.log(`[editButtons] BUTTON CLICK ${btn.id}`);
         const node = findNodeByPath(treeRootRef, window.selectedNodePath);
-        if (!node) return;
+        if (!node) {
+          window.log("[editButtons] ERROR selected node not found");
+          return;
+        }
         btn.action(node);
         updateEditButtons();
         if (typeof window.renderTree?.reRender === "function") {
@@ -74,37 +76,39 @@ export function initEditButtons(containerId, treeRoot, startEditCallback) {
       container.appendChild(b);
     });
 
+    window.log(`[editButtons] children AFTER wrapper=${container.children.length}`);
     updateEditButtons();
     window.log("[editButtons] initEditButtons COMPLETE");
-  }
 
-  tryInit();
+  });
 }
 
-// ----------------------------
-// UPDATE BUTTON STATES
-// ----------------------------
 export function updateEditButtons() {
   const selected = !!window.selectedNodePath;
+  window.log(`[editButtons] update buttons selected=${selected}`);
 
   const ids = ["up","down","left","right","after","copyUrl","edit","save","drop","publish"];
   ids.forEach(id => {
     const btn = document.getElementById(id);
-    if (!btn) return;
+    if (!btn) {
+      window.log(`[editButtons] button missing id=${id}`);
+      return;
+    }
     btn.disabled = !selected;
+    window.log(`[editButtons] button ${id} disabled=${btn.disabled}`);
   });
 }
 
-// ----------------------------
-// STUB ACTIONS
-// ----------------------------
+/* --------------------------------------------------
+STUB ACTIONS
+-------------------------------------------------- */
 function copyNodeUrl(node){ window.log(`[stub] copy URL ${node.path}`); }
 function saveNode(node){ window.log(`[stub] save ${node.path}`); }
 function publishNode(node){ window.log(`[stub] publish ${node.path}`); }
 
-// ----------------------------
-// HELPER: FIND NODE
-// ----------------------------
+/* --------------------------------------------------
+HELPER NODE SEARCH
+-------------------------------------------------- */
 function findNodeByPath(nodes, path) {
   for (const n of nodes) {
     if (n.path === path) return n;
@@ -114,4 +118,18 @@ function findNodeByPath(nodes, path) {
     }
   }
   return null;
+}
+
+/* --------------------------------------------------
+HELPER: Log container ancestors
+-------------------------------------------------- */
+function logAncestors(el) {
+  let ancestor = el;
+  let depth = 0;
+  while (ancestor) {
+    const rect = ancestor.getBoundingClientRect();
+    window.log(`[editButtons] ancestor depth=${depth} tag=${ancestor.tagName} height=${rect.height} width=${rect.width}`);
+    ancestor = ancestor.parentElement;
+    depth++;
+  }
         }
