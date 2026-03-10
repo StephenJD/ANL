@@ -1,14 +1,18 @@
 // static/js/webeditor/renderTree.js
 
+import { moveNode } from './treeMoveActions.js';
+
 export function renderTree(
   nodes,
   startEditCallback,
   editButtonsId = "editButtons",
   selectedNodePath = null,
   addMoveButtonsFn = null,
-  fullTreeRoot = null
+  fullTreeRoot = null,
+  treeData = null
 ) {
   if (!fullTreeRoot) fullTreeRoot = nodes;
+  if (!treeData) treeData = fullTreeRoot;
 
   const ul = document.createElement("ul");
   ul.style.listStyle = "none";
@@ -20,29 +24,37 @@ export function renderTree(
     const li = document.createElement("li");
     li.style.position = "relative";
 
+    const displayTitle = node.qualification + " " + (node.title || node.rawName);
     const titleSpan = document.createElement("span");
-    titleSpan.textContent = node.qualification + " " + (node.title || node.rawName);
+    titleSpan.textContent = displayTitle;
     titleSpan.style.display = "inline-block";
     titleSpan.style.cursor = "pointer";
     titleSpan.style.padding = "2px 4px";
-    if (selectedNodePath && node.path === selectedNodePath) {
-      titleSpan.style.fontWeight = "bold";
-    }
 
-    if (node.edit && node.edit.moved) {
+    // color based on edit
+    if (!node.edit) {
+      titleSpan.style.color = "black";
+    } else if (node.edit.includes("moved")) {
       titleSpan.style.color = "orange";
     } else {
       titleSpan.style.color = "blue";
     }
 
+    // bold if selected
+    if (selectedNodePath && node.path === selectedNodePath) {
+      titleSpan.style.fontWeight = "bold";
+    }
+
     titleSpan.onclick = e => {
       e.preventDefault();
       window.selectedNodePath = node.path;
-      if (typeof renderTree.reRender === "function") renderTree.reRender(node.path);
-      updateFixedEditButtons(node, fullTreeRoot, startEditCallback);
+      if (typeof renderTree.reRender === "function") {
+        renderTree.reRender(node.path);
+      }
     };
 
     li.appendChild(titleSpan);
+
     if (node.children && node.children.length) {
       li.appendChild(
         renderTree(
@@ -51,7 +63,8 @@ export function renderTree(
           editButtonsId,
           selectedNodePath,
           addMoveButtonsFn,
-          fullTreeRoot
+          fullTreeRoot,
+          treeData
         )
       );
     }
@@ -59,79 +72,90 @@ export function renderTree(
     ul.appendChild(li);
   });
 
+  // render bottom-fixed buttons
+  let bottomBtnContainer = document.getElementById('bottomTreeButtons');
+  if (!bottomBtnContainer) {
+    bottomBtnContainer = document.createElement('div');
+    bottomBtnContainer.id = 'bottomTreeButtons';
+    bottomBtnContainer.style.position = 'fixed';
+    bottomBtnContainer.style.bottom = '0';
+    bottomBtnContainer.style.left = '0';
+    bottomBtnContainer.style.right = '0';
+    bottomBtnContainer.style.backgroundColor = '#f0f0f0';
+    bottomBtnContainer.style.borderTop = '1px solid #ccc';
+    bottomBtnContainer.style.padding = '6px';
+    bottomBtnContainer.style.display = 'flex';
+    bottomBtnContainer.style.flexWrap = 'wrap';
+    bottomBtnContainer.style.alignItems = 'center';
+    bottomBtnContainer.style.zIndex = '9999';
+    document.body.appendChild(bottomBtnContainer);
+  }
+
+  const buttons = [
+    { dir: 'up', label: '↑' },
+    { dir: 'down', label: '↓' },
+    { dir: 'left', label: '←' },
+    { dir: 'right', label: '→' },
+    { action: 'afterNext', label: 'After Next' },
+    { action: 'copyURL', label: 'Copy URL' },
+    { action: 'edit', label: '✎' },
+    { action: 'save', label: '💾' },
+    { action: 'drop', label: '✗' },
+    { action: 'publish', label: '📤' }
+  ];
+
+  bottomBtnContainer.innerHTML = '';
+  buttons.forEach(btnInfo => {
+    const btn = document.createElement('button');
+    btn.textContent = btnInfo.label;
+    btn.style.margin = '2px';
+    btn.disabled = !window.selectedNodePath;
+
+    btn.onclick = e => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!window.selectedNodePath) return;
+      const nodeObj = findNodeByPath(window.selectedNodePath, treeData);
+      if (!nodeObj) return;
+
+      if (btnInfo.dir) {
+        moveNode(nodeObj, btnInfo.dir, treeData);
+      } else if (btnInfo.action === 'afterNext') {
+        // implement move after next selected node logic if required
+      } else if (btnInfo.action === 'copyURL') {
+        navigator.clipboard.writeText(window.location.href + '#' + nodeObj.path);
+      } else if (btnInfo.action === 'edit') {
+        startEditCallback(nodeObj.path);
+      } else if (btnInfo.action === 'save') {
+        saveNode(nodeObj);
+      } else if (btnInfo.action === 'drop') {
+        dropChanges(nodeObj);
+      } else if (btnInfo.action === 'publish') {
+        publishNode(nodeObj);
+      }
+
+      // Re-render tree to reflect changes
+      const container = document.getElementById('tree');
+      if (container) {
+        container.innerHTML = '';
+        container.appendChild(renderTree(treeData, startEditCallback, editButtonsId, window.selectedNodePath, addMoveButtonsFn, fullTreeRoot, treeData));
+      }
+    };
+
+    bottomBtnContainer.appendChild(btn);
+  });
+
   return ul;
 }
 
-// --- fixed top edit buttons container ---
-export function createFixedEditButtons(containerId = "editButtonsContainer") {
-  let container = document.getElementById(containerId);
-  if (!container) {
-    container = document.createElement("div");
-    container.id = containerId;
-    container.style.position = "fixed";
-    container.style.top = "0";
-    container.style.left = "0";
-    container.style.right = "0";
-    container.style.background = "#f0f0f0";
-    container.style.padding = "4px";
-    container.style.zIndex = "9999";
-    container.style.display = "flex";
-    container.style.flexWrap = "wrap";
-    container.style.gap = "4px";
-    document.body.appendChild(container);
+// helper to find node by path
+function findNodeByPath(path, nodes) {
+  for (const node of nodes) {
+    if (node.path === path) return node;
+    if (node.children && node.children.length) {
+      const found = findNodeByPath(path, node.children);
+      if (found) return found;
+    }
   }
-  container.innerHTML = ""; // reset buttons
-  return container;
-}
-
-// --- populate buttons for current selected node ---
-export function updateFixedEditButtons(node, fullTreeRoot, startEditCallback) {
-  const container = createFixedEditButtons();
-  if (!node) {
-    container.innerHTML = "";
-    return;
-  }
-
-  const btns = [
-    { id: "up", label: "↑", action: "moveUp" },
-    { id: "down", label: "↓", action: "moveDown" },
-    { id: "left", label: "←", action: "moveLeft" },
-    { id: "right", label: "→", action: "moveRight" },
-    { id: "afterNext", label: "⇥", action: "moveAfterNext" },
-    { id: "copyUrl", label: "🔗", action: "copyUrl" },
-    { id: "edit", label: "✎", action: "edit" },
-    { id: "save", label: "💾", action: "save" },
-    { id: "drop", label: "✗", action: "drop" },
-    { id: "publish", label: "📤", action: "publish" }
-  ];
-
-  btns.forEach(b => {
-    const btn = document.createElement("button");
-    btn.textContent = b.label;
-    btn.disabled = !node;
-    btn.style.opacity = node ? "1" : "0.5";
-    btn.onclick = e => {
-      e.stopPropagation();
-      handleFixedButtonAction(b.action, node, fullTreeRoot, startEditCallback);
-    };
-    container.appendChild(btn);
-  });
-}
-
-// --- actual button actions ---
-function handleFixedButtonAction(action, node, fullTreeRoot, startEditCallback) {
-  if (!window.treeMoveActions) return;
-  switch (action) {
-    case "moveUp": window.treeMoveActions.moveNode(node, "up", fullTreeRoot); break;
-    case "moveDown": window.treeMoveActions.moveNode(node, "down", fullTreeRoot); break;
-    case "moveLeft": window.treeMoveActions.moveNode(node, "left", fullTreeRoot); break;
-    case "moveRight": window.treeMoveActions.moveNode(node, "right", fullTreeRoot); break;
-    case "moveAfterNext": /* implement after next selection */ break;
-    case "copyUrl": navigator.clipboard.writeText(node.path); break;
-    case "edit": startEditCallback(node.path); break;
-    case "save": /* implement save */ break;
-    case "drop": /* implement drop changes */ break;
-    case "publish": /* implement publish */ break;
-  }
-  if (typeof renderTree.reRender === "function") renderTree.reRender(window.selectedNodePath);
+  return null;
     }
