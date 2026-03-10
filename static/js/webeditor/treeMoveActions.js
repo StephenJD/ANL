@@ -1,7 +1,7 @@
 // static/js/webeditor/treeMoveActions.js
 
-export function moveNode(nodeObj, direction, treeData) {
-    window.log(`[moveNode] Moving node: ${nodeObj.title}, direction: ${direction}`);
+export function moveNode(nodeObj, direction, treeData, selectedNode = null) {
+    window.log(`[moveNode] Attempting move: ${direction} for node: ${nodeObj.title}`);
 
     const parentArray = findParentArray(treeData, nodeObj);
     if (!parentArray) {
@@ -10,75 +10,116 @@ export function moveNode(nodeObj, direction, treeData) {
     }
 
     const idx = parentArray.indexOf(nodeObj);
-    window.log(`[moveNode] Node index in parentArray: ${idx}`);
-    window.log(`[moveNode] Parent array titles before move: ${parentArray.map(n => n.title).join(', ')}`);
+    window.log(`[moveNode] Node current index: ${idx} in parent path: ${parentArray.map(n => n.path).join(', ')}`);
 
-    if (direction === 'up' && idx > 0) {
+    let moved = false;
+
+    if (!nodeObj.originalIndex && nodeObj.originalIndex !== 0) nodeObj.originalIndex = idx;
+    if (!nodeObj.originalParent && nodeObj.originalParent !== 0) nodeObj.originalParent = parentArray;
+
+    if (direction === "up" && idx > 0) {
         parentArray.splice(idx, 1);
         parentArray.splice(idx - 1, 0, nodeObj);
-    } else if (direction === 'down' && idx < parentArray.length - 1) {
+        moved = true;
+    } else if (direction === "down" && idx < parentArray.length - 1) {
         parentArray.splice(idx, 1);
         parentArray.splice(idx + 1, 0, nodeObj);
-    } else if (direction === 'left') {
-        const grandParentArray = findParentArray(treeData, nodeObj, true);
+        moved = true;
+    } else if (direction === "left") {
+        const grandParentArray = findParentArray(treeData, parentArray[0], true);
         if (!grandParentArray || parentArray === treeData) {
             window.log("[moveNode] Cannot move left, already at top level");
             return false;
         }
         parentArray.splice(idx, 1);
-        const parentNode = nodeObj.parent;
-        const parentIdx = grandParentArray.indexOf(parentNode);
+        const parentIdx = grandParentArray.indexOf(parentArray[0]);
         grandParentArray.splice(parentIdx + 1, 0, nodeObj);
-        nodeObj.parent = parentNode.parent;
-    } else if (direction === 'right') {
+        moved = true;
+    } else if (direction === "right") {
         if (idx === 0) {
             window.log("[moveNode] Cannot move right, no previous sibling");
             return false;
         }
-        if (newParent.qualification !== 'navigation' && newParent.qualification !== 'collated') {
-          window.log(`[moveNode] Cannot move right, previous sibling is not navigation or collated (qualification: ${newParent.qualification})`);
-          return false;
-        }
         const newParent = parentArray[idx - 1];
+        if (!["navigation", "collated"].includes(newParent.qualification)) {
+            window.log("[moveNode] Right move blocked, previous sibling not navigation/collated");
+            return false;
+        }
         if (!newParent.children) newParent.children = [];
         parentArray.splice(idx, 1);
         newParent.children.push(nodeObj);
-        nodeObj.parent = newParent;
-    } else {
-        window.log("[moveNode] Move not possible");
-        return false;
+        moved = true;
     }
 
-    detectMoveState(nodeObj);
-    window.log(`[moveNode] Parent array titles after move: ${parentArray.map(n => n.title).join(', ')}`);
-    window.log("[moveNode] Move completed");
+    if (moved) {
+        nodeObj.edit = nodeObj.edit || {};
+        nodeObj.edit.moved = true;
+
+        // Reset moved if back in original position
+        const backInPlace = parentArray === nodeObj.originalParent &&
+            parentArray.indexOf(nodeObj) === nodeObj.originalIndex;
+
+        if (backInPlace) {
+            if (nodeObj.edit) {
+                delete nodeObj.edit.moved;
+                if (Object.keys(nodeObj.edit).length === 0) nodeObj.edit = null;
+            }
+        }
+
+        window.log(`[moveNode] Move ${moved ? "completed" : "skipped"} for ${nodeObj.title}`);
+    }
+
+    return moved;
+}
+
+export function dropMove(nodeObj) {
+    if (!nodeObj.originalParent || nodeObj.originalIndex === undefined) return false;
+
+    const currentParent = findParentArray(nodeObj.originalParent, nodeObj);
+    if (!currentParent) return false;
+
+    const idx = currentParent.indexOf(nodeObj);
+    if (idx !== -1) currentParent.splice(idx, 1);
+
+    nodeObj.originalParent.splice(nodeObj.originalIndex, 0, nodeObj);
+
+    if (nodeObj.edit) {
+        delete nodeObj.edit.moved;
+        if (Object.keys(nodeObj.edit).length === 0) nodeObj.edit = null;
+    }
+
+    window.log(`[dropMove] Node dropped back to original position: ${nodeObj.title}`);
     return true;
 }
 
-// Compute the path from root
-function computeTreePath(node) {
-    const parts = [node.rawName];
-    let p = node.parent;
-    while (p) {
-        parts.unshift(p.rawName);
-        p = p.parent;
-    }
-    return parts.join("/");
+export function moveAfterNextSelected(nodeObj, treeData, nextSelectedPath) {
+    const flat = flattenTree(treeData);
+    const nextNode = flat.find(n => n.path === nextSelectedPath);
+    if (!nextNode) return false;
+
+    const parentArray = findParentArray(treeData, nodeObj);
+    if (!parentArray) return false;
+
+    const idx = parentArray.indexOf(nodeObj);
+    if (idx === -1) return false;
+
+    // remove from current
+    parentArray.splice(idx, 1);
+
+    // insert after next selected in its parent
+    const targetParentArray = findParentArray(treeData, nextNode);
+    const targetIdx = targetParentArray.indexOf(nextNode);
+
+    targetParentArray.splice(targetIdx + 1, 0, nodeObj);
+
+    nodeObj.edit = nodeObj.edit || {};
+    nodeObj.edit.moved = true;
+
+    window.log(`[moveAfterNextSelected] ${nodeObj.title} moved after ${nextNode.title}`);
+    return true;
 }
 
-// Compare computed path to original file path
-function detectMoveState(node) {
-    const currentPath = computeTreePath(node) + ".md";
-    if (currentPath !== node.path) {
-        node.edit ??= {};
-        node.edit.moved = true;
-    } else {
-        if (node.edit?.moved) delete node.edit.moved;
-        if (node.edit && Object.keys(node.edit).length === 0) delete node.edit;
-    }
-}
-
-// Recursively find parent array, optionally return grandparent
+// Helper: find array containing nodeObj
 function findParentArray(arr, targetNode, returnGrandParent = false) {
     let result = null;
     function recurse(currentArr, parentArr = null) {
@@ -98,42 +139,11 @@ function findParentArray(arr, targetNode, returnGrandParent = false) {
     return result;
 }
 
-// Add move buttons to a node element
-export function addMoveButtons(nodeEl, nodeObj, treeData, renderTreeFn, clickHandler) {
-    const btnContainer = document.createElement('span');
-    btnContainer.style.marginLeft = '10px';
-
-    const buttons = [
-        { dir: 'up', label: '↑' },
-        { dir: 'down', label: '↓' },
-        { dir: 'left', label: '←' },
-        { dir: 'right', label: '→' },
-    ];
-
-    buttons.forEach(({ dir, label }) => {
-        const btn = document.createElement('button');
-        btn.textContent = label;
-        btn.style.marginLeft = '2px';
-        btn.onclick = (e) => {
-            e.stopPropagation();
-            window.selectedNodePath = nodeObj.path;
-
-            if (moveNode(nodeObj, dir, treeData)) {
-                const container = nodeEl.closest('#tree');
-                if (container) {
-                    container.innerHTML = '';
-                    container.appendChild(renderTreeFn(
-                        treeData,
-                        clickHandler,
-                        "editButtons",
-                        window.selectedNodePath,
-                        addMoveButtons
-                    ));
-                }
-            }
-        };
-        btnContainer.appendChild(btn);
-    });
-
-    nodeEl.appendChild(btnContainer);
+// Helper: flatten tree into array
+function flattenTree(nodes, out = []) {
+    for (const n of nodes) {
+        out.push(n);
+        if (n.children && n.children.length) flattenTree(n.children, out);
+    }
+    return out;
 }
