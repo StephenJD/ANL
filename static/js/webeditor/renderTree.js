@@ -126,7 +126,10 @@ function setupEditButtons(containerId) {
   container.style.alignItems = "center";
   container.style.gap = "4px";                // small spacing
   container.style.padding = "2px";            // optional padding
-
+  container.style.minHeight = "40px";   // ensures container is visible
+  container.style.width = "100%";       // prevents collapse on narrow screens
+  const rect2 = container.getBoundingClientRect();
+  window.log(`[renderTree] container rect after styles height=${rect2.height} width=${rect2.width}`);
   window.log(`[renderTree] container display=${container.style.display}`);
 
   window.log(`[renderTree] children BEFORE=${container.children.length}`);
