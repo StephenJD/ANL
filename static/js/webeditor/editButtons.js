@@ -1,4 +1,3 @@
-
 // static/js/webeditor/editButtons.js
 import { moveNode, dropMove, moveAfterNextSelected } from "./treeMoveActions.js";
 window.log("editButtons FILE LOADED 2026-03-10");
@@ -15,21 +14,25 @@ export function initEditButtons(containerId, treeRoot, startEditCallback) {
   window.log(`[editButtons] container lookup = ${container ? "FOUND" : "NOT FOUND"}`);
   if (!container) return;
 
-  container.style.display = "flex";
-  container.style.flexWrap = "wrap";
-  container.style.justifyContent = "flex-start";
-  container.style.alignItems = "center";
-  container.style.gap = "4px";
-  container.style.padding = "2px";
-  container.style.minHeight = "40px";
+  // force container visible
+  container.style.display = "block";
   container.style.width = "100%";
-
-  const rect = container.getBoundingClientRect();
-  window.log(`[editButtons] container rect after styles height=${rect.height} width=${rect.width}`);
-  window.log(`[editButtons] container display=${container.style.display}`);
-
-  window.log(`[editButtons] children BEFORE=${container.children.length}`);
+  container.style.minHeight = "40px";
+  container.style.padding = "2px";
   container.innerHTML = "";
+
+  // create wrapper for buttons
+  const wrapper = document.createElement("div");
+  wrapper.style.display = "flex";
+  wrapper.style.flexWrap = "wrap";
+  wrapper.style.justifyContent = "flex-start";
+  wrapper.style.alignItems = "center";
+  wrapper.style.gap = "4px";
+  wrapper.style.width = "100%";
+  wrapper.style.minHeight = "40px";
+  wrapper.style.backgroundColor = "rgba(255,0,0,0.1)"; // temporary visible debugging aid
+
+  container.appendChild(wrapper);
 
   const buttons = [
     { id:"up", label:"↑", action:(n)=>moveNode(n,"up",treeRootRef) },
@@ -69,10 +72,10 @@ export function initEditButtons(containerId, treeRoot, startEditCallback) {
       }
     };
 
-    container.appendChild(b);
+    wrapper.appendChild(b);
   });
 
-  window.log(`[editButtons] children AFTER=${container.children.length}`);
+  window.log(`[editButtons] children AFTER wrapper=${wrapper.children.length}`);
   updateEditButtons();
   window.log("[editButtons] initEditButtons COMPLETE");
 }
@@ -96,7 +99,6 @@ export function updateEditButtons() {
 /* --------------------------------------------------
 STUB ACTIONS
 -------------------------------------------------- */
-
 function copyNodeUrl(node){ window.log(`[stub] copy URL ${node.path}`); }
 function saveNode(node){ window.log(`[stub] save ${node.path}`); }
 function publishNode(node){ window.log(`[stub] publish ${node.path}`); }
@@ -104,7 +106,6 @@ function publishNode(node){ window.log(`[stub] publish ${node.path}`); }
 /* --------------------------------------------------
 HELPER NODE SEARCH
 -------------------------------------------------- */
-
 function findNodeByPath(nodes, path) {
   for (const n of nodes) {
     if (n.path === path) return n;
