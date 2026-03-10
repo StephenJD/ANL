@@ -3,8 +3,7 @@ import { walkDir } from "./webeditor/walkDir.js";
 
 export async function handler(event, context) {
     try {
-        const rootDir = "./content";
-        console.log("[list_content_tree] Listing content at:", rootDir);
+        const rootDir = path.join(process.cwd(), "content"); // absolute path  console.log("[list_content_tree] Listing content at:", rootDir);
 
         const rootNodes = await walkDir(rootDir);
 
