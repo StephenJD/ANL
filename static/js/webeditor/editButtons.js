@@ -5,79 +5,86 @@ window.log("editButtons FILE LOADED 2026-03-10");
 let treeRootRef = null;
 let startEditCallbackRef = null;
 
-export function initEditButtons(containerId, treeRoot, startEditCallback) {
+function waitForVisibleContainer(containerId, callback) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  const check = () => {
+    const rect = container.getBoundingClientRect();
+    if (rect.width > 0 && rect.height > 0) {
+      callback(container);
+    } else {
+      requestAnimationFrame(check);
+    }
+  };
+  check();
+}
 
+export function initEditButtons(containerId, treeRoot, startEditCallback) {
   treeRootRef = treeRoot;
   startEditCallbackRef = startEditCallback;
 
-  const container = document.getElementById(containerId);
-  window.log(`[editButtons] container lookup = ${container ? "FOUND" : "NOT FOUND"}`);
-  if (!container) return;
+  waitForVisibleContainer(containerId, (container) => {
+    window.log(`[editButtons] container ready for buttons`);
 
-  // force container visible
-  container.style.display = "block";
-  container.style.width = "100%";
-  container.style.minHeight = "40px";
-  container.style.padding = "2px";
-  container.innerHTML = "";
+    container.style.display = "flex";
+    container.style.flexWrap = "wrap";
+    container.style.justifyContent = "flex-start";
+    container.style.alignItems = "center";
+    container.style.gap = "4px";
+    container.style.padding = "2px";
+    container.style.minHeight = "40px";
+    container.style.width = "100%";
 
-  // create wrapper for buttons
-  const wrapper = document.createElement("div");
-  wrapper.style.display = "flex";
-  wrapper.style.flexWrap = "wrap";
-  wrapper.style.justifyContent = "flex-start";
-  wrapper.style.alignItems = "center";
-  wrapper.style.gap = "4px";
-  wrapper.style.width = "100%";
-  wrapper.style.minHeight = "40px";
-  wrapper.style.backgroundColor = "rgba(255,0,0,0.1)"; // temporary visible debugging aid
+    window.log(`[editButtons] container rect after styles height=${container.getBoundingClientRect().height} width=${container.getBoundingClientRect().width}`);
+    window.log(`[editButtons] children BEFORE=${container.children.length}`);
 
-  container.appendChild(wrapper);
+    container.innerHTML = "";
 
-  const buttons = [
-    { id:"up", label:"↑", action:(n)=>moveNode(n,"up",treeRootRef) },
-    { id:"down", label:"↓", action:(n)=>moveNode(n,"down",treeRootRef) },
-    { id:"left", label:"←", action:(n)=>moveNode(n,"left",treeRootRef) },
-    { id:"right", label:"→", action:(n)=>moveNode(n,"right",treeRootRef) },
-    { id:"after", label:"→|", action:(n)=>moveAfterNextSelected(n,treeRootRef,window.nextSelectedPath) },
-    { id:"copyUrl", label:"🔗", action:(n)=>copyNodeUrl(n) },
-    { id:"edit", label:"✎", action:(n)=>startEditCallbackRef(n.path) },
-    { id:"save", label:"💾", action:(n)=>saveNode(n) },
-    { id:"drop", label:"↺", action:(n)=>dropMove(n) },
-    { id:"publish", label:"📤", action:(n)=>publishNode(n) }
-  ];
+    const buttons = [
+      { id:"up", label:"↑", action:(n)=>moveNode(n,"up",treeRootRef) },
+      { id:"down", label:"↓", action:(n)=>moveNode(n,"down",treeRootRef) },
+      { id:"left", label:"←", action:(n)=>moveNode(n,"left",treeRootRef) },
+      { id:"right", label:"→", action:(n)=>moveNode(n,"right",treeRootRef) },
+      { id:"after", label:"→|", action:(n)=>moveAfterNextSelected(n,treeRootRef,window.nextSelectedPath) },
+      { id:"copyUrl", label:"🔗", action:(n)=>copyNodeUrl(n) },
+      { id:"edit", label:"✎", action:(n)=>startEditCallbackRef(n.path) },
+      { id:"save", label:"💾", action:(n)=>saveNode(n) },
+      { id:"drop", label:"↺", action:(n)=>dropMove(n) },
+      { id:"publish", label:"📤", action:(n)=>publishNode(n) }
+    ];
 
-  buttons.forEach(btn => {
-    window.log(`[editButtons] create button ${btn.id}`);
-    const b = document.createElement("button");
-    b.id = btn.id;
-    b.textContent = btn.label;
-    b.disabled = true;
-    b.style.flex = "1 0 auto";
-    b.style.minWidth = "36px";
-    b.style.height = "36px";
-    b.style.fontSize = "16px";
+    buttons.forEach(btn => {
+      window.log(`[editButtons] create button ${btn.id}`);
+      const b = document.createElement("button");
+      b.id = btn.id;
+      b.textContent = btn.label;
+      b.disabled = true;
+      b.style.flex = "1 0 auto";
+      b.style.minWidth = "36px";
+      b.style.height = "36px";
+      b.style.fontSize = "16px";
 
-    b.onclick = () => {
-      window.log(`[editButtons] BUTTON CLICK ${btn.id}`);
-      const node = findNodeByPath(treeRootRef, window.selectedNodePath);
-      if (!node) {
-        window.log("[editButtons] ERROR selected node not found");
-        return;
-      }
-      btn.action(node);
-      updateEditButtons();
-      if (typeof window.renderTree?.reRender === "function") {
-        window.renderTree.reRender(window.selectedNodePath);
-      }
-    };
+      b.onclick = () => {
+        window.log(`[editButtons] BUTTON CLICK ${btn.id}`);
+        const node = findNodeByPath(treeRootRef, window.selectedNodePath);
+        if (!node) {
+          window.log("[editButtons] ERROR selected node not found");
+          return;
+        }
+        btn.action(node);
+        updateEditButtons();
+        if (typeof window.renderTree?.reRender === "function") {
+          window.renderTree.reRender(window.selectedNodePath);
+        }
+      };
 
-    wrapper.appendChild(b);
+      container.appendChild(b);
+    });
+
+    window.log(`[editButtons] children AFTER wrapper=${container.children.length}`);
+    updateEditButtons();
+    window.log("[editButtons] initEditButtons COMPLETE");
   });
-
-  window.log(`[editButtons] children AFTER wrapper=${wrapper.children.length}`);
-  updateEditButtons();
-  window.log("[editButtons] initEditButtons COMPLETE");
 }
 
 export function updateEditButtons() {
@@ -115,4 +122,4 @@ function findNodeByPath(nodes, path) {
     }
   }
   return null;
-}
+        }
