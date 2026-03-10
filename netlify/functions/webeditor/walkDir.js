@@ -1,4 +1,4 @@
-  // netlify/functions/webeditor/walkDir.js
+// netlify/functions/webeditor/walkDir.js
 import fs from "fs";
 import path from "path";
 import { qualification } from "./qualification.js";
@@ -50,19 +50,20 @@ export async function walkDir(dir, parentType = null, rootDir = dir, parentNode 
 
             console.log(`[walkDir] Reading file: ${fullPath}`);
             const fm = readFrontMatter(fullPath);
+            const type = fm.type || "document";
 
             const fileNode = {
                 parent: parentNode,
                 rawName: path.basename(entry.name, ".md"),
                 title: fm.title || "",
-                qualification: qualification({ title: fm.title || "", rawName: path.basename(entry.name, ".md") }, parentType),
+                qualification: qualification(type, parentType),
                 path: relativePath,
                 children: []
             };
 
             console.log(`[walkDir] File node created:`, fileNode);
 
-            if (!parentType && fm.type === "login") {
+            if (!parentType && type === "login") {
                 loginNodes.push(fileNode);
             } else {
                 fileNodes.push(fileNode);
@@ -96,33 +97,4 @@ function readFrontMatter(filePath) {
     const lines = content.split(/\r?\n/);
     for (let line of lines) {
         rawLines.push(line);
-        line = line.trim();
-
-        if (line === "---") {
-            inFrontMatter = !inFrontMatter;
-            continue;
-        }
-
-        if (!inFrontMatter) continue;
-        if (!line || line.startsWith("#")) continue;
-
-        const match = line.match(/^([\w_]+)\s*:\s*(.+)$/) || line.match(/^([\w_]+)\s*=\s*(.+)$/);
-        if (match) {
-            const key = match[1].trim();
-            let value = match[2].trim();
-            if ((value.startsWith('"') && value.endsWith('"')) ||
-                (value.startsWith("'") && value.endsWith("'"))) {
-                value = value.slice(1, -1);
-            }
-            fm[key] = value;
-        } else {
-            console.log(`[FM] Unparsed line: "${line}"`);
-        }
-    }
-
-    console.log(`[FM] Raw frontmatter lines for ${filePath}:`);
-    rawLines.forEach((l, i) => console.log(`  ${i + 1}: ${l}`));
-
-    console.log(`[FM] Parsed frontmatter object:`, fm);
-    return fm;
-    }                                               }
+        line = line
