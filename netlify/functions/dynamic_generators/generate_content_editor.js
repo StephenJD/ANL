@@ -14,13 +14,6 @@ export default async function generate_content_editor() {
 
     <label for="frontMatterText">Front Matter:</label>
     <textarea id="frontMatterText" style="width:100%;height:200px;margin-bottom:10px;"></textarea>
-
-    <div id="editButtons" style="margin-top:20px;">
-      <button type="button" id="saveBtn">Save</button>
-      <button type="button" id="publishBtn">Publish</button>
-      <button type="button" id="cancelBtn">Cancel</button>
-      <button type="button" id="dropBtn">Drop</button>
-    </div>
   </div>
 
 </div>
@@ -77,7 +70,7 @@ white-space:pre-wrap;
   }
 
   // =====================
-  // Node edit callback (single function)
+  // Node edit callback
   // =====================
   async function startEditForPath(path) {
     currentFile = path;
@@ -130,25 +123,27 @@ white-space:pre-wrap;
       try { const mod = await import('/js/webeditor/treeMoveActions.js'); 
             addMoveButtonsFn = mod.addMoveButtons; log("treeMoveActions loaded"); }
       catch(e){ log("treeMoveActions load failed: " + e); }
-
-      // attach listeners to buttons
-      document.getElementById("saveBtn").addEventListener("click", saveEdit);
-      document.getElementById("publishBtn").addEventListener("click", publishEdits);
-      document.getElementById("cancelBtn").addEventListener("click", ()=>{
-        cancelEdit();
-        document.getElementById("editorContainer").style.display = "none";
-        document.getElementById("tree").style.display = "block";
-      });
-      document.getElementById("dropBtn").addEventListener("click", ()=>{
-        dropEdits();
-        document.getElementById("editorContainer").style.display = "none";
-        document.getElementById("tree").style.display = "block";
-      });
-
-      log("Step 2: Helper loading complete");
     } catch(err) {
       log("loadHelpers fatal error: " + err);
     }
+  }
+
+  // =====================
+  // Wait for gated page to load
+  // =====================
+  async function waitForGatedPage() {
+    const placeholder = document.querySelector(".gated_page_placeholder");
+    if (!placeholder) return;
+
+    return new Promise(resolve => {
+      const observer = new MutationObserver((mutations, obs) => {
+        if (placeholder.querySelector("#editorContainer")) {
+          obs.disconnect();
+          resolve();
+        }
+      });
+      observer.observe(placeholder, { childList: true, subtree: true });
+    });
   }
 
   // =====================
@@ -170,6 +165,8 @@ white-space:pre-wrap;
         } catch(e){
           log("Tree fetch error: " + e);
         }
+
+        await waitForGatedPage();
 
         // Define reRender function on renderTreeFn
         renderTreeFn.reRender = (path) => {
