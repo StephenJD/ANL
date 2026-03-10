@@ -1,6 +1,6 @@
 // static/js/webeditor/renderTree.js
-
 import { moveNode, dropMove, moveAfterNextSelected } from "./treeMoveActions.js";
+window.log("renderTree FILE LOADED 2026-03-10");
 
 let treeRoot = null;
 let startEditCallbackRef = null;
