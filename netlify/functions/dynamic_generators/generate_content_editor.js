@@ -64,7 +64,7 @@ white-space:pre-wrap;
     if(treeContainer && renderTreeFn){
       treeContainer.innerHTML = '';
       treeContainer.appendChild(
-        renderTreeFn(treeData, startEditForPath, "editButtons", selectedNodePath, addMoveButtonsFn)
+        renderTreeFn(treeData, startEditForPath, selectedNodePath)
       );
     }
   }
@@ -168,19 +168,10 @@ white-space:pre-wrap;
 
         await waitForGatedPage();
 
-        // Define reRender function on renderTreeFn
-        renderTreeFn.reRender = (path) => {
-          selectedNodePath = path;
-          treeContainer.innerHTML = "";
-          treeContainer.appendChild(
-            renderTreeFn(tree, startEditForPath, "editButtons", selectedNodePath, addMoveButtonsFn)
-          );
-        };
-
         // Initial render
         treeContainer.innerHTML = "";
         treeContainer.appendChild(
-          renderTreeFn(tree, startEditForPath, "editButtons", selectedNodePath, addMoveButtonsFn)
+          renderTreeFn(tree, startEditForPath, selectedNodePath)
         );
 
         log("Tree rendered");
