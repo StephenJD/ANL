@@ -1,20 +1,20 @@
-// netlify/functions/webeditor/walkDir.js
+  // netlify/functions/webeditor/walkDir.js
 import fs from "fs";
 import path from "path";
-import { qualifyTitle } from "./qualifyTitle.js";
+import { qualification } from "./qualification.js";
 
-export async function walkDir(dir, parentType = null, rootDir = dir) {
+export async function walkDir(dir, parentType = null, rootDir = dir, parentNode = null) {
     console.log(`[walkDir] Entering: ${dir} | parentType: ${parentType}`);
 
     const entries = fs.readdirSync(dir, { withFileTypes: true });
     const folderNodes = [];
     const fileNodes = [];
     let homeNode = null;
-    let loginNodes = [];
+    const loginNodes = [];
 
     for (const entry of entries) {
         const fullPath = path.join(dir, entry.name);
-        const relativePath = path.relative(rootDir, fullPath); // <-- relative to content root
+        const relativePath = path.relative(rootDir, fullPath).replace(/\\/g, "/");
 
         if (entry.isDirectory()) {
             const indexPath = path.join(fullPath, "_index.md");
@@ -28,22 +28,17 @@ export async function walkDir(dir, parentType = null, rootDir = dir) {
             }
 
             const folderNode = {
-                name: path.basename(fullPath),
-                path: relativePath.replace(/\\/g, "/"), // always forward slashes for URLs
-                title: fm.title || path.basename(fullPath),
-                type,
+                parent: parentNode,
+                rawName: path.basename(fullPath),
+                title: fm.title || "",
+                qualification: qualification({ title: fm.title || "", rawName: path.basename(fullPath) }, parentType),
+                path: relativePath,
                 children: []
             };
 
-            folderNode.qualifiedTitle = qualifyTitle(folderNode, parentType);
-            console.log(`[walkDir] Folder node created:`, {
-                rawTitle: folderNode.title,
-                qualifiedTitle: folderNode.qualifiedTitle,
-                type: folderNode.type,
-                path: folderNode.path
-            });
+            console.log(`[walkDir] Folder node created:`, folderNode);
 
-            folderNode.children = await walkDir(fullPath, type, rootDir);
+            folderNode.children = await walkDir(fullPath, type, rootDir, folderNode);
 
             if (type === "home" && !parentType) {
                 homeNode = folderNode;
@@ -56,32 +51,28 @@ export async function walkDir(dir, parentType = null, rootDir = dir) {
             console.log(`[walkDir] Reading file: ${fullPath}`);
             const fm = readFrontMatter(fullPath);
 
-            const node = {
-                name: path.basename(entry.name, ".md"),
-                path: relativePath.replace(/\\/g, "/"),
-                title: fm.title || path.basename(entry.name, ".md"),
-                type: fm.type || "document"
+            const fileNode = {
+                parent: parentNode,
+                rawName: path.basename(entry.name, ".md"),
+                title: fm.title || "",
+                qualification: qualification({ title: fm.title || "", rawName: path.basename(entry.name, ".md") }, parentType),
+                path: relativePath,
+                children: []
             };
 
-            node.qualifiedTitle = qualifyTitle(node, parentType);
-            console.log(`[walkDir] File node created:`, {
-                rawTitle: node.title,
-                qualifiedTitle: node.qualifiedTitle,
-                type: node.type,
-                path: node.path
-            });
+            console.log(`[walkDir] File node created:`, fileNode);
 
-            if (!parentType && node.type === "login") {
-                loginNodes.push(node);
+            if (!parentType && fm.type === "login") {
+                loginNodes.push(fileNode);
             } else {
-                fileNodes.push(node);
+                fileNodes.push(fileNode);
             }
         }
     }
 
-    folderNodes.sort((a, b) => a.name.localeCompare(b.name));
-    fileNodes.sort((a, b) => a.name.localeCompare(b.name));
-    loginNodes.sort((a, b) => a.name.localeCompare(b.name));
+    folderNodes.sort((a, b) => a.rawName.localeCompare(b.rawName));
+    fileNodes.sort((a, b) => a.rawName.localeCompare(b.rawName));
+    loginNodes.sort((a, b) => a.rawName.localeCompare(b.rawName));
 
     const result = [];
 
@@ -134,4 +125,4 @@ function readFrontMatter(filePath) {
 
     console.log(`[FM] Parsed frontmatter object:`, fm);
     return fm;
-                                                 }
+    }                                               }
