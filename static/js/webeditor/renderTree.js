@@ -41,16 +41,18 @@ export function renderTree(
     titleSpan.style.cursor = "pointer";
     titleSpan.style.padding = "2px 4px";
 
+    // Ensure edit object exists
+    node.edit = node.edit || {};
+
     // Colour based on edit flags
-    if (node.edit && node.edit.moved) {
+    if (node.edit.moved) {
       titleSpan.style.color = "orange";
-    } else if (node.edit) {
+    } else if (Object.keys(node.edit).length) {
       titleSpan.style.color = "blue";
     } else {
       titleSpan.style.color = "black";
     }
 
-    // Selection highlight
     if (selectedNodePath === node.path) {
       titleSpan.style.fontWeight = "bold";
       titleSpan.style.backgroundColor = "#def";
@@ -79,12 +81,14 @@ export function renderTree(
     ul.appendChild(li);
   });
 
-  // Bottom-bar buttons (always recreated)
+  // Always render bottom-bar buttons
   const btnContainer = document.getElementById(editButtonsContainerId);
-  if (btnContainer) {
+  if (!btnContainer) {
+    console.warn("[renderTree] No button container found:", editButtonsContainerId);
+  } else {
     btnContainer.innerHTML = "";
-    const isNodeSelected = !!selectedNodePath;
 
+    const isNodeSelected = !!selectedNodePath;
     const buttons = [
       { id: "up", label: "↑", action: (n) => moveNode(n, "up", fullTreeRoot) },
       { id: "down", label: "↓", action: (n) => moveNode(n, "down", fullTreeRoot) },
@@ -127,4 +131,4 @@ function findNodeByPath(nodes, path) {
     }
   }
   return null;
-                                                                       }
+      }
