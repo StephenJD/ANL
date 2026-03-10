@@ -51,23 +51,17 @@ export function renderTree(
 
     li.appendChild(titleSpan);
 
-    // Recursively append children UL
+    // Recursively render children
     if (node.children && node.children.length) {
-      const childUl = document.createElement("ul");
-      childUl.style.listStyle = "none";
-      childUl.style.paddingLeft = "15px";
-      node.children.forEach((child) => {
-        const childLi = renderTree([child], startEditCallback, null, selectedNodePath, fullTreeRoot);
-        if (childLi) childUl.appendChild(childLi);
-      });
-      li.appendChild(childUl);
+      const childrenUl = renderTree(node.children, startEditCallback, editButtonsContainerId, selectedNodePath, fullTreeRoot);
+      li.appendChild(childrenUl);
     }
 
     ul.appendChild(li);
   });
 
-  // Only add bottom buttons at top-level call
-  if (editButtonsContainerId) {
+  // Only handle bottom-bar buttons at top level
+  if (!document.getElementById(editButtonsContainerId)?.hasChildNodes()) {
     const btnContainer = document.getElementById(editButtonsContainerId);
     if (btnContainer) {
       btnContainer.innerHTML = "";
@@ -79,7 +73,7 @@ export function renderTree(
         { id: "left", label: "←", action: (n) => moveNode(n, "left", fullTreeRoot) },
         { id: "right", label: "→", action: (n) => moveNode(n, "right", fullTreeRoot) },
         { id: "after", label: "→|", action: (n) => moveAfterNextSelected(n, fullTreeRoot, window.nextSelectedPath) },
-        { id: "copyUrl", label: "Copy URL", action: (n) => copyNodeUrl(n) },
+        { id: "copyUrl", label: "🔗", action: (n) => copyNodeUrl(n) },
         { id: "edit", label: "✎", action: (n) => startEditCallback(n.path) },
         { id: "save", label: "💾", action: (n) => saveNode(n) },
         { id: "drop", label: "↺", action: (n) => dropMove(n) },
@@ -106,7 +100,7 @@ export function renderTree(
   return ul;
 }
 
-// utility to find node by path
+// Utility to find node by path
 function findNodeByPath(nodes, path) {
   for (const n of nodes) {
     if (n.path === path) return n;
@@ -116,4 +110,4 @@ function findNodeByPath(nodes, path) {
     }
   }
   return null;
-}
+                }
