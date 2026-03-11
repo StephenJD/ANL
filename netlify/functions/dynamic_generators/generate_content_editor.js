@@ -148,15 +148,26 @@ editButtons = mod.setupEditButtons(
 // =====================
 function handleMove(direction){
   if(!selectedNodePath) return;
+
   const node = findNodeByPath(treeData, selectedNodePath);
   if(!node) return;
 
   let moved = false;
-  if(direction === "after") moved = treeMoveActions.moveAfterNextSelected(node, treeData, selectedNodePath);
-  else moved = treeMoveActions.moveNode(node, direction, treeData);
 
-  log(\`Move "\${direction}" for node "\${node.title || node.path}" result: \${moved}\`);
-  if(moved) renderTree();
+  if(direction === "after")
+    moved = treeMoveActions.moveAfterNextSelected(node, treeData, selectedNodePath);
+  else
+    moved = treeMoveActions.moveNode(node, direction, treeData);
+
+  if(!moved) return;
+
+  // mark node as moved
+  node.editState = "moved";
+
+  log(`Move "${direction}" for node "${node.title || node.path}" result: ${moved}`);
+
+  renderTree();
+  if(editButtons) editButtons.update(selectedNodePath);
 }
 
 // =====================
