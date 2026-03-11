@@ -68,12 +68,31 @@ export function setupEditButtons(containerId, treeData, moveFn, showEditorFn) {
   }
 
   function update(selectedPath){
-    const anySelected = !!selectedPath;
-    for(const id in buttons){
-      if(buttons.hasOwnProperty(id)) buttons[id].disabled = !anySelected;
-    }
-    window.log(`[editButtons] buttons updated selected=${anySelected}`);
+  const anySelected = !!selectedPath;
+
+  for(const id in buttons){
+    buttons[id].disabled = !anySelected;
   }
+
+  if(!anySelected){
+    window.log("[editButtons] buttons updated selected=false");
+    return;
+  }
+
+  const node = findNodeByPath(treeDataRef, selectedPath);
+
+  if(node){
+    if(buttons.save){
+      buttons.save.disabled = node.editState !== "moved";
+    }
+
+    if(buttons.drop){
+      buttons.drop.disabled = !(node.editState === "moved" || node.editState === "staged");
+    }
+  }
+
+  window.log(`[editButtons] buttons updated selected=true`);
+}
 
   return { update };
 }
