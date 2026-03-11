@@ -23,14 +23,11 @@ export function renderTree(nodes, selectedNodePath = null, onSelectNode = null) 
         span.style.padding = "2px 4px";
 
         // colour based on edit state
-        if(node.editState === "moved"){
-  span.style.color = "red";
-}
-
-if(node.editState === "staged"){
-  span.style.color = "orange";
-}
+        if(node.editState === "moved") span.style.color = "red";
+        else if(node.editState === "staged") span.style.color = "orange";
+        else span.style.color = "blue"; // default color
         // bold if selected
+        
         if (selectedNodePath === node.path) {
             span.style.fontWeight = "bold";
             span.style.backgroundColor = "#def";
