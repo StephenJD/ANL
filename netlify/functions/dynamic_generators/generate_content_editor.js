@@ -47,225 +47,171 @@ box-shadow:0 -2px 5px rgba(0,0,0,0.1);
 
 <script type="module">
 
-window.log = function(msg){
-  const logDiv = document.getElementById("logDiv");
-  if(logDiv){
-    logDiv.textContent += msg + "\\n";
-    logDiv.scrollTop = logDiv.scrollHeight;
-  }
-  console.log(msg);
-};
+  window.log = function(msg){
+    const logDiv = document.getElementById("logDiv");
+    if(logDiv){
+      logDiv.textContent += msg + "\\n";
+      logDiv.scrollTop = logDiv.scrollHeight;
+    }
+    console.log(msg);
+  };
 
-log("Step 1: Content editor script started");
+  log("Step 1: Content editor script started");
 
-// =====================
-// Controller State
-// =====================
+  // =====================
+  // Controller State
+  // =====================
 
-let selectedNodePath = null;
-let treeData = [];
+  let selectedNodePath = null;
+  let treeData = [];
 
-let currentFile = null;
-let rawBody = "";
+  let currentFile = null;
+  let rawBody = "";
 
-// =====================
-// Loaded Modules
-// =====================
+  // =====================
+  // Loaded Modules
+  // =====================
 
-let renderTreeFn = null;
-let parseMarkdownFn = null;
-let renderFormFn = null;
+  let renderTreeFn = null;
+  let parseMarkdownFn = null;
+  let renderFormFn = null;
 
-let saveEdit = ()=>log("saveEdit not loaded yet");
-let publishEdits = ()=>log("publishEdits not loaded yet");
-let cancelEdit = ()=>log("cancelEdit not loaded yet");
-let dropEdits = ()=>log("dropEdits not loaded yet");
+  let saveEdit = ()=>log("saveEdit not loaded yet");
+  let publishEdits = ()=>log("publishEdits not loaded yet");
+  let cancelEdit = ()=>log("cancelEdit not loaded yet");
+  let dropEdits = ()=>log("dropEdits not loaded yet");
 
-let updateEditButtons = null;
-let initEditButtons = null;
+  let updateEditButtons = null;
+  let addMoveButtons = null;
 
-// =====================
-// Selection Controller
-// =====================
+  // =====================
+  // Node Selection
+  // =====================
 
-function selectNodePath(path){
-
-  selectedNodePath = path;
-
-  if(updateEditButtons){
-    updateEditButtons(path);
-  }
-
-  log("Node selected: " + path);
-
-  renderTree();
-}
-
-// =====================
-// Tree Renderer
-// =====================
-
-function renderTree(){
-
-  const treeContainer = document.getElementById("tree");
-  if(!treeContainer){
-    log("Tree container missing");
-    return;
+  function selectNode(path){
+    selectedNodePath = path;
+    if(updateEditButtons) updateEditButtons(path);
+    log("Node selected: " + path);
+    renderTree();
   }
 
-  treeContainer.innerHTML = "";
+  // =====================
+  // Tree Renderer
+  // =====================
 
-  treeContainer.appendChild(
-    renderTreeFn(
+  function renderTree(){
+    if(!renderTreeFn) return;
+    const treeContainer = document.getElementById("tree");
+    if(!treeContainer){
+      log("Tree container missing");
+      return;
+    }
+
+    treeContainer.innerHTML = "";
+
+    const treeEl = renderTreeFn(
       treeData,
-      selectedNodePath,
-      selectNodePath
-    )
-  );
-}
+      selectNodePathCallback,  // callback used inside renderTree for node click
+      null,
+      null,
+      treeData,
+      0
+    );
 
-// expose for move actions
-window.renderContentTree = renderTree;
+    treeContainer.appendChild(treeEl);
+  }
 
-// =====================
-// Helper Module Loader
-// =====================
+  // Internal callback passed to renderTree nodes
+  function selectNodePathCallback(path){
+    selectedNodePath = path;
+    if(updateEditButtons) updateEditButtons(path);
+    renderTree();
+  }
 
-async function loadHelpers(){
+  // =====================
+  // Helper Loader
+  // =====================
 
-  log("Step 2: Loading helpers...");
+  async function loadHelpers(){
 
-  try{
+    log("Step 2: Loading helpers...");
 
     try{
-      const mod = await import('/js/webeditor/renderTree.js');
-      renderTreeFn = mod.renderTree;
+      const modRenderTree = await import('/js/webeditor/renderTree.js');
+      renderTreeFn = modRenderTree.renderTree;
       log("renderTree loaded");
-    }catch(e){
-      log("renderTree load failed: " + e);
-    }
+    }catch(e){ log("renderTree load failed: " + e); }
 
     try{
-      const mod = await import('/js/webeditor/parseMarkdown.js');
-      parseMarkdownFn = mod.parseMarkdown;
+      const modParse = await import('/js/webeditor/parseMarkdown.js');
+      parseMarkdownFn = modParse.parseMarkdown;
       log("parseMarkdown loaded");
-    }catch(e){
-      log("parseMarkdown load failed: " + e);
-    }
+    }catch(e){ log("parseMarkdown load failed: " + e); }
 
     try{
-      const mod = await import('/js/webeditor/renderForm.js');
-      renderFormFn = mod.renderForm;
+      const modForm = await import('/js/webeditor/renderForm.js');
+      renderFormFn = modForm.renderForm;
       log("renderForm loaded");
-    }catch(e){
-      log("renderForm load failed: " + e);
-    }
+    }catch(e){ log("renderForm load failed: " + e); }
 
     try{
-      const mod = await import('/js/webeditor/editActions.js');
-
+      const modEdit = await import('/js/webeditor/editActions.js');
       ({ saveEdit, publishEdits, cancelEdit, dropEdits } =
-        mod.setupEditActions({value: currentFile}, {value: rawBody}));
-
+        modEdit.setupEditActions({value: currentFile}, {value: rawBody}));
       log("editActions loaded");
-
-    }catch(e){
-      log("editActions load failed: " + e);
-    }
+    }catch(e){ log("editActions load failed: " + e); }
 
     try{
-      await import('/js/webeditor/treeMoveActions.js');
+      const modMove = await import('/js/webeditor/treeMoveActions.js');
+      addMoveButtons = modMove.addMoveButtons;
       log("treeMoveActions loaded");
-    }catch(e){
-      log("treeMoveActions load failed: " + e);
-    }
+    }catch(e){ log("treeMoveActions load failed: " + e); }
 
     try{
-
-      const mod = await import('/js/webeditor/editButtons.js');
-
-      updateEditButtons = mod.updateEditButtons;
-      initEditButtons = mod.initEditButtons;
-
-      log("editButtons module loaded");
-
-    }catch(e){
-      log("editButtons load failed: " + e);
-    }
+      const modButtons = await import('/js/webeditor/editButtons.js');
+      updateEditButtons = modButtons.updateEditButtons;
+      modButtons.initEditButtons("treeEditButtons", treeData, selectNode);
+      log("editButtons loaded and initialized");
+    }catch(e){ log("editButtons load failed: " + e); }
 
     log("Step 2: Helper loading complete");
-
-  }catch(err){
-
-    log("loadHelpers fatal error: " + err);
-
   }
-}
 
-// =====================
-// Tree Loader
-// =====================
+  // =====================
+  // Tree Loader
+  // =====================
 
-async function loadTree(){
-
-  log("Step 3: Loading tree...");
-
-  try{
-
-    let tree = [];
+  async function loadTree(){
+    log("Step 3: Loading tree...");
 
     try{
-
       const res = await fetch("/.netlify/functions/list_content_tree");
-
-      log("Tree HTTP status: " + res.status);
-
       if(res.ok){
-        tree = await res.json();
-      }else{
+        treeData = await res.json();
+      } else {
         log("Tree fetch failed with HTTP " + res.status);
       }
 
+      renderTree();
+      log("Tree rendered");
+
     }catch(e){
-
-      log("Tree fetch error: " + e);
-
+      log("loadTree fatal error: " + e);
     }
-
-    treeData = tree;
-
-    renderTree();
-
-    if(initEditButtons){
-      initEditButtons("treeEditButtons", treeData, selectNodePath);
-    }
-
-    log("Tree rendered");
-
-  }catch(err){
-
-    log("loadTree fatal error: " + err);
-
   }
-}
 
-// =====================
-// Initializer
-// =====================
+  // =====================
+  // Initializer
+  // =====================
 
-async function init(){
+  async function init(){
+    log("Step 0: Initializing editor");
+    await loadHelpers();
+    await loadTree();
+    log("Step 4: Initialization complete");
+  }
 
-  log("Step 0: Initializing editor");
-
-  await loadHelpers();
-
-  await loadTree();
-
-  log("Step 4: Initialization complete");
-
-}
-
-init();
+  init();
 
 </script>
 `;
