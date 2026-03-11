@@ -116,7 +116,6 @@ function showEditorForSelectedNode(){
   const frontMatterText = document.getElementById("frontMatterText");
 
   if(editorContainer && editForm && frontMatterText){
-    // Hide tree while editing
     document.getElementById("tree").style.display = "none";
     editorContainer.style.display = "block";
 
@@ -152,6 +151,20 @@ async function loadHelpers(){
 }
 
 // =====================
+// Reconstruct parent references
+// =====================
+function reconstructTree(nodes, parent = null) {
+  return nodes.map(node => {
+    const newNode = { ...node };
+    newNode.parent = parent;
+    if (newNode.children?.length) {
+      newNode.children = reconstructTree(newNode.children, newNode);
+    }
+    return newNode;
+  });
+}
+
+// =====================
 // Move / Save / Drop handler
 // =====================
 function handleMove(action){
@@ -161,23 +174,22 @@ function handleMove(action){
   if(!node) return;
 
   if(["up","down","left","right","after"].includes(action)){
-    // Move node in tree
     let moved = (action === "after") 
       ? treeMoveActions.moveAfterNextSelected(node, treeData, selectedNodePath)
-      : treeMoveActions.moveNode(node, action, treeData);
+      : treeMoveActions.moveNode(node, action);
     if(!moved) return;
 
     node.editState = "moved";
     log(\`Moved node "\${node.title || node.path}" -> "\${action}"\`);
+    log(\`node.parent title: \${node.parent?.title || "(no title)"}\`);
+    log(\`node.parent children length: \${node.parent?.children?.length || 0}\`);
   } 
   else if(action === "save"){
-    // Stage node
     tmpNodes[node.path] = {...node};
     node.editState = "staged";
     log(\`Saved node "\${node.title || node.path}" to tmp\`);
   }
   else if(action === "drop"){
-    // Drop node
     if(node.editState === "staged" && tmpNodes[node.path]) delete tmpNodes[node.path];
     if(node.editState === "moved" || node.editState === "staged") node.editState = null;
     log(\`Dropped node "\${node.title || node.path}"\`);
@@ -215,8 +227,12 @@ async function loadTree(){
   try{
     const res = await fetch("/.netlify/functions/list_content_tree");
     log("Tree HTTP status: " + res.status);
-    if(res.ok) treeData = await res.json();
-    else log("Tree fetch failed with HTTP " + res.status);
+    if(res.ok) {
+      const jsonSafeTree = await res.json();
+      treeData = reconstructTree(jsonSafeTree, null); // <-- reconstruct parents
+    } else {
+      log("Tree fetch failed with HTTP " + res.status);
+    }
 
     renderTree();
     log("Tree rendered");
