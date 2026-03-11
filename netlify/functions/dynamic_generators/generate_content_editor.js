@@ -129,13 +129,13 @@ async function loadHelpers(){
 
     try{
       const mod = await import('/js/webeditor/editButtons.js');
-      // provide a simple interface: update buttons & move callbacks
-      editButtons = mod.setupEditButtons("treeEditButtons", treeData,
-        () => log("Move button clicked"), // placeholder, real move handled below
-        selectNode,
-        showEditorForSelectedNode,
-        handleMove
-      );
+
+editButtons = mod.setupEditButtons(
+  "treeEditButtons",
+  treeData,
+  handleMove,
+  showEditorForSelectedNode
+);
       log("editButtons loaded and initialized");
     }catch(e){ log("editButtons load failed: " + e); }
 
