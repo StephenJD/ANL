@@ -70,17 +70,15 @@ box-shadow:0 -2px 5px rgba(0,0,0,0.1);
   let parseMarkdownFn = null;
   let renderFormFn = null;
   let addMoveButtonsFn = null;
+  let updateEditButtons = null;
 
   // =====================
   // Node selection callback
   // =====================
-  async function selectNodePath(path) {
-    window.selectedNodePath = path;   // report selection
+  function selectNodePath(path) {
     if (typeof updateEditButtons === "function") updateEditButtons(path);
-
     log("Node selected: " + path);
-
-    // Tree remains visible, no front-matter editor shown
+    // Tree remains visible; front-matter editor shown only via edit button
   }
 
   // =====================
@@ -107,6 +105,14 @@ box-shadow:0 -2px 5px rgba(0,0,0,0.1);
             addMoveButtonsFn = mod.addMoveButtons; log("treeMoveActions loaded"); }
       catch(e){ log("treeMoveActions load failed: " + e); }
 
+      try { const mod = await import('/js/webeditor/editButtons.js'); 
+            updateEditButtons = mod.updateEditButtons;
+            const { initEditButtons } = mod;
+            // initialize fixed button set
+            initEditButtons("treeEditButtons", [], null);
+            log("editButtons loaded and initialized");
+      } catch(e){ log("editButtons load failed: " + e); }
+
       log("Step 2: Helper loading complete");
     } catch(err) {
       log("loadHelpers fatal error: " + err);
@@ -122,32 +128,37 @@ box-shadow:0 -2px 5px rgba(0,0,0,0.1);
       const treeContainer = document.getElementById("tree");
       if(!treeContainer){ log("Tree container missing"); return; }
 
-      // Inside loadTree() after fetching treeData
-if (renderTreeFn) {
-    const treeContainer = document.getElementById("tree");
-    treeContainer.innerHTML = "";
+      let tree = [];
+      try {
+        const res = await fetch("/.netlify/functions/list_content_tree");
+        log("Tree HTTP status: " + res.status);
+        if(res.ok) tree = await res.json();
+        else log("Tree fetch failed with HTTP " + res.status);
+      } catch(e){
+        log("Tree fetch error: " + e);
+      }
 
-    // Import editButtons functions
-    const { updateEditButtons, initEditButtons } = await import('/js/webeditor/editButtons.js');
+      treeData = tree;
 
-    // Initialize the fixed button set once
-    initEditButtons("treeEditButtons", tree, null);
-
-    // Render tree passing updateEditButtons as callback
-    treeContainer.appendChild(
-        renderTreeFn(
-            tree,
-            null,                  // startEditCallback no longer needed for buttons
-            "treeEditButtons",     // editButtonsContainerId (unused now)
-            null,                  // selectedNodePath
-            tree,                  // fullTreeRoot
-            0,                     // depth
-            updateEditButtons      // Pass the callback for node selection
-        )
-    );
-
-    log("Tree rendered with buttons wired for node selection");
-}
+      if (renderTreeFn) {
+        treeContainer.innerHTML = "";
+        treeContainer.appendChild(
+            renderTreeFn(
+                tree,
+                null,          // startEditCallback no longer needed
+                "treeEditButtons",
+                null,
+                tree,
+                0,
+                selectNodePath // callback for node selection
+            )
+        );
+        log("Tree rendered with buttons wired for node selection");
+      }
+    } catch(err){
+      log("loadTree fatal error: " + err);
+    }
+  }
 
   // =====================
   // Initialize
