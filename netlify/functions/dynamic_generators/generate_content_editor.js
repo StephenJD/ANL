@@ -14,13 +14,6 @@ export default async function generate_content_editor() {
 
     <label for="frontMatterText">Front Matter:</label>
     <textarea id="frontMatterText" style="width:100%;height:200px;margin-bottom:10px;"></textarea>
-
-    <div id="editButtons" style="margin-top:20px;">
-      <button type="button" id="saveBtn">Save</button>
-      <button type="button" id="publishBtn">Publish</button>
-      <button type="button" id="cancelBtn">Cancel</button>
-      <button type="button" id="dropBtn">Drop</button>
-    </div>
   </div>
 
 </div>
@@ -126,20 +119,6 @@ white-space:pre-wrap;
             addMoveButtonsFn = mod.addMoveButtons; log("treeMoveActions loaded"); }
       catch(e){ log("treeMoveActions load failed: " + e); }
 
-      // attach listeners to standard editor buttons
-      document.getElementById("saveBtn").addEventListener("click", saveEdit);
-      document.getElementById("publishBtn").addEventListener("click", publishEdits);
-      document.getElementById("cancelBtn").addEventListener("click", ()=>{
-        cancelEdit();
-        document.getElementById("editorContainer").style.display = "none";
-        document.getElementById("tree").style.display = "block";
-      });
-      document.getElementById("dropBtn").addEventListener("click", ()=>{
-        dropEdits();
-        document.getElementById("editorContainer").style.display = "none";
-        document.getElementById("tree").style.display = "block";
-      });
-
       log("Step 2: Helper loading complete");
     } catch(err) {
       log("loadHelpers fatal error: " + err);
@@ -168,20 +147,18 @@ white-space:pre-wrap;
 
         treeData = tree;
 
-        // Render the tree
         const onNodeSelect = startEditForPath;
         treeContainer.innerHTML = "";
         treeContainer.appendChild(renderTreeFn(tree, onNodeSelect));
 
         log("Tree rendered");
 
-        // Step 5: initialize tree edit buttons externally
+        // Initialize single sticky button set for tree + front-matter
         try {
           const { initEditButtons } = await import('/js/webeditor/editButtons.js');
           initEditButtons("treeEditButtons", tree, onNodeSelect);
 
           // Wire essential button actions
-          Object.values(window.buttons || {}).forEach(btn => btn.remove()); // clean old if any
           const btnSave = document.getElementById("save");
           const btnPublish = document.getElementById("publish");
           const btnDrop = document.getElementById("drop");
