@@ -25,7 +25,6 @@ export default async function generate_content_editor() {
 
 </div>
 
-<!-- Step 1: Dedicated non-scrolling container for tree buttons -->
 <div id="treeEditButtons" style="
 position:sticky;
 bottom:0;
@@ -60,7 +59,6 @@ white-space:pre-wrap;
   // =====================
   let currentFile = null;
   let rawBody = "";
-  let selectedNodePath = null;
   let treeData = [];
 
   let saveEdit = ()=>log("saveEdit not loaded yet");
@@ -74,23 +72,7 @@ white-space:pre-wrap;
   let addMoveButtonsFn = null;
 
   // =====================
-  // Re-render tree
-  // =====================
-  function reRenderTree(newSelectedPath = null) {
-    selectedNodePath = newSelectedPath;
-    const treeContainer = document.getElementById("tree");
-    if(treeContainer && renderTreeFn){
-      treeContainer.innerHTML = '';
-      // Step 3 & 4: removed selectedNodePath, renamed callback to onNodeSelect
-      const onNodeSelect = startEditForPath;
-      treeContainer.appendChild(
-        renderTreeFn(treeData, onNodeSelect)
-      );
-    }
-  }
-
-  // =====================
-  // Node edit callback (single function)
+  // Node selection callback
   // =====================
   async function startEditForPath(path) {
     currentFile = path;
@@ -144,7 +126,7 @@ white-space:pre-wrap;
             addMoveButtonsFn = mod.addMoveButtons; log("treeMoveActions loaded"); }
       catch(e){ log("treeMoveActions load failed: " + e); }
 
-      // attach listeners to buttons
+      // attach listeners to standard editor buttons
       document.getElementById("saveBtn").addEventListener("click", saveEdit);
       document.getElementById("publishBtn").addEventListener("click", publishEdits);
       document.getElementById("cancelBtn").addEventListener("click", ()=>{
@@ -173,8 +155,8 @@ white-space:pre-wrap;
       const treeContainer = document.getElementById("tree");
       if(!treeContainer){ log("Tree container missing"); return; }
 
-      let tree = [];
       if(renderTreeFn){
+        let tree = [];
         try {
           const res = await fetch("/.netlify/functions/list_content_tree");
           log("Tree HTTP status: " + res.status);
@@ -184,23 +166,33 @@ white-space:pre-wrap;
           log("Tree fetch error: " + e);
         }
 
-        // Define reRender function on renderTreeFn
-        renderTreeFn.reRender = (path) => {
-          const onNodeSelect = startEditForPath;
-          treeContainer.innerHTML = "";
-          treeContainer.appendChild(
-            renderTreeFn(tree, onNodeSelect)
-          );
-        };
+        treeData = tree;
 
-        // Initial render
-        treeContainer.innerHTML = "";
+        // Render the tree
         const onNodeSelect = startEditForPath;
-        treeContainer.appendChild(
-          renderTreeFn(tree, onNodeSelect)
-        );
+        treeContainer.innerHTML = "";
+        treeContainer.appendChild(renderTreeFn(tree, onNodeSelect));
 
         log("Tree rendered");
+
+        // Step 5: initialize tree edit buttons externally
+        try {
+          const { initEditButtons } = await import('/js/webeditor/editButtons.js');
+          initEditButtons("treeEditButtons", tree, onNodeSelect);
+
+          // Wire essential button actions
+          Object.values(window.buttons || {}).forEach(btn => btn.remove()); // clean old if any
+          const btnSave = document.getElementById("save");
+          const btnPublish = document.getElementById("publish");
+          const btnDrop = document.getElementById("drop");
+          if(btnSave) btnSave.addEventListener("click", saveEdit);
+          if(btnPublish) btnPublish.addEventListener("click", publishEdits);
+          if(btnDrop) btnDrop.addEventListener("click", dropEdits);
+
+          log("Tree buttons initialized and wired");
+        } catch(e) {
+          log("Tree buttons init error: " + e);
+        }
       } else {
         log("renderTree function not available, tree cannot be displayed");
       }
