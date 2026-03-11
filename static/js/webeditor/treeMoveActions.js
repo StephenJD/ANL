@@ -9,10 +9,25 @@ export function moveNode(nodeObj, direction) {
     }
 
     const parentArray = nodeObj.parent.children;
-    if (!parentArray || parentArray.length === 0) return false;
+
+    window.log(`[moveNode] node.parent title: ${nodeObj.parent.title || "(no title)"}`);
+    window.log(`[moveNode] node.parent children length: ${parentArray?.length || 0}`);
+    if (parentArray?.length) {
+        window.log(`[moveNode] node.parent children titles: ${parentArray.map(c => c.title).join(", ")}`);
+    }
+
+    if (!parentArray || parentArray.length === 0) {
+        window.log("[moveNode] Parent has no children array, cannot move");
+        return false;
+    }
 
     const idx = parentArray.indexOf(nodeObj);
-    if (idx === -1) return false;
+    window.log(`[moveNode] index of node in parent.children: ${idx}`);
+
+    if (idx === -1) {
+        window.log("[moveNode] Node not found in parent.children, cannot move");
+        return false;
+    }
 
     let moved = false;
 
@@ -26,6 +41,7 @@ export function moveNode(nodeObj, direction) {
         moved = true;
     } else if (direction === "left") {
         const grandParentArray = nodeObj.parent.parent?.children;
+        window.log(`[moveNode] grandParentArray: ${grandParentArray?.map(c=>c.title).join(", ")}`);
         if (!grandParentArray) return false;
         parentArray.splice(idx, 1);
         const parentIdx = grandParentArray.indexOf(nodeObj.parent);
@@ -47,50 +63,9 @@ export function moveNode(nodeObj, direction) {
         nodeObj.edit = nodeObj.edit || {};
         nodeObj.editState = "moved";
         window.log(`[moveNode] Move completed for ${nodeObj.title}`);
+    } else {
+        window.log(`[moveNode] No move performed for ${nodeObj.title}`);
     }
 
     return moved;
-}
-
-export function dropMove(nodeObj) {
-    if (!nodeObj.path || !nodeObj.originalParent) return false;
-
-    const currentParentArray = nodeObj.parent?.children;
-    if (!currentParentArray) return false;
-
-    const idx = currentParentArray.indexOf(nodeObj);
-    if (idx !== -1) currentParentArray.splice(idx, 1);
-
-    if (!nodeObj.originalParent.children) nodeObj.originalParent.children = [];
-    nodeObj.originalParent.children.push(nodeObj);
-    nodeObj.parent = nodeObj.originalParent;
-
-    nodeObj.editState = "moved";
-    delete nodeObj.edit?.staged;
-
-    window.log(`[dropMove] Node dropped back to original parent: ${nodeObj.title}`);
-    return true;
-}
-
-export function moveAfterNextSelected(nodeObj, nextSelectedNode) {
-    if (!nextSelectedNode) return false;
-    const parentArray = nodeObj.parent?.children;
-    const targetParentArray = nextSelectedNode.parent?.children;
-    if (!parentArray || !targetParentArray) return false;
-
-    const idx = parentArray.indexOf(nodeObj);
-    if (idx === -1) return false;
-
-    parentArray.splice(idx, 1);
-
-    const targetIdx = targetParentArray.indexOf(nextSelectedNode);
-    targetParentArray.splice(targetIdx + 1, 0, nodeObj);
-    nodeObj.parent = nextSelectedNode.parent;
-
-    nodeObj.edit = nodeObj.edit || {};
-    nodeObj.editState = "moved";
-    delete nodeObj.edit?.staged;
-
-    window.log(`[moveAfterNextSelected] ${nodeObj.title} moved after ${nextSelectedNode.title}`);
-    return true;
-      }
+          }
