@@ -2,7 +2,10 @@
 
 // Determine if a node is back in its "home" location
 function isHome(node) {
-    if (!node.parent) return true;
+    if (!node.parent) {
+        window.log(`[isHome] ${node.title} -> root node, home=true`);
+        return true;
+    }
 
     const siblings = node.parent.children || [];
 
@@ -11,7 +14,13 @@ function isHome(node) {
     const currentIndex = siblings.indexOf(node);
     const correctIndex = sorted.findIndex(n => n.path === node.path);
 
-    return currentIndex === correctIndex;
+    const home = currentIndex === correctIndex;
+
+    window.log(
+        `[isHome] ${node.title} | parent=${node.parent.title} | currentIndex=${currentIndex} | correctIndex=${correctIndex} | home=${home}`
+    );
+
+    return home;
 }
 
 // Recursively mark moved state for node and children
