@@ -5,14 +5,12 @@ import { moveNode, dropMove, moveAfterNextSelected } from "./treeMoveActions.js"
 
 let buttonsWrapper = null;
 let buttons = {};
-let selectedNodePath = null;
 let treeDataRef = null;
 
-let onNodeSelectCallback = null;   // for node clicks
 let renderTreeCallback = null;     // called after move to re-render
 let showEditorCallback = null;     // called by Edit button to show frontmatter
 
-export function setupEditButtons(containerId, treeData, renderTreeFn, onNodeSelect, showEditorFn) {
+export function setupEditButtons(containerId, treeData, renderTreeFn, showEditorFn) {
   const container = document.getElementById(containerId);
   if (!container) {
     window.log(`[editButtons] ERROR: container ${containerId} not found`);
@@ -21,7 +19,6 @@ export function setupEditButtons(containerId, treeData, renderTreeFn, onNodeSele
   window.log("[editButtons] container lookup = FOUND");
 
   treeDataRef = treeData;
-  onNodeSelectCallback = onNodeSelect;
   renderTreeCallback = renderTreeFn;
   showEditorCallback = showEditorFn;
 
@@ -57,37 +54,43 @@ export function setupEditButtons(containerId, treeData, renderTreeFn, onNodeSele
     buttons[id] = btn;
   });
 
-  // Move buttons
+  // Move buttons: receive selectedNodePath from generator
   ["up","down","left","right","after"].forEach(dir => {
-    if(buttons[dir]) buttons[dir].addEventListener("click", () => doMove(dir));
+    if(buttons[dir]) buttons[dir].addEventListener("click", () => {
+      if(!treeDataRef || !window.selectedNodePath) return;
+
+      const node = findNodeByPath(treeDataRef, window.selectedNodePath);
+      if(!node) return;
+
+      let moved = false;
+      if(dir === "after") moved = moveAfterNextSelected(node, treeDataRef, window.selectedNodePath);
+      else moved = moveNode(node, dir, treeDataRef);
+
+      if(moved){
+        window.log(`[editButtons] node moved ${dir}: ${node.title || node.path}`);
+        if(renderTreeCallback) renderTreeCallback();
+        update(window.selectedNodePath);
+      }
+    });
   });
 
-  // Edit button
+  // Edit button shows frontmatter via generator callback
   if(buttons.edit){
     buttons.edit.addEventListener("click", () => {
       if(showEditorCallback) showEditorCallback();
     });
   }
 
-  update(selectedNodePath);
+  // Enable/disable buttons based on selection from generator
+  function update(selectedPath){
+    const anySelected = !!selectedPath;
+    for(const id in buttons){
+      if(buttons.hasOwnProperty(id)) buttons[id].disabled = !anySelected;
+    }
+    window.log(`[editButtons] buttons updated selected=${anySelected}`);
+  }
 
   return { update };
-}
-
-function doMove(direction){
-  if(!selectedNodePath || !treeDataRef) return;
-  const node = findNodeByPath(treeDataRef, selectedNodePath);
-  if(!node) return;
-
-  let moved = false;
-  if(direction === "after") moved = moveAfterNextSelected(node, treeDataRef, selectedNodePath);
-  else moved = moveNode(node, direction, treeDataRef);
-
-  if(moved){
-    window.log(`[editButtons] node moved ${direction}: ${node.title || node.path}`);
-    if(renderTreeCallback) renderTreeCallback();
-    update(selectedNodePath);
-  }
 }
 
 function findNodeByPath(nodes, path){
@@ -99,13 +102,5 @@ function findNodeByPath(nodes, path){
     }
   }
   return null;
-}
-
-function update(selectedPath = null){
-  selectedNodePath = selectedPath;
-  const anySelected = !!selectedNodePath;
-  for(const id in buttons){
-    if(buttons.hasOwnProperty(id)) buttons[id].disabled = !anySelected;
-  }
-  window.log(`[editButtons] buttons updated selected=${anySelected}`);
       }
+
