@@ -4,20 +4,21 @@ import { walkDir } from "./webeditor/walkDir.js";
 
 export async function handler(event, context) {
     try {
-        const rootDir = path.join(process.cwd(), "content"); // absolute path  console.log("[list_content_tree] Listing content at:", rootDir);
+        const rootDir = path.join(process.cwd(), "content");
+        console.log("[list_content_tree] Listing content at:", rootDir);
 
         const rootNodes = await walkDir(rootDir);
 
-        // Strip parent references before JSON output
-        function stripParent(node) {
-            const { parent, ...rest } = node;
+        // Instead of stripping parent entirely, just replace circular reference with path
+        function makeJsonSafe(node) {
             return {
-                ...rest,
-                children: node.children.map(stripParent)
+                ...node,
+                parent: node.parent ? { path: node.parent.path } : null,
+                children: node.children.map(makeJsonSafe)
             };
         }
 
-        const jsonSafeTree = rootNodes.map(stripParent);
+        const jsonSafeTree = rootNodes.map(makeJsonSafe);
 
         return {
             statusCode: 200,
