@@ -1,13 +1,22 @@
-// static/js/webeditor/renderTree.js
+// /js/webeditor/renderTree.js
 window.log("renderTree FILE LOADED 2026-03-10");
 
 let treeRoot = null;
 let startEditCallbackRef = null;
+let buttonsInitialised = false;
 
-export function renderTree(nodes, onNodeSelect, fullTreeRoot = null, depth = 0) {
+export function renderTree(
+  nodes,
+  startEditCallback,
+  editButtonsContainerId = "editButtons",
+  selectedNodePath = null,
+  fullTreeRoot = null,
+  depth = 0,
+  updateButtonsFn = null // NEW: function to call when node selected
+) {
   if (!nodes) return document.createTextNode("Tree missing");
   if (!treeRoot) treeRoot = fullTreeRoot || nodes;
-  if (!startEditCallbackRef) startEditCallbackRef = onNodeSelect;
+  if (!startEditCallbackRef) startEditCallbackRef = startEditCallback;
 
   const ul = document.createElement("ul");
   ul.style.listStyle = "none";
@@ -22,22 +31,30 @@ export function renderTree(nodes, onNodeSelect, fullTreeRoot = null, depth = 0) 
     span.style.cursor = "pointer";
     span.style.padding = "2px 4px";
     span.style.color = node.edit?.moved ? "orange" : "blue";
+    if (selectedNodePath === node.path) {
+      span.style.fontWeight = "bold";
+      span.style.backgroundColor = "#def";
+    }
 
-    // Node colouring now external; no selectedNodePath check
-    // span styling for selection handled elsewhere
-
+    // ON NODE CLICK → update selected path AND call updateButtonsFn
     span.onclick = () => {
-      if (typeof onNodeSelect === "function") onNodeSelect(node.path);
+      selectedNodePath = node.path;
+      if (updateButtonsFn) updateButtonsFn(selectedNodePath);
     };
 
     li.appendChild(span);
 
     if (node.children?.length) {
-      li.appendChild(renderTree(node.children, onNodeSelect, treeRoot, depth + 1));
+      li.appendChild(renderTree(node.children, startEditCallback, editButtonsContainerId, selectedNodePath, treeRoot, depth + 1, updateButtonsFn));
     }
 
     ul.appendChild(li);
   });
+
+  // INITIALIZE BUTTONS ONLY ON TOP LEVEL
+  if (depth === 0 && !buttonsInitialised) {
+    buttonsInitialised = true;
+  }
 
   return ul;
 }
