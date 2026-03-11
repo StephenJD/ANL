@@ -18,7 +18,18 @@ export default async function generate_content_editor() {
 
 </div> <!-- end of flex container -->
 
-<!-- SINGLE BUTTONS SET, FIXED AT BOTTOM -->
+<div id="logDiv" style="
+border-top:1px solid #ccc;
+margin-top:20px;
+padding:10px;
+max-height:300px;
+overflow-y:auto;
+background:#f9f9f9;
+font-size:12px;
+white-space:pre-wrap;
+"></div>
+
+<!-- FIXED BUTTONS OUTSIDE CONTENT -->
 <div id="treeEditButtons" style="
 position:fixed;
 bottom:0;
@@ -30,17 +41,7 @@ border-top:1px solid #ccc;
 padding:10px;
 display:flex;
 gap:10px;
-"></div>
-
-<div id="logDiv" style="
-border-top:1px solid #ccc;
-margin-top:20px;
-padding:10px;
-max-height:300px;
-overflow-y:auto;
-background:#f9f9f9;
-font-size:12px;
-white-space:pre-wrap;
+box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
 "></div>
 
 <script type="module">
@@ -157,7 +158,7 @@ white-space:pre-wrap;
 
         log("Tree rendered");
 
-        // Initialize single sticky button set for tree + front-matter
+        // Initialize single fixed button set for tree + front-matter
         try {
           const { initEditButtons } = await import('/js/webeditor/editButtons.js');
           initEditButtons("treeEditButtons", tree, onNodeSelect);
