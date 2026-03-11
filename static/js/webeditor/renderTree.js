@@ -24,11 +24,11 @@ export function renderTree(nodes, selectedNodePath = null, onSelectNode = null) 
 
         // colour based on edit state
         if(node.editState === "moved"){
-  el.style.color = "red";
+  span.style.color = "red";
 }
 
 if(node.editState === "staged"){
-  el.style.color = "orange";
+  span.style.color = "orange";
 }
         // bold if selected
         if (selectedNodePath === node.path) {
