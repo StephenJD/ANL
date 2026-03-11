@@ -16,11 +16,15 @@ export default async function generate_content_editor() {
     <textarea id="frontMatterText" style="width:100%;height:200px;margin-bottom:10px;"></textarea>
   </div>
 
-</div>
+</div> <!-- end of flex container -->
 
+<!-- SINGLE BUTTONS SET, FIXED AT BOTTOM -->
 <div id="treeEditButtons" style="
-position:sticky;
+position:fixed;
 bottom:0;
+left:0;
+right:0;
+z-index:999;
 background:#fff;
 border-top:1px solid #ccc;
 padding:10px;
