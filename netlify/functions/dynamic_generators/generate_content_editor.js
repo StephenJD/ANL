@@ -14,6 +14,11 @@ export default async function generate_content_editor() {
 
     <label for="frontMatterText">Front Matter:</label>
     <textarea id="frontMatterText" style="width:100%;height:200px;margin-bottom:10px;"></textarea>
+
+    <div style="margin-top:10px;">
+      <button id="saveFrontMatter">Save Frontmatter</button>
+      <button id="dropFrontMatter">Drop</button>
+    </div>
   </div>
 
 </div>
@@ -65,6 +70,7 @@ let selectedNodePath = null;
 let treeData = [];
 let currentFile = null;
 let rawBody = "";
+let tmpNodes = {}; // staged nodes keyed by path
 
 let renderTreeFn = null;
 let renderFormFn = null;
@@ -129,13 +135,12 @@ async function loadHelpers(){
 
     try{
       const mod = await import('/js/webeditor/editButtons.js');
-
-editButtons = mod.setupEditButtons(
-  "treeEditButtons",
-  treeData,
-  handleMove,
-  showEditorForSelectedNode
-);
+      editButtons = mod.setupEditButtons(
+        "treeEditButtons",
+        treeData,
+        handleMove,
+        showEditorForSelectedNode
+      );
       log("editButtons loaded and initialized");
     }catch(e){ log("editButtons load failed: " + e); }
 
@@ -144,31 +149,62 @@ editButtons = mod.setupEditButtons(
 }
 
 // =====================
-// Move node handler (sequential)
+// Move / Save / Drop handler
 // =====================
-function handleMove(direction){
+function handleMove(action){
   if(!selectedNodePath) return;
 
   const node = findNodeByPath(treeData, selectedNodePath);
   if(!node) return;
 
-  let moved = false;
-
-  if(direction === "after")
-    moved = treeMoveActions.moveAfterNextSelected(node, treeData, selectedNodePath);
-  else
-    moved = treeMoveActions.moveNode(node, direction, treeData);
-
-  if(!moved) return;
-
-  // mark node as moved
-  node.editState = "moved";
-
-  log(`Move "${direction}" for node "${node.title || node.path}" result: ${moved}`);
+  if(["up","down","left","right","after"].includes(action)){
+    // Move node in tree
+    let moved = (action === "after") 
+      ? treeMoveActions.moveAfterNextSelected(node, treeData, selectedNodePath)
+      : treeMoveActions.moveNode(node, action, treeData);
+    if(!moved) return;
+    node.editState = "moved";
+    node.color = "red";
+    log(\`Moved node "\${node.title || node.path}" -> "\${action}"\`);
+  } 
+  else if(action === "save"){
+    // Stage node
+    tmpNodes[node.path] = {...node};
+    node.editState = "staged";
+    node.color = "orange";
+    log(\`Saved node "\${node.title || node.path}" to tmp\`);
+  }
+  else if(action === "drop"){
+    // Drop node
+    if(node.editState === "staged" && tmpNodes[node.path]) delete tmpNodes[node.path];
+    if(node.editState === "moved") node.color = "red";
+    else node.color = null;
+    node.editState = node.editState === "staged" ? "moved" : null;
+    log(\`Dropped node "\${node.title || node.path}"\`);
+  }
 
   renderTree();
   if(editButtons) editButtons.update(selectedNodePath);
+  hideEditor(); // after save/drop from editor
 }
+
+// =====================
+// Frontmatter editor save/drop buttons
+// =====================
+function hideEditor(){
+  const editorContainer = document.getElementById("editorContainer");
+  if(editorContainer) editorContainer.style.display = "none";
+}
+
+document.addEventListener("click", e=>{
+  if(e.target.id === "saveFrontMatter") {
+    e.preventDefault();
+    handleMove("save");
+  } else if(e.target.id === "dropFrontMatter") {
+    e.preventDefault();
+    handleMove("drop");
+  }
+});
 
 // =====================
 // Load tree
