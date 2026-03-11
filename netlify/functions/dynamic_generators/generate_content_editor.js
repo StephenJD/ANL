@@ -74,32 +74,13 @@ box-shadow:0 -2px 5px rgba(0,0,0,0.1);
   // =====================
   // Node selection callback
   // =====================
-  async function startEditForPath(path) {
-    currentFile = path;
-    document.getElementById("editorContainer").style.display = "block";
-    document.getElementById("tree").style.display = "none";
+  async function selectNodePath(path) {
+    window.selectedNodePath = path;   // report selection
+    if (typeof updateEditButtons === "function") updateEditButtons(path);
 
-    log("Editing file: " + path);
+    log("Node selected: " + path);
 
-    try {
-      const res = await fetch("/.netlify/functions/start_edit", {
-        method: "POST",
-        headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({file: path})
-      });
-
-      log("start_edit HTTP status: " + res.status);
-      if(!res.ok) throw new Error("start_edit failed HTTP " + res.status);
-
-      const data = await res.json();
-      rawBody = data.rawFrontMatter || "";
-      const fmTextArea = document.getElementById("frontMatterText");
-      if(fmTextArea) fmTextArea.value = rawBody;
-
-      log("Front matter loaded for edit: " + path);
-    } catch(e){
-      log("Error in startEditForPath: " + e);
-    }
+    // Tree remains visible, no front-matter editor shown
   }
 
   // =====================
@@ -154,7 +135,7 @@ box-shadow:0 -2px 5px rgba(0,0,0,0.1);
 
         treeData = tree;
 
-        const onNodeSelect = startEditForPath;
+        const onNodeSelect = selectNodePath;
         treeContainer.innerHTML = "";
         treeContainer.appendChild(renderTreeFn(tree, onNodeSelect));
 
