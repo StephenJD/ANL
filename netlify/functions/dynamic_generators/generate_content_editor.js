@@ -116,7 +116,10 @@ function showEditorForSelectedNode(){
   const frontMatterText = document.getElementById("frontMatterText");
 
   if(editorContainer && editForm && frontMatterText){
+    // Hide tree while editing
+    document.getElementById("tree").style.display = "none";
     editorContainer.style.display = "block";
+
     frontMatterText.value = JSON.stringify(node.edit || {}, null, 2);
     if(renderFormFn) renderFormFn(node, editForm);
   }
@@ -163,29 +166,26 @@ function handleMove(action){
       ? treeMoveActions.moveAfterNextSelected(node, treeData, selectedNodePath)
       : treeMoveActions.moveNode(node, action, treeData);
     if(!moved) return;
+
     node.editState = "moved";
-    node.color = "red";
     log(\`Moved node "\${node.title || node.path}" -> "\${action}"\`);
   } 
   else if(action === "save"){
     // Stage node
     tmpNodes[node.path] = {...node};
     node.editState = "staged";
-    node.color = "orange";
     log(\`Saved node "\${node.title || node.path}" to tmp\`);
   }
   else if(action === "drop"){
     // Drop node
     if(node.editState === "staged" && tmpNodes[node.path]) delete tmpNodes[node.path];
-    if(node.editState === "moved") node.color = "red";
-    else node.color = null;
-    node.editState = node.editState === "staged" ? "moved" : null;
+    if(node.editState === "moved" || node.editState === "staged") node.editState = null;
     log(\`Dropped node "\${node.title || node.path}"\`);
   }
 
   renderTree();
   if(editButtons) editButtons.update(selectedNodePath);
-  hideEditor(); // after save/drop from editor
+  hideEditor();
 }
 
 // =====================
@@ -194,6 +194,7 @@ function handleMove(action){
 function hideEditor(){
   const editorContainer = document.getElementById("editorContainer");
   if(editorContainer) editorContainer.style.display = "none";
+  document.getElementById("tree").style.display = "block";
 }
 
 document.addEventListener("click", e=>{
