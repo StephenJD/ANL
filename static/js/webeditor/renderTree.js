@@ -1,15 +1,13 @@
 // static/js/webeditor/renderTree.js
-import { initEditButtons, updateEditButtons } from "./editButtons.js";
 window.log("renderTree FILE LOADED 2026-03-10");
 
 let treeRoot = null;
 let startEditCallbackRef = null;
-let buttonsInitialised = false;
 
-export function renderTree(nodes, startEditCallback, editButtonsContainerId = "editButtons", selectedNodePath = null, fullTreeRoot = null, depth = 0) {
+export function renderTree(nodes, onNodeSelect, fullTreeRoot = null, depth = 0) {
   if (!nodes) return document.createTextNode("Tree missing");
   if (!treeRoot) treeRoot = fullTreeRoot || nodes;
-  if (!startEditCallbackRef) startEditCallbackRef = startEditCallback;
+  if (!startEditCallbackRef) startEditCallbackRef = onNodeSelect;
 
   const ul = document.createElement("ul");
   ul.style.listStyle = "none";
@@ -24,31 +22,22 @@ export function renderTree(nodes, startEditCallback, editButtonsContainerId = "e
     span.style.cursor = "pointer";
     span.style.padding = "2px 4px";
     span.style.color = node.edit?.moved ? "orange" : "blue";
-    if (selectedNodePath === node.path) {
-      span.style.fontWeight = "bold";
-      span.style.backgroundColor = "#def";
-    }
+
+    // Node colouring now external; no selectedNodePath check
+    // span styling for selection handled elsewhere
 
     span.onclick = () => {
-      window.selectedNodePath = node.path;
-      updateEditButtons();
-      if (typeof renderTree.reRender === "function") renderTree.reRender(node.path);
+      if (typeof onNodeSelect === "function") onNodeSelect(node.path);
     };
 
     li.appendChild(span);
 
     if (node.children?.length) {
-      li.appendChild(renderTree(node.children, startEditCallback, editButtonsContainerId, selectedNodePath, treeRoot, depth + 1));
+      li.appendChild(renderTree(node.children, onNodeSelect, treeRoot, depth + 1));
     }
 
     ul.appendChild(li);
   });
-
-  if (depth === 0 && !buttonsInitialised) {
-    window.log("[renderTree] TOP LEVEL COMPLETE → initialise buttons");
-    initEditButtons(editButtonsContainerId, treeRoot, startEditCallbackRef);
-    buttonsInitialised = true;
-  }
 
   return ul;
 }
