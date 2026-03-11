@@ -1,32 +1,51 @@
 // static/js/webeditor/treeMoveActions.js
 
-// Check if node is in its original disk-path location and order
+// Determine if a node is back in its "home" location
 function isHome(node) {
-    if (!node.path) return true;
+    if (!node.parent) return true;
+    if (!node.field?.path) return true;
 
-    const correctParent = findParentForPath(node);
-    if (node.parent !== correctParent) return false;
-
-    const siblings = correctParent.children || [];
+    const siblings = node.parent.children || [];
     const sortedSiblings = [...siblings].sort((a, b) => a.path.localeCompare(b.path));
+    const index = sortedSiblings.indexOf(node);
 
-    const idx = sortedSiblings.indexOf(node);
-    if (idx === -1) return false;
+    if (index === -1) return false;
 
-    return true;
+    // check if node.path matches its field.path
+    const inCorrectPath = node.path === node.field.path;
+
+    return inCorrectPath;
 }
 
-// Recursively mark moved state
+// Recursively mark moved state for node and children
 function markMovedState(node) {
     const moved = !isHome(node);
     node.edit = node.edit || {};
     node.editState = moved ? "moved" : null;
-
     if (node.children?.length) {
         for (const child of node.children) markMovedState(child);
     }
 }
 
+// Utility: find correct parent for a node based on its disk path
+function findParentForPath(node) {
+    if (!node.path) return { children: window.treeData, title: "(root)" };
+
+    const pathParts = node.path.split("/").slice(0, -1); // remove last segment (file)
+    let current = window.treeData;
+    let parent = null;
+
+    for (const part of pathParts) {
+        const next = current.find(n => n.path.endsWith(part));
+        if (!next) break;
+        parent = next;
+        current = next.children || [];
+    }
+
+    return parent || { children: window.treeData, title: "(root)" };
+}
+
+// Core move function
 export function moveNode(nodeObj, direction) {
     window.log(`[moveNode] Attempting move: ${direction} for node: ${nodeObj.title}`);
 
@@ -54,8 +73,11 @@ export function moveNode(nodeObj, direction) {
     } else if (direction === "left") {
         const grandParentArray = nodeObj.parent.parent?.children;
         if (!grandParentArray) return false;
-        parentArray.splice(idx, 1);
+
         const parentIdx = grandParentArray.indexOf(nodeObj.parent);
+        if (parentIdx === -1) return false;
+
+        parentArray.splice(idx, 1);
         grandParentArray.splice(parentIdx + 1, 0, nodeObj);
         nodeObj.parent = nodeObj.parent.parent;
         moved = true;
@@ -73,40 +95,51 @@ export function moveNode(nodeObj, direction) {
     if (moved) {
         markMovedState(nodeObj);
         window.log(`[moveNode] Move completed for ${nodeObj.title}`);
+        window.log(`[moveNode] node.parent title: ${nodeObj.parent.title}`);
+        window.log(`[moveNode] node.parent children titles: ${nodeObj.parent.children.map(c => c.title).join(", ")}`);
     } else {
         window.log(`[moveNode] No move performed for ${nodeObj.title}`);
     }
 
+    // Force UI update
+    if (window.updateTreeView) window.updateTreeView();
+    if (window.editButtons?.updateButtons) window.editButtons.updateButtons(true);
+
     return moved;
 }
 
-// Drop node back to its disk-path home
+// Drop node back to correct location based on disk path
 export function dropMove(nodeObj) {
-    if (!nodeObj.path) return false;
+    if (!nodeObj.path || !nodeObj.parent) return false;
+
+    const oldParent = nodeObj.parent;
+    let parentArray = oldParent.children || [];
+    const idx = parentArray.indexOf(nodeObj);
+    if (idx !== -1) parentArray.splice(idx, 1);
 
     const correctParent = findParentForPath(nodeObj);
     if (!correctParent.children) correctParent.children = [];
 
-    // Remove from current parent if present
-    const currParentArray = nodeObj.parent?.children || [];
-    const idx = currParentArray.indexOf(nodeObj);
-    if (idx !== -1) currParentArray.splice(idx, 1);
-
-    // Insert into correct parent's children in file-name order
     const siblings = correctParent.children;
     const insertIdx = siblings.findIndex(s => s.path.localeCompare(nodeObj.path) > 0);
     if (insertIdx === -1) siblings.push(nodeObj);
     else siblings.splice(insertIdx, 0, nodeObj);
 
     nodeObj.parent = correctParent;
-
     markMovedState(nodeObj);
 
-    window.log(`[dropMove] Dropped node back to correct location: ${nodeObj.title}`);
+    window.log(`[dropMove] Dropped node "${nodeObj.title}"`);
+    window.log(`[dropMove] New parent: ${correctParent.title}`);
+    window.log(`[dropMove] Parent children titles: ${correctParent.children.map(c => c.title).join(", ")}`);
+
+    // Force UI update
+    if (window.updateTreeView) window.updateTreeView();
+    if (window.editButtons?.updateButtons) window.editButtons.updateButtons(true);
+
     return true;
 }
 
-// Move node after another selected node
+// Move node after next selected node
 export function moveAfterNextSelected(nodeObj, nextSelectedNode) {
     if (!nextSelectedNode) return false;
 
@@ -126,19 +159,10 @@ export function moveAfterNextSelected(nodeObj, nextSelectedNode) {
     markMovedState(nodeObj);
 
     window.log(`[moveAfterNextSelected] ${nodeObj.title} moved after ${nextSelectedNode.title}`);
-    return true;
-}
 
-// Utility: find correct parent for a node based on its disk path
-function findParentForPath(node) {
-    const pathParts = node.path.split("/").slice(0, -1); // remove last segment (file)
-    let current = window.treeData; // root of in-memory tree
-    let parent = null;
-    for (const part of pathParts) {
-        const next = current.find(n => n.path.endsWith(part));
-        if (!next) break;
-        parent = next;
-        current = next.children || [];
-    }
-    return parent || { children: window.treeData, title: "(root)" };
-}
+    // Force UI update
+    if (window.updateTreeView) window.updateTreeView();
+    if (window.editButtons?.updateButtons) window.editButtons.updateButtons(true);
+
+    return true;
+          }
