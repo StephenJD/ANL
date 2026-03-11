@@ -29,19 +29,21 @@ font-size:12px;
 white-space:pre-wrap;
 "></div>
 
-<!-- FIXED BUTTONS OUTSIDE CONTENT -->
+</div> <!-- end wide-content -->
+
+<!-- FIXED BUTTONS OUTSIDE ALL SCROLLING CONTAINERS -->
 <div id="treeEditButtons" style="
 position:fixed;
 bottom:0;
 left:0;
 right:0;
-z-index:999;
+z-index:9999;
 background:#fff;
 border-top:1px solid #ccc;
 padding:10px;
 display:flex;
 gap:10px;
-box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
+box-shadow:0 -2px 5px rgba(0,0,0,0.1);
 "></div>
 
 <script type="module">
