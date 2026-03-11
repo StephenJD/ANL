@@ -122,49 +122,32 @@ box-shadow:0 -2px 5px rgba(0,0,0,0.1);
       const treeContainer = document.getElementById("tree");
       if(!treeContainer){ log("Tree container missing"); return; }
 
-      if(renderTreeFn){
-        let tree = [];
-        try {
-          const res = await fetch("/.netlify/functions/list_content_tree");
-          log("Tree HTTP status: " + res.status);
-          if(res.ok) tree = await res.json();
-          else log("Tree fetch failed with HTTP " + res.status);
-        } catch(e){
-          log("Tree fetch error: " + e);
-        }
+      // Inside loadTree() after fetching treeData
+if (renderTreeFn) {
+    const treeContainer = document.getElementById("tree");
+    treeContainer.innerHTML = "";
 
-        treeData = tree;
+    // Import editButtons functions
+    const { updateEditButtons, initEditButtons } = await import('/js/webeditor/editButtons.js');
 
-        const onNodeSelect = selectNodePath;
-        treeContainer.innerHTML = "";
-        treeContainer.appendChild(renderTreeFn(tree, onNodeSelect));
+    // Initialize the fixed button set once
+    initEditButtons("treeEditButtons", tree, null);
 
-        log("Tree rendered");
+    // Render tree passing updateEditButtons as callback
+    treeContainer.appendChild(
+        renderTreeFn(
+            tree,
+            null,                  // startEditCallback no longer needed for buttons
+            "treeEditButtons",     // editButtonsContainerId (unused now)
+            null,                  // selectedNodePath
+            tree,                  // fullTreeRoot
+            0,                     // depth
+            updateEditButtons      // Pass the callback for node selection
+        )
+    );
 
-        // Initialize single fixed button set for tree + front-matter
-        try {
-          const { initEditButtons } = await import('/js/webeditor/editButtons.js');
-          initEditButtons("treeEditButtons", tree, onNodeSelect);
-
-          // Wire essential button actions
-          const btnSave = document.getElementById("save");
-          const btnPublish = document.getElementById("publish");
-          const btnDrop = document.getElementById("drop");
-          if(btnSave) btnSave.addEventListener("click", saveEdit);
-          if(btnPublish) btnPublish.addEventListener("click", publishEdits);
-          if(btnDrop) btnDrop.addEventListener("click", dropEdits);
-
-          log("Tree buttons initialized and wired");
-        } catch(e) {
-          log("Tree buttons init error: " + e);
-        }
-      } else {
-        log("renderTree function not available, tree cannot be displayed");
-      }
-    } catch(err){
-      log("loadTree fatal error: " + err);
-    }
-  }
+    log("Tree rendered with buttons wired for node selection");
+}
 
   // =====================
   // Initialize
