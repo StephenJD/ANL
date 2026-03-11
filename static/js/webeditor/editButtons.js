@@ -62,24 +62,22 @@ export function setupEditButtons(containerId, treeData, moveFn, showEditorFn) {
   // Save button
   if(buttons.save){
     buttons.save.addEventListener("click", () => {
-      if(moveCallback && window.selectedNodePath){
-        moveCallback("save");
-      }
+      if(moveCallback) moveCallback("save");
     });
   }
 
   // Drop button
   if(buttons.drop){
     buttons.drop.addEventListener("click", () => {
-      if(moveCallback && window.selectedNodePath){
-        moveCallback("drop");
-      }
+      if(moveCallback) moveCallback("drop");
     });
   }
 
-  // Edit button
+  // Edit button hides tree
   if (buttons.edit) {
     buttons.edit.addEventListener("click", () => {
+      const treeDiv = document.getElementById("tree");
+      if(treeDiv) treeDiv.style.display = "none";
       if (showEditorCallback) showEditorCallback();
     });
   }
@@ -100,11 +98,9 @@ export function setupEditButtons(containerId, treeData, moveFn, showEditorFn) {
     const node = findNodeByPath(treeData, selectedPath);
 
     if(node){
-      // Enable save only if node has moved and is not staged
       if(buttons.save){
         buttons.save.disabled = node.editState !== "moved";
       }
-      // Enable drop if moved or staged
       if(buttons.drop){
         buttons.drop.disabled = !(node.editState === "moved" || node.editState === "staged");
       }
@@ -125,4 +121,4 @@ function findNodeByPath(nodes, path){
     }
   }
   return null;
-          }
+        }
