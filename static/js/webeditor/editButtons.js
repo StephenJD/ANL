@@ -41,7 +41,6 @@ export function setupEditButtons(containerId, treeData, moveFn, showEditorFn) {
   ];
 
   buttons = {};
-
   btnDefs.forEach(({ id, label }) => {
     const btn = document.createElement("button");
     btn.id = id;
@@ -60,6 +59,24 @@ export function setupEditButtons(containerId, treeData, moveFn, showEditorFn) {
     }
   });
 
+  // Save button
+  if(buttons.save){
+    buttons.save.addEventListener("click", () => {
+      if(moveCallback && window.selectedNodePath){
+        moveCallback("save");
+      }
+    });
+  }
+
+  // Drop button
+  if(buttons.drop){
+    buttons.drop.addEventListener("click", () => {
+      if(moveCallback && window.selectedNodePath){
+        moveCallback("drop");
+      }
+    });
+  }
+
   // Edit button
   if (buttons.edit) {
     buttons.edit.addEventListener("click", () => {
@@ -67,32 +84,45 @@ export function setupEditButtons(containerId, treeData, moveFn, showEditorFn) {
     });
   }
 
+  // Update button states based on node editState
   function update(selectedPath){
-  const anySelected = !!selectedPath;
+    const anySelected = !!selectedPath;
 
-  for(const id in buttons){
-    buttons[id].disabled = !anySelected;
-  }
-
-  if(!anySelected){
-    window.log("[editButtons] buttons updated selected=false");
-    return;
-  }
-
-  const node = findNodeByPath(treeDataRef, selectedPath);
-
-  if(node){
-    if(buttons.save){
-      buttons.save.disabled = node.editState !== "moved";
+    for(const id in buttons){
+      buttons[id].disabled = !anySelected;
     }
 
-    if(buttons.drop){
-      buttons.drop.disabled = !(node.editState === "moved" || node.editState === "staged");
+    if(!anySelected){
+      window.log("[editButtons] buttons updated selected=false");
+      return;
     }
-  }
 
-  window.log(`[editButtons] buttons updated selected=true`);
-}
+    const node = findNodeByPath(treeData, selectedPath);
+
+    if(node){
+      // Enable save only if node has moved and is not staged
+      if(buttons.save){
+        buttons.save.disabled = node.editState !== "moved";
+      }
+      // Enable drop if moved or staged
+      if(buttons.drop){
+        buttons.drop.disabled = !(node.editState === "moved" || node.editState === "staged");
+      }
+    }
+
+    window.log(`[editButtons] buttons updated selected=true`);
+  }
 
   return { update };
 }
+
+function findNodeByPath(nodes, path){
+  for(const n of nodes){
+    if(n.path === path) return n;
+    if(n.children?.length){
+      const found = findNodeByPath(n.children, path);
+      if(found) return found;
+    }
+  }
+  return null;
+          }
