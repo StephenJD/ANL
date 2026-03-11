@@ -1,18 +1,27 @@
 // static/js/webeditor/treeMoveActions.js
 
+// Check if node is in its original disk-path location and order
 function isHome(node) {
-    if (!node.parent) return true;
-    const siblings = node.parent.children || [];
+    if (!node.path) return true;
+
+    const correctParent = findParentForPath(node);
+    if (node.parent !== correctParent) return false;
+
+    const siblings = correctParent.children || [];
     const sortedSiblings = [...siblings].sort((a, b) => a.path.localeCompare(b.path));
-    const index = sortedSiblings.indexOf(node);
-    if (index === -1) return false;
+
+    const idx = sortedSiblings.indexOf(node);
+    if (idx === -1) return false;
+
     return true;
 }
 
+// Recursively mark moved state
 function markMovedState(node) {
     const moved = !isHome(node);
     node.edit = node.edit || {};
     node.editState = moved ? "moved" : null;
+
     if (node.children?.length) {
         for (const child of node.children) markMovedState(child);
     }
@@ -71,19 +80,19 @@ export function moveNode(nodeObj, direction) {
     return moved;
 }
 
+// Drop node back to its disk-path home
 export function dropMove(nodeObj) {
     if (!nodeObj.path) return false;
-    if (!nodeObj.parent) return false;
-
-    // Reinsert node into its correct parent based on disk path
-    let parentArray = nodeObj.parent.children || [];
-    const idx = parentArray.indexOf(nodeObj);
-    if (idx !== -1) parentArray.splice(idx, 1);
 
     const correctParent = findParentForPath(nodeObj);
     if (!correctParent.children) correctParent.children = [];
 
-    // Insert in file-name order
+    // Remove from current parent if present
+    const currParentArray = nodeObj.parent?.children || [];
+    const idx = currParentArray.indexOf(nodeObj);
+    if (idx !== -1) currParentArray.splice(idx, 1);
+
+    // Insert into correct parent's children in file-name order
     const siblings = correctParent.children;
     const insertIdx = siblings.findIndex(s => s.path.localeCompare(nodeObj.path) > 0);
     if (insertIdx === -1) siblings.push(nodeObj);
@@ -97,8 +106,10 @@ export function dropMove(nodeObj) {
     return true;
 }
 
+// Move node after another selected node
 export function moveAfterNextSelected(nodeObj, nextSelectedNode) {
     if (!nextSelectedNode) return false;
+
     const parentArray = nodeObj.parent?.children;
     const targetParentArray = nextSelectedNode.parent?.children;
     if (!parentArray || !targetParentArray) return false;
@@ -130,4 +141,4 @@ function findParentForPath(node) {
         current = next.children || [];
     }
     return parent || { children: window.treeData, title: "(root)" };
-                                                       }
+}
