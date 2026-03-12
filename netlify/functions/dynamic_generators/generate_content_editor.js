@@ -97,10 +97,15 @@ function selectNode(path){
 function renderTree(){
   const treeContainer = document.getElementById("tree");
   if(!treeContainer || !renderTreeFn) return;
+   const scrollTop = treeContainer.scrollTop;
+  const scrollLeft = treeContainer.scrollLeft;
+  
   treeContainer.innerHTML = "";
   treeContainer.appendChild(
     renderTreeFn(treeData, selectedNodePath, selectNode)
   );
+   treeContainer.scrollTop = scrollTop;
+  treeContainer.scrollLeft = scrollLeft;
 }
 
 // =====================
