@@ -85,8 +85,6 @@ export function moveNode(nodeObj, direction) {
         markMovedState(nodeObj);
         window.log(`[state] ${nodeObj.title} editState=${nodeObj.editState}`);
         window.log(`[moveNode] Move completed for ${nodeObj.title}`);
-        window.log(`[moveNode] node.parent title: ${nodeObj.parent.title}`);
-        window.log(`[moveNode] node.parent children titles: ${nodeObj.parent.children.map(c => c.title).join(", ")}`);
     } else {
         window.log(`[moveNode] No move performed for ${nodeObj.title}`);
     }
