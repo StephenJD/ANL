@@ -39,7 +39,8 @@ function findParentForPath(node) {
     let parent = null;
 
     for (const part of pathParts) {
-        const next = current.find(n => n.path.endsWith(part));
+       window.log(`[findParentForPath] current type: ${typeof current} isArray:${Array.isArray(current)}`);
+      const next = current.find(n => n.path.endsWith(part));
         if (!next) break;
         parent = next;
         current = next.children || [];
