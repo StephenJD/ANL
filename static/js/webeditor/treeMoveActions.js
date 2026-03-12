@@ -2,27 +2,21 @@
 
 // Determine if a node's URL has changed (Hugo-style) based on its position
 function hasNewURL(node) {
-    if (!node.path) return false; // no path, cannot compute URL
+    if (!node.parent) return false; // root node
 
-    function buildURL(n) {
-        if (!n.parent) {
-            // root node: take full first segment from n.path
-            return "/" + n.path.split("/")[0];
-        }
-        const parentURL = buildURL(n.parent);
-        const namePart = n.path.split("/").pop().replace(/\.md$/, ""); // keep numeric prefixes
-        return parentURL + "/" + namePart;
-    }
+    const siblings = node.parent.children || [];
+    // Build correctly sorted sibling order
+    const sorted = [...siblings].sort((a, b) => a.path.localeCompare(b.path));
 
-    const oldURL = "/" + node.path.split("/").join("/").replace(/\.md$/, "");
-    const newURL = buildURL(node);
+    const currentIndex = siblings.indexOf(node);
+    const correctIndex = sorted.indexOf(node);
 
-    const moved = oldURL !== newURL;
+    const moved = currentIndex !== correctIndex;
 
-    window.log(`[hasNewURL] ${node.title} | oldURL=${oldURL} | newURL=${newURL} | moved=${moved}`);
+    window.log(`[hasNewURL] ${node.title} | currentIndex=${currentIndex} | correctIndex=${correctIndex} | moved=${moved}`);
 
     node.edit = node.edit || {};
-    node.editState = moved ? "moved" : "home"
+    node.editState = moved ? "moved" : "home";
 
     if (node.children?.length) {
         for (const child of node.children) hasNewURL(child);
