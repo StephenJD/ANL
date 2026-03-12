@@ -99,7 +99,8 @@ export function moveNode(nodeObj, direction) {
 // Drop node back to correct location based on disk path
 export function dropMove(nodeObj) {
     if (!nodeObj.path) return false;
-
+window.log(`[dropMove] Remove node "${nodeObj.title}"`);
+  
     // Remove from any current parent
     if (nodeObj.parent?.children) {
         const idx = nodeObj.parent.children.indexOf(nodeObj);
@@ -108,7 +109,8 @@ export function dropMove(nodeObj) {
             window.log(`[dropMove] Removed node "${nodeObj.title}" from old parent "${nodeObj.parent.title}" at index ${idx}`);
         }
     }
-
+window.log(`[dropMove] Find correct parent`);
+  
     // Find correct parent
     const correctParent = findParentForPath(nodeObj);
     if (!correctParent.children) correctParent.children = [];
