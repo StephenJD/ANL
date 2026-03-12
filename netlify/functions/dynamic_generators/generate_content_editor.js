@@ -172,34 +172,36 @@ function reconstructTree(nodes, parent = null) {
 // =====================
 // Move / Save / Drop handler
 // =====================
-function handleMove(action){
-  if(!selectedNodePath) return;
+function handleMove(action) {
+    if (!selectedNodePath) return;
 
-  const node = findNodeByPath(treeData, selectedNodePath);
-  if(!node) return;
+    const node = findNodeByPath(treeData, selectedNodePath);
+    if (!node) return;
 
-  if(["up","down","left","right","after"].includes(action)){
-    let moved = (action === "after") 
-      ? treeMoveActions.moveAfterNextSelected(node, treeData, selectedNodePath)
-      : treeMoveActions.moveNode(node, action);
-    if(!moved) return;
+    if (["up","down","after"].includes(action)) {
+        let moved = (action === "after") 
+            ? treeMoveActions.moveAfterNextSelected(node, treeData, selectedNodePath)
+            : treeMoveActions.moveNode(node, action);
+        if (!moved) return;
 
-    log(\`Moved node "\${node.title || node.path}" -> "\${action}"\`);
-  } 
-  else if(action === "save"){
-    tmpNodes[node.path] = {...node};
-    node.editState = "staged";
-    log(\`Saved node "\${node.title || node.path}" to tmp\`);
-  }
-  else if(action === "drop"){
-    if(node.editState === "staged" && tmpNodes[node.path]) delete tmpNodes[node.path];
-    if(node.editState === "moved" || node.editState === "staged") node.editState = null;
-    log(\`Dropped node "\${node.title || node.path}"\`);
-  }
+        log(`Moved node "${node.title || node.path}" -> "${action}"`);
+    } 
+    else if (action === "save") {
+        tmpNodes[node.path] = { ...node };
+        node.editState = "staged";
+        log(`Saved node "${node.title || node.path}" to tmp`);
+    }
+    else if (action === "drop") {
+        if (node.editState === "staged" && tmpNodes[node.path]) delete tmpNodes[node.path];
+        if (node.editState === "moved" || node.editState === "staged") {
+            treeMoveActions.dropMove(node);
+        }
+        log(`Dropped node "${node.title || node.path}"`);
+    }
 
-  renderTree();
-  if(editButtons) editButtons.update(selectedNodePath);
-  hideEditor();
+    renderTree();
+    if (editButtons) editButtons.update(selectedNodePath);
+    hideEditor();
 }
 
 // =====================
