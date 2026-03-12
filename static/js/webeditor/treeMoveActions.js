@@ -1,36 +1,38 @@
 // static/js/webeditor/treeMoveActions.js
 
-// Determine if a node is back in its "home" location
-function isHome(node) {
-    if (!node.parent) {
-        window.log(`[isHome] ${node.title} -> root node, home=true`);
-        return true;
+// Determine if a node's URL has changed (Hugo-style) based on its position
+function hasNewURL(node) {
+    if (!node.parent) return false; // root node, URL unchanged
+
+    function buildURL(n) {
+        if (!n.parent) return "/";
+        const siblings = n.parent.children || [];
+        const idx = siblings.indexOf(n);
+        const namePart = n.path.split("/").pop().replace(/^\d+_/, "").replace(/\.md$/, "");
+        const parentURL = buildURL(n.parent);
+        return parentURL + "/" + namePart;
     }
 
-    const siblings = node.parent.children || [];
+    const oldURL = "/" + node.path.split("/").map(p => p.replace(/^\d+_/, "").replace(/\.md$/, "")).join("/");
+    const newURL = buildURL(node);
 
-    const sorted = [...siblings].sort((a, b) => a.path.localeCompare(b.path));
+    const moved = oldURL !== newURL;
 
-    const currentIndex = siblings.indexOf(node);
-    const correctIndex = sorted.findIndex(n => n.path === node.path);
+    window.log(`[hasNewURL] ${node.title} | oldURL=${oldURL} | newURL=${newURL} | moved=${moved}`);
 
-    const home = currentIndex === correctIndex;
+    node.edit = node.edit || {};
+    node.editState = moved ? "moved" : null;
 
-    window.log(
-        `[isHome] ${node.title} | parent=${node.parent.title} | currentIndex=${currentIndex} | correctIndex=${correctIndex} | home=${home}`
-    );
+    if (node.children?.length) {
+        for (const child of node.children) hasNewURL(child);
+    }
 
-    return home;
+    return moved;
 }
 
 // Recursively mark moved state for node and children
 function markMovedState(node) {
-    const moved = !isHome(node);
-    node.edit = node.edit || {};
-    node.editState = moved ? "moved" : null;
-    if (node.children?.length) {
-        for (const child of node.children) markMovedState(child);
-    }
+    hasNewURL(node);
 }
 
 // Utility: find correct parent for a node based on its disk path
@@ -51,7 +53,7 @@ function findParentForPath(node) {
     return parent || { children: window.treeData, title: "(root)" };
 }
 
-// Core move function
+// Core move function (up/down only)
 export function moveNode(nodeObj, direction) {
     window.log(`[moveNode] Attempting move: ${direction} for node: ${nodeObj.title}`);
 
@@ -76,37 +78,17 @@ export function moveNode(nodeObj, direction) {
         parentArray.splice(idx, 1);
         parentArray.splice(idx + 1, 0, nodeObj);
         moved = true;
-    } else if (direction === "left") {
-        const grandParentArray = nodeObj.parent.parent?.children;
-        if (!grandParentArray) return false;
-
-        const parentIdx = grandParentArray.indexOf(nodeObj.parent);
-        if (parentIdx === -1) return false;
-
-        parentArray.splice(idx, 1);
-        grandParentArray.splice(parentIdx + 1, 0, nodeObj);
-        nodeObj.parent = nodeObj.parent.parent;
-        moved = true;
-    } else if (direction === "right") {
-        if (idx === 0) return false;
-        const newParent = parentArray[idx - 1];
-        if (!["navigation", "collated"].includes(newParent.qualification)) return false;
-        if (!newParent.children) newParent.children = [];
-        parentArray.splice(idx, 1);
-        newParent.children.push(nodeObj);
-        nodeObj.parent = newParent;
-        moved = true;
     }
 
     if (moved) {
-    markMovedState(nodeObj);
-    window.log(`[state] ${nodeObj.title} editState=${nodeObj.editState}`);
-    window.log(`[moveNode] Move completed for ${nodeObj.title}`);
-    window.log(`[moveNode] node.parent title: ${nodeObj.parent.title}`);
-    window.log(`[moveNode] node.parent children titles: ${nodeObj.parent.children.map(c => c.title).join(", ")}`);
-} else {
-    window.log(`[moveNode] No move performed for ${nodeObj.title}`);
-}
+        markMovedState(nodeObj);
+        window.log(`[state] ${nodeObj.title} editState=${nodeObj.editState}`);
+        window.log(`[moveNode] Move completed for ${nodeObj.title}`);
+        window.log(`[moveNode] node.parent title: ${nodeObj.parent.title}`);
+        window.log(`[moveNode] node.parent children titles: ${nodeObj.parent.children.map(c => c.title).join(", ")}`);
+    } else {
+        window.log(`[moveNode] No move performed for ${nodeObj.title}`);
+    }
 
     // Force UI update
     if (window.updateTreeView) window.updateTreeView();
@@ -172,4 +154,4 @@ export function moveAfterNextSelected(nodeObj, nextSelectedNode) {
     if (window.editButtons?.updateButtons) window.editButtons.updateButtons(true);
 
     return true;
-          }
+}
