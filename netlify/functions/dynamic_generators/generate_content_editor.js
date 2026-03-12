@@ -196,7 +196,7 @@ function handleMove(action) {
     else if (action === "drop") {
         if (node.editState === "staged" && tmpNodes[node.path]) delete tmpNodes[node.path];
         if (node.editState === "moved" || node.editState === "staged") {
-            treeMoveActions.dropMove(node);
+          treeMoveActions.dropMove(node, treeData)
         }
         log(\`Dropped node "\${node.title || node.path}"\`);
     }
