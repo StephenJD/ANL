@@ -30,8 +30,6 @@ export function setupEditButtons(containerId, treeData, moveFn, showEditorFn) {
   const btnDefs = [
     { id: "up", label: "↑" },
     { id: "down", label: "↓" },
-    { id: "left", label: "←" },
-    { id: "right", label: "→" },
     { id: "after", label: "↴" },
     { id: "copyUrl", label: "⧉" },
     { id: "edit", label: "✎" },
@@ -51,7 +49,7 @@ export function setupEditButtons(containerId, treeData, moveFn, showEditorFn) {
   });
 
   // Move buttons
-  ["up","down","left","right","after"].forEach(dir => {
+  ["up","down","after"].forEach(dir => {
     if (buttons[dir]) {
       buttons[dir].addEventListener("click", () => {
         if (moveCallback) moveCallback(dir);
