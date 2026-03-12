@@ -109,24 +109,32 @@ export function dropMove(nodeObj) {
     if (!correctParent.children) correctParent.children = [];
 
     const siblings = correctParent.children;
-    const insertIdx = siblings.findIndex(s => s.path.localeCompare(nodeObj.path) > 0);
-    if (insertIdx === -1) siblings.push(nodeObj);
-    else siblings.splice(insertIdx, 0, nodeObj);
 
+    // Insert node into correct index based on sorted sibling paths
+    const tempSiblings = [...siblings, nodeObj];
+    tempSiblings.sort((a, b) => a.path.localeCompare(b.path));
+    const correctIndex = tempSiblings.indexOf(nodeObj);
+
+    siblings.splice(correctIndex, 0, nodeObj);
     nodeObj.parent = correctParent;
-    markMovedState(nodeObj);
+
+    // Recalculate moved state using the same logic as hasNewURL
+    hasNewURL(nodeObj);
 
     window.log(`[dropMove] Dropped node "${nodeObj.title}"`);
     window.log(`[dropMove] New parent: ${correctParent.title}`);
     window.log(`[dropMove] Parent children titles: ${correctParent.children.map(c => c.title).join(", ")}`);
 
-    // Save scroll position
+    // Restore scroll positions
     const treeDiv = document.getElementById("tree");
     const scrollTop = treeDiv?.scrollTop || 0;
+    const scrollLeft = treeDiv?.scrollLeft || 0;
 
-    // Force UI update
     if (window.updateTreeView) window.updateTreeView();
-    if (treeDiv) treeDiv.scrollTop = scrollTop;
+    if (treeDiv) {
+        treeDiv.scrollTop = scrollTop;
+        treeDiv.scrollLeft = scrollLeft;
+    }
 
     if (window.editButtons?.updateButtons) window.editButtons.updateButtons(true);
 
