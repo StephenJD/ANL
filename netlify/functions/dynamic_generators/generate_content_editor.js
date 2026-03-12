@@ -179,10 +179,7 @@ function handleMove(action){
       : treeMoveActions.moveNode(node, action);
     if(!moved) return;
 
-    node.editState = "moved";
     log(\`Moved node "\${node.title || node.path}" -> "\${action}"\`);
-    log(\`node.parent title: \${node.parent?.title || "(no title)"}\`);
-    log(\`node.parent children length: \${node.parent?.children?.length || 0}\`);
   } 
   else if(action === "save"){
     tmpNodes[node.path] = {...node};
