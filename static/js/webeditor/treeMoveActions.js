@@ -103,7 +103,10 @@ export function dropMove(nodeObj) {
     // Remove from any current parent
     if (nodeObj.parent?.children) {
         const idx = nodeObj.parent.children.indexOf(nodeObj);
-        if (idx !== -1) nodeObj.parent.children.splice(idx, 1);
+        if (idx !== -1) {
+            nodeObj.parent.children.splice(idx, 1);
+            window.log(`[dropMove] Removed node "${nodeObj.title}" from old parent "${nodeObj.parent.title}" at index ${idx}`);
+        }
     }
 
     // Find correct parent
@@ -116,11 +119,21 @@ export function dropMove(nodeObj) {
     siblings.sort((a, b) => a.path.localeCompare(b.path));
     nodeObj.parent = correctParent;
 
+    // Log full sibling order
+    window.log(`[dropMove] Parent "${correctParent.title}" children after sort: ${siblings.map(n => n.title).join(", ")}`);
+
     // Recalculate editState for node and children
     markMovedState(nodeObj);
 
     const newIndex = siblings.indexOf(nodeObj);
     window.log(`[dropMove] Dropped node "${nodeObj.title}" into parent "${correctParent.title}" at index ${newIndex}`);
+    window.log(`[dropMove] Node "${nodeObj.title}" editState after drop: ${nodeObj.editState}`);
+
+    if (nodeObj.children?.length) {
+        nodeObj.children.forEach(child => {
+            window.log(`[dropMove] Child "${child.title}" editState: ${child.editState}`);
+        });
+    }
 
     if (window.updateTreeView) window.updateTreeView();
     if (window.editButtons?.updateButtons) window.editButtons.updateButtons(true);
