@@ -98,30 +98,30 @@ export function moveNode(nodeObj, direction) {
 
 // Drop node back to correct location based on disk path
 export function dropMove(nodeObj) {
-    if (!nodeObj.path || !nodeObj.parent) return false;
+    if (!nodeObj.path) return false;
 
-    const oldParent = nodeObj.parent;
-    let parentArray = oldParent.children || [];
-    const oldIndex = parentArray.indexOf(nodeObj);
-    if (oldIndex !== -1) parentArray.splice(oldIndex, 1);
+    // Remove from any current parent
+    if (nodeObj.parent?.children) {
+        const idx = nodeObj.parent.children.indexOf(nodeObj);
+        if (idx !== -1) nodeObj.parent.children.splice(idx, 1);
+    }
 
+    // Find correct parent
     const correctParent = findParentForPath(nodeObj);
     if (!correctParent.children) correctParent.children = [];
 
+    // Insert node into correct position in sorted sibling array
     const siblings = correctParent.children;
-    const insertIdx = siblings.findIndex(s => s.path.localeCompare(nodeObj.path) > 0);
-    if (insertIdx === -1) siblings.push(nodeObj);
-    else siblings.splice(insertIdx, 0, nodeObj);
-
+    siblings.push(nodeObj); // temporarily append
+    siblings.sort((a, b) => a.path.localeCompare(b.path));
     nodeObj.parent = correctParent;
 
-    // Process like a move: update editState and log children
+    // Recalculate editState for node and children
     markMovedState(nodeObj);
 
     const newIndex = siblings.indexOf(nodeObj);
     window.log(`[dropMove] Dropped node "${nodeObj.title}" into parent "${correctParent.title}" at index ${newIndex}`);
 
-    // Force UI update
     if (window.updateTreeView) window.updateTreeView();
     if (window.editButtons?.updateButtons) window.editButtons.updateButtons(true);
 
