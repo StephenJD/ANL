@@ -97,14 +97,16 @@ function selectNode(path){
 function renderTree(){
   const treeContainer = document.getElementById("tree");
   if(!treeContainer || !renderTreeFn) return;
-   const scrollTop = treeContainer.scrollTop;
+
+  const scrollTop = treeContainer.scrollTop;
   const scrollLeft = treeContainer.scrollLeft;
-  
+
   treeContainer.innerHTML = "";
   treeContainer.appendChild(
     renderTreeFn(treeData, selectedNodePath, selectNode)
   );
-   treeContainer.scrollTop = scrollTop;
+
+  treeContainer.scrollTop = scrollTop;
   treeContainer.scrollLeft = scrollLeft;
 }
 
@@ -184,19 +186,19 @@ function handleMove(action) {
             : treeMoveActions.moveNode(node, action);
         if (!moved) return;
 
-        log(`Moved node "${node.title || node.path}" -> "${action}"`);
+        log(\`Moved node "\${node.title || node.path}" -> "\${action}"\`);
     } 
     else if (action === "save") {
         tmpNodes[node.path] = { ...node };
         node.editState = "staged";
-        log(`Saved node "${node.title || node.path}" to tmp`);
+        log(\`Saved node "\${node.title || node.path}" to tmp\`);
     }
     else if (action === "drop") {
         if (node.editState === "staged" && tmpNodes[node.path]) delete tmpNodes[node.path];
         if (node.editState === "moved" || node.editState === "staged") {
             treeMoveActions.dropMove(node);
         }
-        log(`Dropped node "${node.title || node.path}"`);
+        log(\`Dropped node "\${node.title || node.path}"\`);
     }
 
     renderTree();
