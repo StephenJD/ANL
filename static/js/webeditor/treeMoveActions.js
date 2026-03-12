@@ -99,43 +99,62 @@ export function moveNode(nodeObj, direction) {
 // Drop node back to correct location based on disk path
 export function dropMove(nodeObj) {
     if (!nodeObj.path) return false;
-window.log(`[dropMove] Remove node "${nodeObj.title}"`);
-  
-    // Remove from any current parent
-    if (nodeObj.parent?.children) {
-        const idx = nodeObj.parent.children.indexOf(nodeObj);
-        if (idx !== -1) {
-            nodeObj.parent.children.splice(idx, 1);
-            window.log(`[dropMove] Removed node "${nodeObj.title}" from old parent "${nodeObj.parent.title}" at index ${idx}`);
-        }
-    }
-window.log(`[dropMove] Find correct parent`);
-  
-    // Find correct parent
+
+    window.log(`[dropMove] Remove node "${nodeObj.title}"`);
+    window.log(`[dropMove] Find correct parent`);
+
     const correctParent = findParentForPath(nodeObj);
     if (!correctParent.children) correctParent.children = [];
 
-    // Insert node into correct position in sorted sibling array
     const siblings = correctParent.children;
-    siblings.push(nodeObj); // temporarily append
-    siblings.sort((a, b) => a.path.localeCompare(b.path));
-    nodeObj.parent = correctParent;
 
-    // Log full sibling order
+    // If not already in correct folder, move it there
+    if (!siblings.includes(nodeObj)) {
+
+        if (nodeObj.parent?.children) {
+            const idx = nodeObj.parent.children.indexOf(nodeObj);
+            if (idx !== -1) {
+                nodeObj.parent.children.splice(idx, 1);
+                window.log(`[dropMove] Removed node "${nodeObj.title}" from old parent "${nodeObj.parent.title}" at index ${idx}`);
+            }
+        }
+
+        siblings.push(nodeObj);
+        nodeObj.parent = correctParent;
+
+        window.log(`[dropMove] Inserted node "${nodeObj.title}" into parent "${correctParent.title}"`);
+    }
+
+    const actualIndex = siblings.indexOf(nodeObj);
+
+    siblings.sort((a, b) => a.path.localeCompare(b.path));
+
+    const sortedIndex = siblings.indexOf(nodeObj);
+
     window.log(`[dropMove] Parent "${correctParent.title}" children after sort: ${siblings.map(n => n.title).join(", ")}`);
 
-    // Recalculate editState for node and children
+    if (actualIndex !== sortedIndex) {
+
+        siblings.splice(sortedIndex, 1);
+        siblings.splice(actualIndex, 0, nodeObj);
+
+        siblings.splice(actualIndex, 1);
+        siblings.splice(sortedIndex, 0, nodeObj);
+
+        window.log(`[dropMove] Node moved from ${actualIndex} to ${sortedIndex}`);
+    }
+
+    // REQUIRED ORDER
     markMovedState(nodeObj);
 
-    const newIndex = siblings.indexOf(nodeObj);
-    window.log(`[dropMove] Dropped node "${nodeObj.title}" into parent "${correctParent.title}" at index ${newIndex}`);
-    window.log(`[dropMove] Node "${nodeObj.title}" editState after drop: ${nodeObj.editState}`);
-
     if (nodeObj.children?.length) {
-        nodeObj.children.forEach(child => {
-            window.log(`[dropMove] Child "${child.title}" editState: ${child.editState}`);
-        });
+        for (const child of nodeObj.children) {
+            markMovedState(child);
+        }
     }
+
+    window.log(`[dropMove] Dropped node "${nodeObj.title}" into parent "${correctParent.title}" at index ${siblings.indexOf(nodeObj)}`);
+    window.log(`[dropMove] Node "${nodeObj.title}" editState after drop: ${nodeObj.editState}`);
 
     if (window.updateTreeView) window.updateTreeView();
     if (window.editButtons?.updateButtons) window.editButtons.updateButtons(true);
