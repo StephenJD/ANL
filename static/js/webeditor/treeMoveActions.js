@@ -2,10 +2,9 @@
 
 // Determine if a node's URL has changed (Hugo-style) based on its position
 function hasNewURL(node) {
-    if (!node.parent) return false; // root node
+    if (!node.parent) return false;
 
     const siblings = node.parent.children || [];
-    // Build correctly sorted sibling order
     const sorted = [...siblings].sort((a, b) => a.path.localeCompare(b.path));
 
     const currentIndex = siblings.indexOf(node);
@@ -13,76 +12,71 @@ function hasNewURL(node) {
 
     const moved = currentIndex !== correctIndex;
 
-    window.log(`[hasNewURL] ${node.title} | currentIndex=${currentIndex} | correctIndex=${correctIndex} | moved=${moved}`);
+    window.log(`[hasNewURL] ${node.path} | currentIndex=${currentIndex} | correctIndex=${correctIndex} | moved=${moved}`);
 
     node.edit = node.edit || {};
     node.editState = moved ? "moved" : "home";
 
-    if (node.children?.length) {
-        for (const child of node.children) hasNewURL(child);
-    }
-
     return moved;
 }
 
-// Recursively mark moved state for node and children
-function markMovedState(node) {
-    hasNewURL(node);
+// Recursively mark a node and its children
+function markNodeAndChildren(node) {
+    hasNewURL(node); // always mark node first
+    if (node.children?.length) {
+        for (const child of node.children) markNodeAndChildren(child);
+    }
 }
 
-// Utility: find correct parent for a node based on its disk path
+// Find the correct parent node for a given node based on path
 function findParentForPath(node, rootTree) {
-    if (!node.path) return { children: rootTree, title: "(root)" };
+    if (!node.path) return { children: rootTree, path: "(root)" };
 
-    const pathParts = node.path.split("/").slice(0, -1); // remove last segment
+    const pathParts = node.path.split("/").slice(0, -1); // all segments except last (file)
     let current = rootTree;
     let parent = null;
 
     for (const part of pathParts) {
-        window.log(`[findParentForPath] current type: ${typeof current} isArray:${Array.isArray(current)}`);
-        if (!Array.isArray(current)) break; // safety
-        const next = current.find(n => n.path.split("/").pop() === part);
+        window.log(`[findParentForPath] current type: ${typeof current} isArray:${Array.isArray(current)} | looking for: ${part}`);
+        if (!Array.isArray(current)) break;
+        const next = current.find(n => n.path === part);
         if (!next) break;
         parent = next;
-        current = Array.isArray(next.children) ? next.children : [];
+        current = next.children || [];
     }
 
-    return parent || { children: rootTree, title: "(root)" };
+    return parent || { children: rootTree, path: "(root)" };
 }
 
-// Core move function (up/down only)
+// Move node up or down
 export function moveNode(nodeObj, direction) {
-    window.log(`[moveNode] Attempting move: ${direction} for node: ${nodeObj.title}`);
+    window.log(`[moveNode] Attempting move: ${direction} for node: ${nodeObj.path}`);
 
-    if (!nodeObj.parent) {
-        window.log("[moveNode] Node has no parent, cannot move");
-        return false;
-    }
+    if (!nodeObj.parent) return false;
 
-    const parentArray = nodeObj.parent.children;
-    if (!parentArray || parentArray.length === 0) return false;
+    const siblings = nodeObj.parent.children;
+    if (!siblings || siblings.length === 0) return false;
 
-    const idx = parentArray.indexOf(nodeObj);
+    const idx = siblings.indexOf(nodeObj);
     if (idx === -1) return false;
 
     let moved = false;
-
     if (direction === "up" && idx > 0) {
-        parentArray.splice(idx, 1);
-        parentArray.splice(idx - 1, 0, nodeObj);
+        siblings.splice(idx, 1);
+        siblings.splice(idx - 1, 0, nodeObj);
         moved = true;
-    } else if (direction === "down" && idx < parentArray.length - 1) {
-        parentArray.splice(idx, 1);
-        parentArray.splice(idx + 1, 0, nodeObj);
+    } else if (direction === "down" && idx < siblings.length - 1) {
+        siblings.splice(idx, 1);
+        siblings.splice(idx + 1, 0, nodeObj);
         moved = true;
     }
 
     if (moved) {
-        markMovedState(nodeObj);
-        window.log(`[state] ${nodeObj.title} editState=${nodeObj.editState}`);
-        window.log(`[moveNode] Move completed for ${nodeObj.title}`);
+        markNodeAndChildren(nodeObj);
+        window.log(`[state] ${nodeObj.path} editState=${nodeObj.editState}`);
+        window.log(`[moveNode] Move completed for ${nodeObj.path}`);
     } else {
-        window.log(`[moveNode] No move performed for ${nodeObj.title}`);
+        window.log(`[moveNode] No move performed for ${nodeObj.path}`);
     }
 
     const treeDiv = document.getElementById("tree");
@@ -96,55 +90,48 @@ export function moveNode(nodeObj, direction) {
     return moved;
 }
 
-// Drop node back to correct location based on disk path
+// Drop node into correct parent based on its path
 export function dropMove(nodeObj, rootTree) {
     if (!nodeObj.path) return false;
 
-    window.log(`[dropMove] Remove node "${nodeObj.title}"`);
-    window.log(`[dropMove] Find correct parent`);
-
+    window.log(`[dropMove] Start for node ${nodeObj.path}`);
     const correctParent = findParentForPath(nodeObj, rootTree);
     if (!correctParent.children) correctParent.children = [];
 
     const siblings = correctParent.children;
 
-    // Move node if not already in folder
+    // Move node if not already in correct folder
     if (!siblings.includes(nodeObj)) {
         if (nodeObj.parent?.children) {
             const idx = nodeObj.parent.children.indexOf(nodeObj);
             if (idx !== -1) {
                 nodeObj.parent.children.splice(idx, 1);
-                window.log(`[dropMove] Removed node "${nodeObj.title}" from old parent "${nodeObj.parent.title}" at index ${idx}`);
+                window.log(`[dropMove] Removed ${nodeObj.path} from old parent ${nodeObj.parent.path} at index ${idx}`);
             }
         }
         siblings.push(nodeObj);
         nodeObj.parent = correctParent;
-        window.log(`[dropMove] Inserted node "${nodeObj.title}" into parent "${correctParent.title}"`);
+        window.log(`[dropMove] Inserted ${nodeObj.path} into parent ${correctParent.path}`);
     }
 
     const actualIndex = siblings.indexOf(nodeObj);
     siblings.sort((a, b) => a.path.localeCompare(b.path));
     const sortedIndex = siblings.indexOf(nodeObj);
 
-    window.log(`[dropMove] Parent "${correctParent.title}" children after sort: ${siblings.map(n => n.title).join(", ")}`);
+    window.log(`[dropMove] Parent ${correctParent.path} children after sort: ${siblings.map(n => n.path).join(", ")}`);
 
     if (actualIndex !== sortedIndex) {
         siblings.splice(sortedIndex, 1);
         siblings.splice(actualIndex, 0, nodeObj);
         siblings.splice(actualIndex, 1);
         siblings.splice(sortedIndex, 0, nodeObj);
-
         window.log(`[dropMove] Node moved from ${actualIndex} to ${sortedIndex}`);
     }
 
     // ALWAYS mark node first, then children
-    markMovedState(nodeObj);
-    if (nodeObj.children?.length) {
-        for (const child of nodeObj.children) markMovedState(child);
-    }
+    markNodeAndChildren(nodeObj);
 
-    window.log(`[dropMove] Dropped node "${nodeObj.title}" into parent "${correctParent.title}" at index ${siblings.indexOf(nodeObj)}`);
-    window.log(`[dropMove] Node "${nodeObj.title}" editState after drop: ${nodeObj.editState}`);
+    window.log(`[dropMove] Finished drop for ${nodeObj.path} at index ${siblings.indexOf(nodeObj)} | editState=${nodeObj.editState}`);
 
     if (window.updateTreeView) window.updateTreeView();
     if (window.editButtons?.updateButtons) window.editButtons.updateButtons(true);
@@ -158,28 +145,27 @@ export function moveAfterNextSelected(nodeObj, rootTree, nextSelectedPath) {
     if (!nextSelectedNode) return false;
 
     const parentArray = nodeObj.parent?.children;
-    const targetParentArray = nextSelectedNode.parent?.children;
-    if (!parentArray || !targetParentArray) return false;
+    const targetArray = nextSelectedNode.parent?.children;
+    if (!parentArray || !targetArray) return false;
 
     const idx = parentArray.indexOf(nodeObj);
     if (idx === -1) return false;
 
     parentArray.splice(idx, 1);
 
-    const targetIdx = targetParentArray.indexOf(nextSelectedNode);
-    targetParentArray.splice(targetIdx + 1, 0, nodeObj);
+    const targetIdx = targetArray.indexOf(nextSelectedNode);
+    targetArray.splice(targetIdx + 1, 0, nodeObj);
     nodeObj.parent = nextSelectedNode.parent;
 
-    markMovedState(nodeObj);
+    markNodeAndChildren(nodeObj);
 
-    window.log(`[moveAfterNextSelected] ${nodeObj.title} moved after ${nextSelectedNode.title}`);
+    window.log(`[moveAfterNextSelected] ${nodeObj.path} moved after ${nextSelectedNode.path}`);
 
     const treeDiv = document.getElementById("tree");
     const scrollTop = treeDiv?.scrollTop || 0;
 
     if (window.updateTreeView) window.updateTreeView();
     if (treeDiv) treeDiv.scrollTop = scrollTop;
-
     if (window.editButtons?.updateButtons) window.editButtons.updateButtons(true);
 
     return true;
@@ -195,4 +181,4 @@ function findNodeByPath(nodes, path){
         }
     }
     return null;
-      }
+                         }
