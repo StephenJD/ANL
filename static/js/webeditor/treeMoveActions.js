@@ -22,7 +22,7 @@ function hasNewURL(node) {
     window.log(`[hasNewURL] ${node.title} | oldURL=${oldURL} | newURL=${newURL} | moved=${moved}`);
 
     node.edit = node.edit || {};
-    node.editState = moved ? "moved" : null;
+    node.editState = moved ? "moved" : "home"
 
     if (node.children?.length) {
         for (const child of node.children) hasNewURL(child);
