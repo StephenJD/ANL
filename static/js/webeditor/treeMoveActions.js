@@ -2,18 +2,19 @@
 
 // Determine if a node's URL has changed (Hugo-style) based on its position
 function hasNewURL(node) {
-    if (!node.parent) return false; // root node, URL unchanged
+    if (!node.path) return false; // no path, cannot compute URL
 
     function buildURL(n) {
-        if (!n.parent) return ""; // root
-        const siblings = n.parent.children || [];
-        const idx = siblings.indexOf(n);
-        const namePart = n.path.split("/").pop().replace(/\.md$/, ""); // only remove .md
+        if (!n.parent) {
+            // root node: take full first segment from n.path
+            return "/" + n.path.split("/")[0];
+        }
         const parentURL = buildURL(n.parent);
+        const namePart = n.path.split("/").pop().replace(/\.md$/, ""); // keep numeric prefixes
         return parentURL + "/" + namePart;
     }
 
-    const oldURL = "/" + node.path.split("/").map(p => p.replace(/\.md$/, "")).join("/");
+    const oldURL = "/" + node.path.split("/").join("/").replace(/\.md$/, "");
     const newURL = buildURL(node);
 
     const moved = oldURL !== newURL;
