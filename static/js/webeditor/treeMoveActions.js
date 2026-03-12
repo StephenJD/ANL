@@ -2,7 +2,6 @@
 
 // Determine if a node's URL has changed (Hugo-style) based on its position
 function hasNewURL(node) {
-function hasNewURL(node) {
     if (!node.parent) return false; // root node, URL unchanged
 
     function buildURL(n) {
@@ -91,8 +90,14 @@ export function moveNode(nodeObj, direction) {
         window.log(`[moveNode] No move performed for ${nodeObj.title}`);
     }
 
+    // Save scroll position
+    const treeDiv = document.getElementById("tree");
+    const scrollTop = treeDiv?.scrollTop || 0;
+
     // Force UI update
     if (window.updateTreeView) window.updateTreeView();
+    if (treeDiv) treeDiv.scrollTop = scrollTop;
+
     if (window.editButtons?.updateButtons) window.editButtons.updateButtons(true);
 
     return moved;
@@ -122,8 +127,14 @@ export function dropMove(nodeObj) {
     window.log(`[dropMove] New parent: ${correctParent.title}`);
     window.log(`[dropMove] Parent children titles: ${correctParent.children.map(c => c.title).join(", ")}`);
 
+    // Save scroll position
+    const treeDiv = document.getElementById("tree");
+    const scrollTop = treeDiv?.scrollTop || 0;
+
     // Force UI update
     if (window.updateTreeView) window.updateTreeView();
+    if (treeDiv) treeDiv.scrollTop = scrollTop;
+
     if (window.editButtons?.updateButtons) window.editButtons.updateButtons(true);
 
     return true;
@@ -150,8 +161,14 @@ export function moveAfterNextSelected(nodeObj, nextSelectedNode) {
 
     window.log(`[moveAfterNextSelected] ${nodeObj.title} moved after ${nextSelectedNode.title}`);
 
+    // Save scroll position
+    const treeDiv = document.getElementById("tree");
+    const scrollTop = treeDiv?.scrollTop || 0;
+
     // Force UI update
     if (window.updateTreeView) window.updateTreeView();
+    if (treeDiv) treeDiv.scrollTop = scrollTop;
+
     if (window.editButtons?.updateButtons) window.editButtons.updateButtons(true);
 
     return true;
