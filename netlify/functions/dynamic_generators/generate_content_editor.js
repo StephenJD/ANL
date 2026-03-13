@@ -71,6 +71,7 @@ let treeData = [];
 let currentFile = null;
 let rawBody = "";
 let tmpNodes = {}; // staged nodes keyed by path
+let pendingMoveNodePath = null;
 
 let renderTreeFn = null;
 let renderFormFn = null;
@@ -78,6 +79,7 @@ let saveEdit = ()=>log("saveEdit not loaded yet");
 let publishEdits = ()=>log("publishEdits not loaded yet");
 let cancelEdit = ()=>log("cancelEdit not loaded yet");
 let dropEdits = ()=>log("dropEdits not loaded yet");
+let treeMoveActions = null;
 
 let editButtons = null;
 
@@ -85,6 +87,29 @@ let editButtons = null;
 // Selection
 // =====================
 function selectNode(path){
+  if (pendingMoveNodePath) {
+    const nodeToMove = findNodeByPath(treeData, pendingMoveNodePath);
+    const targetNode = findNodeByPath(treeData, path);
+    pendingMoveNodePath = null;
+
+    if (nodeToMove && targetNode && treeMoveActions?.moveToTarget) {
+      const moved = treeMoveActions.moveToTarget(nodeToMove, treeData, targetNode);
+      if (moved) {
+        selectedNodePath = nodeToMove.path;
+        log(\`Moved node "\${nodeToMove.title || nodeToMove.path}" to "\${targetNode.title || targetNode.path}"\`);
+      } else {
+        selectedNodePath = path;
+        log("Move To failed");
+      }
+    } else {
+      selectedNodePath = path;
+    }
+
+    if(editButtons) editButtons.update(selectedNodePath);
+    renderTree();
+    return;
+  }
+
   selectedNodePath = path;
   log("Node selected: " + path);
   if(editButtons) editButtons.update(selectedNodePath);
@@ -140,7 +165,7 @@ async function loadHelpers(){
     try{ const mod = await import('/js/webeditor/renderTree.js'); renderTreeFn = mod.renderTree; log("renderTree loaded"); } catch(e){ log("renderTree load failed: " + e); }
     try{ const mod = await import('/js/webeditor/renderForm.js'); renderFormFn = mod.renderForm; log("renderForm loaded"); } catch(e){ log("renderForm load failed: " + e); }
     try{ const mod = await import('/js/webeditor/editActions.js'); ({ saveEdit, publishEdits, cancelEdit, dropEdits } = mod.setupEditActions({value: currentFile}, {value: rawBody})); log("editActions loaded"); } catch(e){ log("editActions load failed: " + e); }
-    try{ const mod = await import('/js/webeditor/treeMoveActions.js'); window.treeMoveActions = mod; log("treeMoveActions loaded"); } catch(e){ log("treeMoveActions load failed: " + e); }
+    try{ const mod = await import('/js/webeditor/treeMoveActions.js'); treeMoveActions = mod; window.treeMoveActions = mod; log("treeMoveActions loaded"); } catch(e){ log("treeMoveActions load failed: " + e); }
 
     try{
       const mod = await import('/js/webeditor/editButtons.js');
@@ -180,14 +205,16 @@ function handleMove(action) {
     const node = findNodeByPath(treeData, selectedNodePath);
     if (!node) return;
 
-    if (["up","down","after"].includes(action)) {
-        let moved = (action === "after") 
-            ? treeMoveActions.moveAfterNextSelected(node, treeData, selectedNodePath)
-            : treeMoveActions.moveNode(node, action);
+    if (["up","down"].includes(action)) {
+        let moved = treeMoveActions.moveNode(node, action);
         if (!moved) return;
 
         log(\`Moved node "\${node.title || node.path}" -> "\${action}"\`);
-    } 
+    }
+    else if (action === "to") {
+        pendingMoveNodePath = selectedNodePath;
+        log(\`Move To armed for "\${node.title || node.path}". Select a target.\`);
+    }
     else if (action === "save") {
         tmpNodes[node.path] = { ...node };
         node.editState = "staged";

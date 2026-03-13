@@ -139,27 +139,39 @@ export function dropMove(nodeObj, rootTree) {
     return true;
 }
 
-// Move node after next selected node
-export function moveAfterNextSelected(nodeObj, rootTree, nextSelectedPath) {
-    const nextSelectedNode = findNodeByPath(rootTree, nextSelectedPath);
-    if (!nextSelectedNode) return false;
+// Move node to a target selection (folder => first child, content => index of content)
+export function moveToTarget(nodeObj, rootTree, targetNode) {
+    if (!nodeObj || !targetNode) return false;
+    if (nodeObj === targetNode || nodeObj.path === targetNode.path) return false;
 
-    const parentArray = nodeObj.parent?.children;
-    const targetArray = nextSelectedNode.parent?.children;
-    if (!parentArray || !targetArray) return false;
+    const oldParentArray = nodeObj.parent?.children || rootTree;
+    const oldIdx = oldParentArray.indexOf(nodeObj);
+    if (oldIdx === -1) return false;
 
-    const idx = parentArray.indexOf(nodeObj);
-    if (idx === -1) return false;
+    const isFolderTarget = !targetNode.path?.endsWith(".md");
 
-    parentArray.splice(idx, 1);
+    // Remove from old parent first
+    oldParentArray.splice(oldIdx, 1);
 
-    const targetIdx = targetArray.indexOf(nextSelectedNode);
-    targetArray.splice(targetIdx + 1, 0, nodeObj);
-    nodeObj.parent = nextSelectedNode.parent;
+    if (isFolderTarget) {
+        if (!targetNode.children) targetNode.children = [];
+        targetNode.children.unshift(nodeObj);
+        nodeObj.parent = targetNode;
+        window.log(`[moveToTarget] ${nodeObj.path} moved into folder ${targetNode.path} at index 0`);
+    } else {
+        const targetArray = targetNode.parent?.children || rootTree;
+        const targetIdx = targetArray.indexOf(targetNode);
+        if (targetIdx === -1) {
+            // restore to original position if target missing
+            oldParentArray.splice(oldIdx, 0, nodeObj);
+            return false;
+        }
+        targetArray.splice(targetIdx, 0, nodeObj);
+        nodeObj.parent = targetNode.parent || null;
+        window.log(`[moveToTarget] ${nodeObj.path} moved to index ${targetIdx} in ${nodeObj.parent?.path || "(root)"}`);
+    }
 
     markNodeAndChildren(nodeObj);
-
-    window.log(`[moveAfterNextSelected] ${nodeObj.path} moved after ${nextSelectedNode.path}`);
 
     const treeDiv = document.getElementById("tree");
     const scrollTop = treeDiv?.scrollTop || 0;
@@ -171,14 +183,4 @@ export function moveAfterNextSelected(nodeObj, rootTree, nextSelectedPath) {
     return true;
 }
 
-// Helper: find node by path
-function findNodeByPath(nodes, path){
-    for(const n of nodes){
-        if(n.path === path) return n;
-        if(n.children?.length){
-            const found = findNodeByPath(n.children, path);
-            if(found) return found;
-        }
-    }
-    return null;
-                         }
+// (no extra helpers)

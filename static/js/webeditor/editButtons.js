@@ -28,14 +28,14 @@ export function setupEditButtons(containerId, treeData, moveFn, showEditorFn) {
   container.appendChild(buttonsWrapper);
 
   const btnDefs = [
-    { id: "up", label: "↑" },
-    { id: "down", label: "↓" },
-    { id: "after", label: "↴" },
-    { id: "copyUrl", label: "⧉" },
-    { id: "edit", label: "✎" },
-    { id: "save", label: "💾" },
-    { id: "drop", label: "✘" },
-    { id: "publish", label: "✔" }
+    { id: "up", label: "â†‘" },
+    { id: "down", label: "â†“" },
+    { id: "to", label: "To" },
+    { id: "copyUrl", label: "â§‰" },
+    { id: "edit", label: "âœŽ" },
+    { id: "save", label: "ðŸ’¾" },
+    { id: "drop", label: "âœ˜" },
+    { id: "publish", label: "âœ”" }
   ];
 
   buttons = {};
@@ -49,7 +49,7 @@ export function setupEditButtons(containerId, treeData, moveFn, showEditorFn) {
   });
 
   // Move buttons
-  ["up","down","after"].forEach(dir => {
+  ["up","down","to"].forEach(dir => {
     if (buttons[dir]) {
       buttons[dir].addEventListener("click", () => {
         if (moveCallback) moveCallback(dir);
@@ -119,4 +119,4 @@ function findNodeByPath(nodes, path){
     }
   }
   return null;
-        }
+}
