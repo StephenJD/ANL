@@ -2,7 +2,26 @@
 
 export function renderExtraFields(form, frontMatter) {
     Object.entries(frontMatter).forEach(([k,v]) => {
-        if(['title','page_type','summary','access','content_type','navigation_options'].includes(k)) return;
+        if([
+            'title',
+            'page_type',
+            'summary',
+            'last_reviewed',
+            'review_period',
+            'reviewed_by',
+            'type',
+            'include_unselected_options',
+            'validation',
+            'access',
+            'share',
+            'qrCode',
+            'background_image',
+            'logo_image',
+            'content_type',
+            'navigation_options',
+            'staged',
+            'edited'
+        ].includes(k)) return;
 
         const label = document.createElement("label");
         label.textContent = k;

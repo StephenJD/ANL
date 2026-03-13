@@ -1,33 +1,9 @@
-// netlify/functions/dynamic_generators/generate_content_editor.js
-export default async function generate_content_editor() {
-  return `
-<h1>Content Editor</h1>
 
-<div>
-
-  <div id="tree"></div>
-
-  <div id="editorContainer" style="display:none;">
-    <form id="editForm"></form>
-
-    <label for="frontMatterText">Front Matter:</label>
-    <textarea id="frontMatterText" style="width:100%;height:200px;margin-bottom:10px;"></textarea>
-
-    <div style="margin-top:10px;"></div>
-  </div>
-
-</div>
-
-<div id="logDiv"></div>
-
-<div id="treeEditButtons"></div>
-
-<script type="module">
 
 window.log = function(msg){
   const logDiv = document.getElementById("logDiv");
   if(logDiv){
-    logDiv.textContent += msg + "\\n";
+    logDiv.textContent += msg + "\n";
     logDiv.scrollTop = logDiv.scrollHeight;
   }
   console.log(msg);
@@ -39,7 +15,6 @@ log("Step 1: Content editor script started");
 // Controller State
 // =====================
 let selectedNodePath = null;
-let selectedNodePathRef = { value: null };
 let treeData = [];
 let currentFile = null;
 let rawBody = "";
@@ -54,8 +29,6 @@ let dropEdits = ()=>log("dropEdits not loaded yet");
 let treeMoveActions = null;
 
 let editButtons = null;
-let editDirty = false;
-let newMode = false;
 
 // =====================
 // Selection
@@ -79,14 +52,12 @@ function selectNode(path){
       selectedNodePath = path;
     }
 
-    selectedNodePathRef.value = selectedNodePath;
     if(editButtons) editButtons.update(selectedNodePath);
     renderTree();
     return;
   }
 
   selectedNodePath = path;
-  selectedNodePathRef.value = path;
   log("Node selected: " + path);
   if(editButtons) editButtons.update(selectedNodePath);
   renderTree();
@@ -118,7 +89,6 @@ function renderTree(){
 // Show editor on edit button
 // =====================
 function showEditorForSelectedNode(){
-  newMode = false;
   if(!selectedNodePath) return;
   const node = findNodeByPath(treeData, selectedNodePath);
   if(!node) return;
@@ -131,20 +101,6 @@ function showEditorForSelectedNode(){
     document.getElementById("tree").style.display = "none";
     editorContainer.style.display = "block";
     if (editButtons?.setEditing) editButtons.setEditing(true);
-    editDirty = false;
-    if (editButtons?.setDirty) editButtons.setDirty(false);
-    // Any further edit should un-stage until saved again
-    if (node.edit?.staged) {
-      node.edit.staged = null;
-      cleanupEdit(node);
-    }
-
-    if (node.edit?.edited) {
-      editDirty = true;
-      if (editButtons?.setDirty) editButtons.setDirty(true);
-      loadEditorFromContent(node, node.edit.edited);
-      return;
-    }
 
     (async ()=>{
       try{
@@ -159,49 +115,38 @@ function showEditorForSelectedNode(){
           const data = await res.json();
           const rawFrontMatter = data.rawFrontMatter || "";
           const content = data.content || "";
-          loadEditorFromContent(node, content, rawFrontMatter);
+          let innerFrontMatter = "";
+          const match = rawFrontMatter.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+          if (match) innerFrontMatter = match[1];
+          const rawBody = rawFrontMatter ? content.slice(rawFrontMatter.length).replace(/^\s*\n/, "") : content;
+          node.rawBody = rawBody;
+          frontMatterText.value = innerFrontMatter;
+          let frontMatterObj = {};
+          try {
+            const { normalizeFrontMatter } = await import("/js/webeditor/normalizeFrontMatter.js");
+            frontMatterObj = normalizeFrontMatter("---\n" + innerFrontMatter + "\n---");
+          } catch (err) {
+            frontMatterObj = {};
+          }
+          node.edit = frontMatterObj;
+          if(renderFormFn) renderFormFn(node, frontMatterObj);
           log("[frontmatter] loaded length=" + rawFrontMatter.length);
         } else {
           const errText = await res.text();
           log("[frontmatter] start_edit error: " + errText);
           frontMatterText.value = "";
           if(renderFormFn) renderFormFn(node, {});
-          wireEditDirtyTracking();
         }
       }catch(err){
         log("[frontmatter] start_edit exception: " + err);
         frontMatterText.value = "";
         if(renderFormFn) renderFormFn(node, {});
-        wireEditDirtyTracking();
       }
     })();
 
   }
 }
 window.showEditorForSelectedNode = showEditorForSelectedNode;
-
-function showBlankEditorForSelectedNode(){
-  newMode = true;
-  if(!selectedNodePath) return;
-  const node = findNodeByPath(treeData, selectedNodePath);
-  if(!node) return;
-
-  const editorContainer = document.getElementById("editorContainer");
-  const editForm = document.getElementById("editForm");
-  const frontMatterText = document.getElementById("frontMatterText");
-  if(editorContainer && editForm && frontMatterText){
-    document.getElementById("tree").style.display = "none";
-    editorContainer.style.display = "block";
-    if (editButtons?.setEditing) editButtons.setEditing(true);
-    editDirty = false;
-    if (editButtons?.setDirty) editButtons.setDirty(false);
-    frontMatterText.value = "";
-    node.rawBody = "";
-    node.frontMatterOriginal = {};
-    if(renderFormFn) renderFormFn(node, {});
-    wireEditDirtyTracking();
-  }
-}
 
 // =====================
 // Load helper modules
@@ -211,14 +156,7 @@ async function loadHelpers(){
   try{
     try{ const mod = await import('/js/webeditor/renderTree.js'); renderTreeFn = mod.renderTree; log("renderTree loaded"); } catch(e){ log("renderTree load failed: " + e); }
     try{ const mod = await import('/js/webeditor/renderForm.js'); renderFormFn = mod.renderForm; log("renderForm loaded"); } catch(e){ log("renderForm load failed: " + e); }
-    try{
-      const mod = await import('/js/webeditor/editActions.js');
-      const actions = mod.setupEditActions(treeData, selectedNodePathRef);
-      saveEdit = actions.saveEditFrontmatter;
-      dropEdits = actions.dropNode;
-      cancelEdit = actions.cancelEdit;
-      log("editActions loaded");
-    } catch(e){ log("editActions load failed: " + e); }
+    try{ const mod = await import('/js/webeditor/editActions.js'); ({ saveEdit, publishEdits, cancelEdit, dropEdits } = mod.setupEditActions({value: currentFile}, {value: rawBody})); log("editActions loaded"); } catch(e){ log("editActions load failed: " + e); }
     try{ const mod = await import('/js/webeditor/treeMoveActions.js'); treeMoveActions = mod; window.treeMoveActions = mod; log("treeMoveActions loaded"); } catch(e){ log("treeMoveActions load failed: " + e); }
 
     try{
@@ -253,7 +191,7 @@ function reconstructTree(nodes, parent = null) {
 // =====================
 // Move / Save / Drop handler
 // =====================
-async function handleMove(action) {
+function handleMove(action) {
     if (!selectedNodePath) return;
 
     const node = findNodeByPath(treeData, selectedNodePath);
@@ -273,48 +211,21 @@ async function handleMove(action) {
     }
     else if (action === "save") {
         if (isEditing) {
-          if (newMode) {
-            log("[handleMove] new mode save not implemented");
-            return;
-          }
-          log("[handleMove] save from editor");
-          if (saveEdit) {
-            await saveEdit();
-            editDirty = false;
-            if (editButtons?.setDirty) editButtons.setDirty(false);
-          }
           hideEditor();
-          renderTree();
-          if (editButtons) editButtons.update(selectedNodePath);
           return;
         }
-        if (!node.edit) node.edit = {};
-        node.edit.staged = true;
+        node.editState = "staged";
         log('Saved node "' + (node.title || node.path) + '" to tmp');
     }
     else if (action === "drop") {
         if (isEditing) {
-          if (dropEdits) await dropEdits();
-          editDirty = false;
-          if (editButtons?.setDirty) editButtons.setDirty(false);
-          newMode = false;
           hideEditor();
           return;
         }
-        if (node.edit?.staged) {
-          node.edit.staged = null;
-          cleanupEdit(node);
-        } else if (node.edit?.moved) {
-          treeMoveActions.dropMove(node, treeData);
-        } else if (node.edit?.edited) {
-          node.edit.edited = null;
-          cleanupEdit(node);
+        if (node.editState === "moved" || node.editState === "staged") {
+          treeMoveActions.dropMove(node, treeData)
         }
         log('Dropped node "' + (node.title || node.path) + '"');
-    }
-    else if (action === "new") {
-        showBlankEditorForSelectedNode();
-        return;
     }
 
     renderTree();
@@ -346,14 +257,12 @@ async function loadTree(){
   try{
     const res = await fetch("/.netlify/functions/list_content_tree");
     log("Tree HTTP status: " + res.status);
-      if(res.ok) {
-        const jsonSafeTree = await res.json();
-        const rootParent = { path: "(root)", children: [] };
-        const builtTree = reconstructTree(jsonSafeTree, rootParent); // <-- reconstruct parents
-        treeData.length = 0;
-        treeData.push(...builtTree);
-        rootParent.children = treeData;
-      } else {
+    if(res.ok) {
+      const jsonSafeTree = await res.json();
+      const rootParent = { path: "(root)", children: [] };
+      treeData = reconstructTree(jsonSafeTree, rootParent); // <-- reconstruct parents
+      rootParent.children = treeData;
+    } else {
       log("Tree fetch failed with HTTP " + res.status);
     }
 
@@ -376,60 +285,6 @@ function findNodeByPath(nodes, path){
   return null;
 }
 
-function wireEditDirtyTracking(){
-  const editorContainer = document.getElementById("editorContainer");
-  const form = document.getElementById("editForm");
-  const frontMatterText = document.getElementById("frontMatterText");
-  if (!editorContainer || !form || !frontMatterText) return;
-
-  const markDirty = () => {
-    if (!editDirty) {
-      editDirty = true;
-      if (editButtons?.setDirty) editButtons.setDirty(true);
-    }
-  };
-
-  editorContainer.oninput = markDirty;
-  editorContainer.onchange = markDirty;
-  frontMatterText.oninput = markDirty;
-  frontMatterText.onchange = markDirty;
-}
-
-async function loadEditorFromContent(node, content, rawFrontMatterOverride = null){
-  const frontMatterText = document.getElementById("frontMatterText");
-  let rawFrontMatter = rawFrontMatterOverride;
-  if (rawFrontMatter == null) {
-    const match = content.match(/^---\\r?\\n([\\s\\S]*?)\\r?\\n---/);
-    rawFrontMatter = match ? match[0] : "";
-  }
-
-  let innerFrontMatter = "";
-  const matchInner = rawFrontMatter.match(/^---\\r?\\n([\\s\\S]*?)\\r?\\n---/);
-  if (matchInner) innerFrontMatter = matchInner[1];
-
-  const rawBody = rawFrontMatter ? content.slice(rawFrontMatter.length).replace(/^\\s*\\n/, "") : content;
-  node.rawBody = rawBody;
-  if (frontMatterText) frontMatterText.value = innerFrontMatter;
-
-  let frontMatterObj = {};
-  try {
-    const { normalizeFrontMatter } = await import("/js/webeditor/normalizeFrontMatter.js");
-    frontMatterObj = normalizeFrontMatter("---\\n" + innerFrontMatter + "\\n---");
-  } catch (err) {
-    frontMatterObj = {};
-  }
-
-  if(renderFormFn) renderFormFn(node, frontMatterObj);
-  node.frontMatterOriginal = { ...frontMatterObj };
-  wireEditDirtyTracking();
-}
-
-function cleanupEdit(node){
-  if (!node?.edit) return;
-  const e = node.edit;
-  if (!e.moved && !e.edited && !e.staged) delete node.edit;
-}
-
 // =====================
 // Initialize
 // =====================
@@ -442,6 +297,4 @@ async function init(){
 
 init();
 
-</script>
-`;
-}
+

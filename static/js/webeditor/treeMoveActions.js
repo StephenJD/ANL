@@ -2,25 +2,42 @@
 
 // Determine if a node's URL has changed (Hugo-style) based on its position
 function hasNewURL(node) {
-    if (!node.parent) return false;
+    if (!node.parent) return false; 
+    let currentIndex = 0;
+    let correctIndex = 0;
 
-    const siblings = node.parent.children || [];
-    const sorted = [...siblings].sort((a, b) => a.path.localeCompare(b.path));
-
-    const currentIndex = siblings.indexOf(node);
-    const correctIndex = sorted.indexOf(node);
-
-    const pathParts = node.path ? node.path.split("/").slice(0, -1) : [];
-    const expectedParentFull = pathParts.join("/") || "(root)";
-    const expectedParentLeaf = pathParts.length ? pathParts[pathParts.length - 1] : "(root)";
-    const currentParentPath = node.parent?.path ?? "(root)";
-    const parentMatchesPath = currentParentPath === expectedParentFull || currentParentPath === expectedParentLeaf;
-
-    const moved = !parentMatchesPath || currentIndex !== correctIndex;
+    const parentMoved = !!node.parent?.edit?.moved;
+    let moved = false;
+    if (parentMoved) {
+        moved = true;
+    } else {
+        const siblings = node.parent.children || [];
+        const pathParts = node.path ? node.path.split("/").slice(0, -1) : [];
+        const expectedParentPath = pathParts.length ? pathParts.join("/") : "(root)";
+        const actualParentPath = node.parent?.path ?? "(root)";
+        const parentMatchesPath = actualParentPath === expectedParentPath;
+        if (!parentMatchesPath) {
+            moved = true;
+        } else {
+            const sorted = [...siblings].sort((a, b) => a.path.localeCompare(b.path));
+            currentIndex = siblings.indexOf(node);
+            correctIndex = sorted.indexOf(node);
+            moved = currentIndex !== correctIndex;
+        }
+    }
 
     window.log(`[hasNewURL] ${node.path} | currentIndex=${currentIndex} | correctIndex=${correctIndex} | moved=${moved}`);
 
-    node.editState = moved ? "moved" : "home";
+    if (moved) {
+        if (!node.edit) node.edit = {};
+        node.edit.moved = true;
+    } else if (node.edit) {
+        node.edit.moved = null;
+    }
+
+    // Any move recalculation invalidates staging
+    if (node.edit) node.edit.staged = null;
+    cleanupEdit(node);
 
     return moved;
 }
@@ -80,7 +97,7 @@ export function moveNode(nodeObj, direction) {
 
     if (moved) {
         markNodeAndChildren(nodeObj);
-        window.log(`[state] ${nodeObj.path} editState=${nodeObj.editState}`);
+        window.log(`[state] ${nodeObj.path} moved=${!!nodeObj.edit?.moved}`);
         window.log(`[moveNode] Move completed for ${nodeObj.path}`);
     } else {
         window.log(`[moveNode] No move performed for ${nodeObj.path}`);
@@ -135,7 +152,7 @@ export function dropMove(nodeObj, rootTree) {
     // ALWAYS mark node first, then children
     markNodeAndChildren(nodeObj);
 
-    window.log(`[dropMove] Finished drop for ${nodeObj.path} at index ${siblings.indexOf(nodeObj)} | editState=${nodeObj.editState}`);
+    window.log(`[dropMove] Finished drop for ${nodeObj.path} at index ${siblings.indexOf(nodeObj)} | moved=${!!nodeObj.edit?.moved}`);
 
     if (window.updateTreeView) window.updateTreeView();
     if (window.editButtons?.updateButtons) window.editButtons.updateButtons(true);
@@ -185,4 +202,8 @@ export function moveToTarget(nodeObj, rootTree, targetNode) {
     return true;
 }
 
-// (no extra helpers)
+function cleanupEdit(node) {
+    if (!node?.edit) return;
+    const e = node.edit;
+    if (!e.moved && !e.edited && !e.staged) delete node.edit;
+}

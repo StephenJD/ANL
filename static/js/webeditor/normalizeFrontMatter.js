@@ -13,11 +13,11 @@ export function normalizeFrontMatter(mdContent) {
     value = value
         .slice(1,-1)
         .split(',')
-        .map(v => v.trim().toLowerCase());
+        .map(v => v.trim());
 
 } else {
 
-    value = value.toLowerCase();
+    value = value;
 
 }
         front[key] = value;

@@ -10,25 +10,50 @@ export function setupEditActions(treeDataRef = [], selectedNodePathRef = { value
 
     try {
       const form = document.getElementById("editForm");
-      const data = new FormData(form);
+      const illegal = Array.from(form.querySelectorAll("select")).filter(sel => sel.dataset?.illegal === "true");
+      if (illegal.length) {
+        window.log("[editActions] save blocked: illegal option(s) selected");
+        return;
+      }
+      const dataObj = {};
+      const elements = Array.from(form.elements || []).filter(el => el && el.name);
+      for (const el of elements) {
+        if (el.type === "checkbox") {
+          dataObj[el.name] = el.checked ? "true" : "false";
+        } else {
+          dataObj[el.name] = el.value;
+        }
+      }
+      if (node.frontMatterOriginal && Object.prototype.hasOwnProperty.call(node.frontMatterOriginal, "page_type")) {
+        dataObj.page_type = node.frontMatterOriginal.page_type;
+      }
 
       // Build frontmatter text
       let front = "---\n";
-      for (const [k, v] of data.entries()) {
+      for (const [k, v] of Object.entries(dataObj)) {
         front += `${k}: ${v}\n`;
       }
       front += "---\n";
 
       const content = front + (node.rawBody || "");
+      window.log(`[editActions] save_edit start file=${node.path} fields=${Object.keys(dataObj).join(",")}`);
       const res = await fetch("/.netlify/functions/save_edit", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ file: node.path, content })
       });
-      if (!res.ok) throw new Error("HTTP " + res.status);
+      if (!res.ok) {
+        const errText = await res.text();
+        window.log(`[editActions] save_edit error status=${res.status} body=${errText}`);
+        throw new Error("HTTP " + res.status);
+      }
 
-      // Mark node as staged
-      node.editState = "staged";
-      node.edit = Object.fromEntries(data.entries());
+      // Mark node as edited (not staged)
+      if (!node.edit) node.edit = {};
+      node.edit.edited = content;
+      node.edit.staged = null;
+
+      window.log(`[editActions] save_edit ok file=${node.path} contentLen=${content.length}`);
 
       // Close editor and update tree/buttons
       document.getElementById("editorContainer").style.display = "none";
@@ -46,20 +71,19 @@ export function setupEditActions(treeDataRef = [], selectedNodePathRef = { value
     if (!node) return;
 
     try {
-      if (node.editState === "staged") {
-        // Remove staged tmp copy
-        const res = await fetch("/.netlify/functions/drop_edit", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ file: node.path })
-        });
-        if (!res.ok) throw new Error("HTTP " + res.status);
-
-        node.editState = "moved"; // revert to moved (red)
-      } else if (node.editState === "moved") {
+      if (node.edit?.staged) {
+        // Unstage only
+        node.edit.staged = null;
+        cleanupEdit(node);
+      } else if (node.edit?.moved) {
         // Revert node to original position using node.path
         // reload tree or reposition logic if needed
-        node.editState = null;
+        node.edit.moved = null;
+        cleanupEdit(node);
+      } else if (node.edit?.edited) {
+        // Drop unsaved edits
+        node.edit.edited = null;
+        cleanupEdit(node);
       }
 
       // Close editor if open
@@ -95,6 +119,12 @@ export function setupEditActions(treeDataRef = [], selectedNodePathRef = { value
       }
     }
     return null;
+  }
+
+  function cleanupEdit(node) {
+    if (!node?.edit) return;
+    const e = node.edit;
+    if (!e.moved && !e.edited && !e.staged) delete node.edit;
   }
 
   return { saveEditFrontmatter, dropNode, cancelEdit };

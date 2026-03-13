@@ -22,14 +22,14 @@ export async function renderAccessOptions(form, frontMatter, cache){
             const res = await fetch("/.netlify/functions/get_role_options");
             if(!res.ok) throw new Error("HTTP " + res.status);
             options = await res.json();
-            options = options.map(o => o.Role);
+            options = options.map(o => o.Role || o.role || o);
             options.unshift('Public');
         } catch(err) {
             log("Access fetch error: " + err);
             options = ['Public'];
         }
     } else {
-        options = ['Public', ...options.map(o => o.Role)];
+        options = ['Public', ...options.map(o => o.Role || o.role || o)];
     }
 
     options.forEach(optVal => {

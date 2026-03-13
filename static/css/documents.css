@@ -147,3 +147,56 @@ center {
   margin-left: 50%;
   transform: translateX(-50%);
 }
+
+/* Content editor layout (KISS: use existing IDs) */
+.document-content > div {
+  width: 100%;
+}
+
+.document-content #tree {
+  width: 100%;
+  border-right: 1px solid #ccc;
+  padding-right: 20px;
+}
+
+.document-content #editorContainer {
+  width: 100%;
+}
+
+.document-content #logDiv {
+  border-top: 1px solid #ccc;
+  margin-top: 20px;
+  padding: 10px;
+  max-height: 300px;
+  overflow-y: auto;
+  background: #f9f9f9;
+  font-size: 12px;
+  white-space: pre-wrap;
+}
+
+.document-content #treeEditButtons {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(1000px, calc(100% - 2rem));
+  box-sizing: border-box;
+  z-index: 5;
+  background: #fff;
+  border-top: 1px solid #ccc;
+  padding: 10px 1rem;
+  display: flex;
+  gap: 10px;
+  box-shadow: 0 -2px 5px rgba(0,0,0,0.08);
+}
+
+/* Match document-content width on desktop */
+@media (min-width: 900px) {
+  .document-content #tree,
+  .document-content #editorContainer,
+  .document-content #logDiv {
+    max-width: 1000px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}

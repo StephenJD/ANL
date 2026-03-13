@@ -23,21 +23,30 @@ export function renderTree(nodes, selectedNodePath = null, onSelectNode = null) 
         span.style.padding = "2px 4px";
 
         // colour based on edit state
-        if(node.editState === "moved") span.style.color = "red";
-        else if(node.editState === "staged") span.style.color = "orange";
-        else span.style.color = "blue"; // default color
+        if (!node.edit) span.style.color = "blue"; // default color
+        else if (node.edit.staged) span.style.color = "orange";
+        else if (node.edit.moved || node.edit.edited) span.style.color = "red";
+        else span.style.color = "blue";
         // bold if selected
         
         if (selectedNodePath === node.path) {
             span.style.fontWeight = "bold";
             span.style.backgroundColor = "#def";
-          window.log(`[renderTreeView] Rendering node: ${node.title} editState=${node.editState}`);
+          window.log(`[renderTreeView] Rendering node: ${node.title} moved=${!!node.edit?.moved} edited=${!!node.edit?.edited} staged=${!!node.edit?.staged}`);
       
         }
 
         span.onclick = () => {
             if (typeof onSelectNode === "function") {
                 onSelectNode(node.path);
+            }
+        };
+        span.ondblclick = () => {
+            if (typeof onSelectNode === "function") {
+                onSelectNode(node.path);
+            }
+            if (typeof window.showEditorForSelectedNode === "function") {
+                window.showEditorForSelectedNode();
             }
         };
 

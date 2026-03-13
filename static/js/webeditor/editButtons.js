@@ -81,8 +81,13 @@ export function setupEditButtons(containerId, treeData, moveFn, showEditorFn) {
     });
   }
 
-  // Update button states based on node editState
+  // Update button states based on node edit flags
+  let isEditing = false;
+  let isDirty = false;
+  let lastSelectedPath = null;
+
   function update(selectedPath){
+    lastSelectedPath = selectedPath;
     const anySelected = !!selectedPath;
 
     for(const id in buttons){
@@ -98,17 +103,40 @@ export function setupEditButtons(containerId, treeData, moveFn, showEditorFn) {
 
     if(node){
       if(buttons.save){
-        buttons.save.disabled = node.editState !== "moved";
+        if (isEditing) {
+          buttons.save.disabled = !isDirty;
+        } else {
+          buttons.save.disabled = !(node.edit?.moved || node.edit?.edited);
+        }
       }
       if(buttons.drop){
-        buttons.drop.disabled = !(node.editState === "moved" || node.editState === "staged");
+        if (isEditing) {
+          buttons.drop.disabled = false;
+        } else {
+          buttons.drop.disabled = !(node.edit?.moved || node.edit?.staged || node.edit?.edited);
+        }
+      }
+      if (isEditing) {
+        ["up","down","to","new"].forEach(id => {
+          if (buttons[id]) buttons[id].disabled = true;
+        });
       }
     }
 
     window.log(`[editButtons] buttons updated selected=true`);
   }
 
-  return { update };
+  function setEditing(value){
+    isEditing = !!value;
+    update(lastSelectedPath);
+  }
+
+  function setDirty(value){
+    isDirty = !!value;
+    update(lastSelectedPath);
+  }
+
+  return { update, setEditing, setDirty };
 }
 
 function findNodeByPath(nodes, path){

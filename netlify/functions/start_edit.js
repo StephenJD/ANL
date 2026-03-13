@@ -25,7 +25,7 @@ export async function handler(event) {
     const rawContent = fs.readFileSync(fullPath, "utf-8");
 
     // Extract front matter (simple split for now)
-    const frontMatterMatch = rawContent.match(/^---\n([\s\S]*?)\n---/);
+    const frontMatterMatch = rawContent.match(/^---\r?\n([\s\S]*?)\r?\n---/);
     const rawFrontMatter = frontMatterMatch ? frontMatterMatch[0] : "";
 
     return {
