@@ -24,6 +24,9 @@ export function setupEditActions(treeDataRef = [], selectedNodePathRef = { value
           dataObj[el.name] = el.value;
         }
       }
+      delete dataObj.page_type;
+      delete dataObj.content_type;
+      delete dataObj.give_content_prev_next_buttons;
       if (node.frontMatterOriginal && Object.prototype.hasOwnProperty.call(node.frontMatterOriginal, "page_type")) {
         dataObj.page_type = node.frontMatterOriginal.page_type;
       }

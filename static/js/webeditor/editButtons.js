@@ -81,6 +81,13 @@ export function setupEditButtons(containerId, treeData, moveFn, showEditorFn) {
     });
   }
 
+  // New button opens blank editor
+  if (buttons.new) {
+    buttons.new.addEventListener("click", () => {
+      if (moveCallback) moveCallback("new");
+    });
+  }
+
   // Update button states based on node edit flags
   let isEditing = false;
   let isDirty = false;

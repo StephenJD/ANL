@@ -117,7 +117,7 @@ function renderTree(){
 // =====================
 // Show editor on edit button
 // =====================
-function showEditorForSelectedNode(){
+async function showEditorForSelectedNode(){
   newMode = false;
   if(!selectedNodePath) return;
   const node = findNodeByPath(treeData, selectedNodePath);
@@ -142,7 +142,8 @@ function showEditorForSelectedNode(){
     if (node.edit?.edited) {
       editDirty = true;
       if (editButtons?.setDirty) editButtons.setDirty(true);
-      loadEditorFromContent(node, node.edit.edited);
+      await loadEditorFromContent(node, node.edit.edited);
+      await ensureParentFrontMatter(node);
       return;
     }
 
@@ -160,18 +161,21 @@ function showEditorForSelectedNode(){
           const rawFrontMatter = data.rawFrontMatter || "";
           const content = data.content || "";
           loadEditorFromContent(node, content, rawFrontMatter);
+          ensureParentFrontMatter(node);
           log("[frontmatter] loaded length=" + rawFrontMatter.length);
         } else {
           const errText = await res.text();
           log("[frontmatter] start_edit error: " + errText);
           frontMatterText.value = "";
           if(renderFormFn) renderFormFn(node, {});
+          ensureParentFrontMatter(node);
           wireEditDirtyTracking();
         }
       }catch(err){
         log("[frontmatter] start_edit exception: " + err);
         frontMatterText.value = "";
         if(renderFormFn) renderFormFn(node, {});
+        ensureParentFrontMatter(node);
         wireEditDirtyTracking();
       }
     })();
@@ -421,7 +425,44 @@ async function loadEditorFromContent(node, content, rawFrontMatterOverride = nul
 
   if(renderFormFn) renderFormFn(node, frontMatterObj);
   node.frontMatterOriginal = { ...frontMatterObj };
+  node.frontMatterOriginalText = innerFrontMatter;
+  node.frontMatterOriginalOrder = innerFrontMatter
+    .split(/\\r?\\n/)
+    .map(line => line.split("#")[0].trim())
+    .filter(line => line.includes(":"))
+    .map(line => line.split(":")[0].trim().toLowerCase());
   wireEditDirtyTracking();
+}
+
+async function ensureParentFrontMatter(node) {
+  const parent = node?.parent;
+  if (!parent || parent.frontMatterOriginal) return;
+  const parentPath = String(parent.path || "");
+  if (!parentPath.endsWith("_index.md")) return;
+
+  try {
+    const res = await fetch("/.netlify/functions/start_edit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ file: parentPath })
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    const rawFrontMatter = data.rawFrontMatter || "";
+    let innerFrontMatter = "";
+    const match = rawFrontMatter.match(/^---\\r?\\n([\\s\\S]*?)\\r?\\n---/);
+    if (match) innerFrontMatter = match[1];
+    let frontMatterObj = {};
+    try {
+      const { normalizeFrontMatter } = await import("/js/webeditor/normalizeFrontMatter.js");
+      frontMatterObj = normalizeFrontMatter("---\\n" + innerFrontMatter + "\\n---");
+    } catch (err) {
+      frontMatterObj = {};
+    }
+    parent.frontMatterOriginal = frontMatterObj;
+  } catch (err) {
+    // ignore
+  }
 }
 
 function cleanupEdit(node){
