@@ -28,14 +28,15 @@ export function setupEditButtons(containerId, treeData, moveFn, showEditorFn) {
   container.appendChild(buttonsWrapper);
 
   const btnDefs = [
-    { id: "up", label: "â†‘" },
-    { id: "down", label: "â†“" },
-    { id: "to", label: "To" },
-    { id: "copyUrl", label: "â§‰" },
-    { id: "edit", label: "âœŽ" },
-    { id: "save", label: "ðŸ’¾" },
-    { id: "drop", label: "âœ˜" },
-    { id: "publish", label: "âœ”" }
+    { id: "up", label: "↑" },
+    { id: "down", label: "↓" },
+    { id: "to", label: "↴" },
+    { id: "copyUrl", label: "🔗" },
+    { id: "edit", label: "✎" },
+    { id: "new", label: "📝" },
+    { id: "save", label: "✔" },
+    { id: "drop", label: "✘" },
+    { id: "publish", label: "📤" }
   ];
 
   buttons = {};
