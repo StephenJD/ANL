@@ -10,11 +10,16 @@ function hasNewURL(node) {
     const currentIndex = siblings.indexOf(node);
     const correctIndex = sorted.indexOf(node);
 
-    const moved = currentIndex !== correctIndex;
+    const pathParts = node.path ? node.path.split("/").slice(0, -1) : [];
+    const expectedParentFull = pathParts.join("/") || "(root)";
+    const expectedParentLeaf = pathParts.length ? pathParts[pathParts.length - 1] : "(root)";
+    const currentParentPath = node.parent?.path ?? "(root)";
+    const parentMatchesPath = currentParentPath === expectedParentFull || currentParentPath === expectedParentLeaf;
+
+    const moved = !parentMatchesPath || currentIndex !== correctIndex;
 
     window.log(`[hasNewURL] ${node.path} | currentIndex=${currentIndex} | correctIndex=${correctIndex} | moved=${moved}`);
 
-    node.edit = node.edit || {};
     node.editState = moved ? "moved" : "home";
 
     return moved;
@@ -33,13 +38,15 @@ function findParentForPath(node, rootTree) {
     if (!node.path) return { children: rootTree, path: "(root)" };
 
     const pathParts = node.path.split("/").slice(0, -1); // all segments except last (file)
+    let cumulative = "";
     let current = rootTree;
     let parent = null;
 
     for (const part of pathParts) {
+        cumulative = cumulative ? `${cumulative}/${part}` : part;
         window.log(`[findParentForPath] current type: ${typeof current} isArray:${Array.isArray(current)} | looking for: ${part}`);
         if (!Array.isArray(current)) break;
-        const next = current.find(n => n.path === part);
+        const next = current.find(n => n.path === cumulative || n.path === part);
         if (!next) break;
         parent = next;
         current = next.children || [];
@@ -79,11 +86,8 @@ export function moveNode(nodeObj, direction) {
         window.log(`[moveNode] No move performed for ${nodeObj.path}`);
     }
 
-    const treeDiv = document.getElementById("tree");
-    const scrollTop = treeDiv?.scrollTop || 0;
 
     if (window.updateTreeView) window.updateTreeView();
-    if (treeDiv) treeDiv.scrollTop = scrollTop;
 
     if (window.editButtons?.updateButtons) window.editButtons.updateButtons(true);
 
@@ -173,11 +177,9 @@ export function moveToTarget(nodeObj, rootTree, targetNode) {
 
     markNodeAndChildren(nodeObj);
 
-    const treeDiv = document.getElementById("tree");
-    const scrollTop = treeDiv?.scrollTop || 0;
+
 
     if (window.updateTreeView) window.updateTreeView();
-    if (treeDiv) treeDiv.scrollTop = scrollTop;
     if (window.editButtons?.updateButtons) window.editButtons.updateButtons(true);
 
     return true;
