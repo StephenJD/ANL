@@ -157,7 +157,7 @@ function buildListFolderHtml(currentEntry, allEntries) {
   const summaryPages = allEntries
     .filter((entry) =>
       entry.dirPath === currentEntry.dirPath &&
-      ["document", "form", "secure_page"].includes(entry.type)
+      (["document", "form"].includes(entry.type) || entry.type.startsWith("dynamic"))
     )
     .sort(sortByTitleThenPath);
 

@@ -39,7 +39,8 @@
       </div>
    
       {{ range .Pages }}
-        {{ if or (eq .Type "document") (eq .Type "form") (hasPrefix .Type "dynamic") }}
+        {{ $rawType := lower (printf "%v" .Params.type) }}
+        {{ if or (eq .Type "document") (eq .Type "form") (hasPrefix .Type "dynamic") (hasPrefix $rawType "dynamic") }}
           {{ $auto_summary_types := site.Params.auto_summary | default dict }}
           {{ $auto_summary := index $auto_summary_types .Type | default false }}
           <div class="summary-style">		
