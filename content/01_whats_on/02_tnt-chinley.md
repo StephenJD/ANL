@@ -3,7 +3,7 @@ access: public
 title: TnT Chinley
 summary: After School Drop-In
 share: true
-background_image: /images/shared/3.JPG
+background_image: /images/shared/pagewash.jpg
 logo_image: /images/shared/anl_logo_transparent_1024.png
 type: document
 ---
