@@ -8,6 +8,7 @@ export default async function generate_content_editor() {
   <div id="tree"></div>
 
   <div id="editorContainer" style="display:none;">
+    <div id="editorHeader" style="font-weight:bold;margin-bottom:8px;"></div>
     <form id="editForm"></form>
 
     <label for="frontMatterText">Front Matter:</label>
@@ -51,6 +52,7 @@ let saveEdit = ()=>log("saveEdit not loaded yet");
 let publishEdits = ()=>log("publishEdits not loaded yet");
 let cancelEdit = ()=>log("cancelEdit not loaded yet");
 let dropEdits = ()=>log("dropEdits not loaded yet");
+let buildContentFromForm = null;
 let treeMoveActions = null;
 
 let editButtons = null;
@@ -125,12 +127,20 @@ async function showEditorForSelectedNode(){
 
   const editorContainer = document.getElementById("editorContainer");
   const editForm = document.getElementById("editForm");
+  const editorHeader = document.getElementById("editorHeader");
   const frontMatterText = document.getElementById("frontMatterText");
 
   if(editorContainer && editForm && frontMatterText){
     document.getElementById("tree").style.display = "none";
     editorContainer.style.display = "block";
     if (editButtons?.setEditing) editButtons.setEditing(true);
+    if (editorHeader) {
+      const parent = node.parent;
+      const parentLabel = parent
+        ? (parent.qualification ? parent.qualification + " " : "") + (parent.title || parent.rawName || parent.path)
+        : "(root)";
+      editorHeader.textContent = "Parent: " + parentLabel;
+    }
     editDirty = false;
     if (editButtons?.setDirty) editButtons.setDirty(false);
     // Any further edit should un-stage until saved again
@@ -192,11 +202,21 @@ function showBlankEditorForSelectedNode(){
 
   const editorContainer = document.getElementById("editorContainer");
   const editForm = document.getElementById("editForm");
+  const editorHeader = document.getElementById("editorHeader");
   const frontMatterText = document.getElementById("frontMatterText");
   if(editorContainer && editForm && frontMatterText){
     document.getElementById("tree").style.display = "none";
     editorContainer.style.display = "block";
     if (editButtons?.setEditing) editButtons.setEditing(true);
+    const newParent = node.children?.length ? node : (node.parent || node);
+    node.newParent = newParent;
+    if (editorHeader) {
+      const parent = newParent;
+      const parentLabel = parent
+        ? (parent.qualification ? parent.qualification + " " : "") + (parent.title || parent.rawName || parent.path)
+        : "(root)";
+      editorHeader.textContent = "Parent: " + parentLabel;
+    }
     editDirty = false;
     if (editButtons?.setDirty) editButtons.setDirty(false);
     frontMatterText.value = "";
@@ -219,6 +239,7 @@ async function loadHelpers(){
       const mod = await import('/js/webeditor/editActions.js');
       const actions = mod.setupEditActions(treeData, selectedNodePathRef);
       saveEdit = actions.saveEditFrontmatter;
+      buildContentFromForm = actions.buildContentFromForm;
       dropEdits = actions.dropNode;
       cancelEdit = actions.cancelEdit;
       log("editActions loaded");
@@ -278,7 +299,52 @@ async function handleMove(action) {
     else if (action === "save") {
         if (isEditing) {
           if (newMode) {
-            log("[handleMove] new mode save not implemented");
+            const form = document.getElementById("editForm");
+            const tempNode = { frontMatterOriginal: {}, rawBody: "" };
+            const formValues = getFormValues(form);
+            const derived = deriveTypeAndIndex(formValues);
+            const result = buildContentFromForm ? buildContentFromForm(form, tempNode, { type: derived.type }) : null;
+            if (!result) return;
+            const { content, dataObj } = result;
+
+            const title = dataObj.title || "Untitled";
+            const newNode = {
+              title,
+              rawName: title,
+              path: "__new__/" + Date.now(),
+              isIndex: derived.isIndex,
+              derivedType: derived.type,
+              edit: { edited: content },
+              children: []
+            };
+
+            let targetParent = node;
+            let insertIndex = null;
+            if (node.children?.length) {
+              targetParent = node;
+            } else if (node.parent) {
+              targetParent = node.parent;
+              const idx = targetParent.children?.indexOf(node) ?? -1;
+              if (idx >= 0) insertIndex = idx + 1;
+            }
+
+            if (!targetParent.children) targetParent.children = [];
+            if (insertIndex == null || insertIndex > targetParent.children.length) {
+              targetParent.children.push(newNode);
+            } else {
+              targetParent.children.splice(insertIndex, 0, newNode);
+            }
+            newNode.parent = targetParent;
+
+            selectedNodePath = newNode.path;
+            selectedNodePathRef.value = newNode.path;
+
+            editDirty = false;
+            if (editButtons?.setDirty) editButtons.setDirty(false);
+            newMode = false;
+            hideEditor();
+            renderTree();
+            if (editButtons) editButtons.update(selectedNodePath);
             return;
           }
           log("[handleMove] save from editor");
@@ -463,6 +529,46 @@ async function ensureParentFrontMatter(node) {
   } catch (err) {
     // ignore
   }
+}
+
+function getFormValues(form){
+  const obj = {};
+  const elements = Array.from(form.elements || []).filter(el => el && el.name);
+  for (const el of elements) {
+    if (el.type === "checkbox") {
+      obj[el.name] = el.checked ? "true" : "false";
+    } else {
+      obj[el.name] = el.value;
+    }
+  }
+  return obj;
+}
+
+function deriveTypeAndIndex(values){
+  const pageType = String(values.page_type || "").toLowerCase();
+  const contentType = String(values.content_type || "").toLowerCase();
+  const givePrevNext = String(values.give_content_prev_next_buttons || "").toLowerCase() === "true";
+
+  if (pageType === "navigation") {
+    return { type: givePrevNext ? "see_also" : "document-folder", isIndex: true };
+  }
+
+  if (pageType === "content") {
+    if (contentType === "page from section files") {
+      return { type: "collated_page", isIndex: true };
+    }
+    if (contentType === "page from single file") {
+      return { type: "document", isIndex: false };
+    }
+    if (contentType === "form") {
+      return { type: "form", isIndex: false };
+    }
+    if (contentType === "dynamic") {
+      return { type: "dynamic", isIndex: false };
+    }
+  }
+
+  return { type: "", isIndex: false };
 }
 
 function cleanupEdit(node){

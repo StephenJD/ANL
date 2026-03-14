@@ -2,7 +2,18 @@
 export const fieldSchema = {
   fields: [
     { key: "page_type", label: "Page Type", type: "select", options: ["Navigation", "Content"], required: true },
-    { key: "content_type", label: "Content Type", type: "select", options: ["Page from single file", "Page from section files", "Form", "Dynamic",], dependsOn: { key: "page_type", values: ["Content"] }, required: true },
+    {
+      key: "content_type",
+      label: "Content Type",
+      type: "select",
+      options: ["Page from single file", "Page from section files", "Form", "Dynamic"],
+      dependsOn: { key: "page_type", values: ["Content"] },
+      required: true,
+      optionsByParentQualification: {
+        "collated:": ["Document", "Form", "Dynamic"],
+        "navigation:": ["Page from single file", "Page from section files", "Form", "Dynamic"]
+      }
+    },
     { key: "give_content_prev_next_buttons", label: "Give Content Prev/Next buttons", type: "boolean", dependsOn: { key: "page_type", values: ["Navigation"] } , required: true},
     { key: "access", label: "Access", type: "select", optionsProvider: "get_role_options", required: true },
     { key: "title", label: "Title", type: "text", required: true },

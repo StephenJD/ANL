@@ -3,6 +3,45 @@ window.log("editActions FILE LOADED 2026-03-11");
 
 export function setupEditActions(treeDataRef = [], selectedNodePathRef = { value: null }) {
 
+  function buildContentFromForm(form, node, overrides = null) {
+    const illegal = Array.from(form.querySelectorAll("select")).filter(sel => sel.dataset?.illegal === "true");
+    if (illegal.length) {
+      window.log("[editActions] save blocked: illegal option(s) selected");
+      return null;
+    }
+    const dataObj = {};
+    const elements = Array.from(form.elements || []).filter(el => el && el.name);
+    for (const el of elements) {
+      if (el.type === "checkbox") {
+        dataObj[el.name] = el.checked ? "true" : "false";
+      } else {
+        dataObj[el.name] = el.value;
+      }
+    }
+    delete dataObj.page_type;
+    delete dataObj.content_type;
+    delete dataObj.give_content_prev_next_buttons;
+    if (node?.frontMatterOriginal && Object.prototype.hasOwnProperty.call(node.frontMatterOriginal, "page_type")) {
+      dataObj.page_type = node.frontMatterOriginal.page_type;
+    }
+    if (overrides && typeof overrides === "object") {
+      for (const [k, v] of Object.entries(overrides)) {
+        if (v === "" || v == null) delete dataObj[k];
+        else dataObj[k] = v;
+      }
+    }
+
+    let front = "---\n";
+    for (const [k, v] of Object.entries(dataObj)) {
+      if (v === "" || v == null) continue;
+      front += `${k}: ${v}\n`;
+    }
+    front += "---\n";
+
+    const content = front + (node?.rawBody || "");
+    return { content, dataObj };
+  }
+
   async function saveEditFrontmatter() {
     if (!selectedNodePathRef.value) return;
     const node = findNodeByPath(treeDataRef, selectedNodePathRef.value);
@@ -10,35 +49,9 @@ export function setupEditActions(treeDataRef = [], selectedNodePathRef = { value
 
     try {
       const form = document.getElementById("editForm");
-      const illegal = Array.from(form.querySelectorAll("select")).filter(sel => sel.dataset?.illegal === "true");
-      if (illegal.length) {
-        window.log("[editActions] save blocked: illegal option(s) selected");
-        return;
-      }
-      const dataObj = {};
-      const elements = Array.from(form.elements || []).filter(el => el && el.name);
-      for (const el of elements) {
-        if (el.type === "checkbox") {
-          dataObj[el.name] = el.checked ? "true" : "false";
-        } else {
-          dataObj[el.name] = el.value;
-        }
-      }
-      delete dataObj.page_type;
-      delete dataObj.content_type;
-      delete dataObj.give_content_prev_next_buttons;
-      if (node.frontMatterOriginal && Object.prototype.hasOwnProperty.call(node.frontMatterOriginal, "page_type")) {
-        dataObj.page_type = node.frontMatterOriginal.page_type;
-      }
-
-      // Build frontmatter text
-      let front = "---\n";
-      for (const [k, v] of Object.entries(dataObj)) {
-        front += `${k}: ${v}\n`;
-      }
-      front += "---\n";
-
-      const content = front + (node.rawBody || "");
+      const result = buildContentFromForm(form, node);
+      if (!result) return;
+      const { content, dataObj } = result;
       window.log(`[editActions] save_edit start file=${node.path} fields=${Object.keys(dataObj).join(",")}`);
       const res = await fetch("/.netlify/functions/save_edit", {
         method: "POST",
@@ -130,5 +143,5 @@ export function setupEditActions(treeDataRef = [], selectedNodePathRef = { value
     if (!e.moved && !e.edited && !e.staged) delete node.edit;
   }
 
-  return { saveEditFrontmatter, dropNode, cancelEdit };
-                                                    }
+  return { saveEditFrontmatter, dropNode, cancelEdit, buildContentFromForm };
+                                                     }

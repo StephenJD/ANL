@@ -148,6 +148,13 @@ export async function renderForm(node, frontMatter, accessOptionsCache) {
     form.appendChild(heading);
   }
 
+  function getOptionsByParentQualification(field) {
+    if (!field.optionsByParentQualification) return null;
+    const parent = node?.newParent || node?.parent;
+    const qual = String(parent?.qualification || "").toLowerCase();
+    return field.optionsByParentQualification[qual] || null;
+  }
+
   async function renderField(field) {
     if (!isVisible(field)) return;
 
@@ -164,15 +171,12 @@ export async function renderForm(node, frontMatter, accessOptionsCache) {
       if (field.optionsProvider === "get_role_options") {
         options = await getAccessOptions();
       }
-      if (!options.length) options = [""];
-      const allowBlankKeys = ["page_type", "content_type", "give_content_prev_next_buttons"];
-      const allowBlank = allowBlankKeys.includes(field.key);
-      if (allowBlank) {
-        const blankOpt = document.createElement("option");
-        blankOpt.value = "";
-        blankOpt.textContent = "";
-        input.appendChild(blankOpt);
+      const parentOptions = getOptionsByParentQualification(field);
+      if (parentOptions) {
+        options = parentOptions;
       }
+      if (!options.length) options = [""];
+      const allowBlank = false;
       const firstOption = options[0];
       const optionsLower = options.map(o => String(o).toLowerCase());
       const hasValue = !(value === "" || value == null);
