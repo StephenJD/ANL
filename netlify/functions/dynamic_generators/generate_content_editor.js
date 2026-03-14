@@ -144,6 +144,7 @@ function markLocalPublished(nodes) {
     if (n.edit?.staged) {
       n.edit.local = true;
       if (n.edit.deleted) n.edit.deleted = true;
+      n.edit.edited = null;
       n.edit.staged = null;
       if (!n.edit.moved && !n.edit.edited && !n.edit.local) delete n.edit;
     }
@@ -157,6 +158,7 @@ function clearPublishedEdits(nodes) {
       n.edit.staged = null;
       n.edit.local = null;
       n.edit.deleted = null;
+      n.edit.edited = null;
       if (!n.edit.moved && !n.edit.edited) delete n.edit;
     }
     if (n.children?.length) clearPublishedEdits(n.children);

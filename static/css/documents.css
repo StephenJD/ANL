@@ -232,4 +232,13 @@ center {
     margin-left: auto;
     margin-right: auto;
   }
+  .document-content #tree ul {
+    padding-left: 28px;
+  }
+}
+
+/* Document list: keep folder links same size as document links */
+.document-content .directory-style a,
+.document-content .summary-style a {
+  font-size: 1rem;
 }
