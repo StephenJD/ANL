@@ -2,7 +2,7 @@
 access: public
 title: Dance Workshop
 summary: Free Dance Workshop on Monday 16th Feb    5.30 – 7pm
-expires: 2026-03-13
+expires: 2026-03-14
 share: true
 type: document
 ---
