@@ -124,6 +124,8 @@ async function showEditorForSelectedNode(){
   if(!selectedNodePath) return;
   const node = findNodeByPath(treeData, selectedNodePath);
   if(!node) return;
+  node._newEdit = false;
+  if (node.newParent) node.newParent = null;
 
   const editorContainer = document.getElementById("editorContainer");
   const editForm = document.getElementById("editForm");
@@ -153,6 +155,7 @@ async function showEditorForSelectedNode(){
       editDirty = true;
       if (editButtons?.setDirty) editButtons.setDirty(true);
       await loadEditorFromContent(node, node.edit.edited);
+      if (newMode && renderFormFn) renderFormFn(node, {});
       await ensureParentFrontMatter(node);
       return;
     }
@@ -199,6 +202,7 @@ function showBlankEditorForSelectedNode(){
   if(!selectedNodePath) return;
   const node = findNodeByPath(treeData, selectedNodePath);
   if(!node) return;
+  node._newEdit = true;
 
   const editorContainer = document.getElementById("editorContainer");
   const editForm = document.getElementById("editForm");
@@ -208,7 +212,9 @@ function showBlankEditorForSelectedNode(){
     document.getElementById("tree").style.display = "none";
     editorContainer.style.display = "block";
     if (editButtons?.setEditing) editButtons.setEditing(true);
-    const newParent = node.children?.length ? node : (node.parent || node);
+    const qual = String(node.qualification || "").toLowerCase();
+    const isParentQual = qual === "collated:" || qual === "navigation:";
+    const newParent = isParentQual || node.children?.length ? node : (node.parent || node);
     node.newParent = newParent;
     if (editorHeader) {
       const parent = newParent;
@@ -220,8 +226,6 @@ function showBlankEditorForSelectedNode(){
     editDirty = false;
     if (editButtons?.setDirty) editButtons.setDirty(false);
     frontMatterText.value = "";
-    node.rawBody = "";
-    node.frontMatterOriginal = {};
     if(renderFormFn) renderFormFn(node, {});
     wireEditDirtyTracking();
   }
@@ -303,6 +307,7 @@ async function handleMove(action) {
             const tempNode = { frontMatterOriginal: {}, rawBody: "" };
             const formValues = getFormValues(form);
             const derived = deriveTypeAndIndex(formValues);
+            const qual = deriveQualification(formValues, derived);
             const result = buildContentFromForm ? buildContentFromForm(form, tempNode, { type: derived.type }) : null;
             if (!result) return;
             const { content, dataObj } = result;
@@ -312,18 +317,17 @@ async function handleMove(action) {
               title,
               rawName: title,
               path: "__new__/" + Date.now(),
+              qualification: qual,
               isIndex: derived.isIndex,
               derivedType: derived.type,
+              frontMatterOriginal: derived.type ? { type: derived.type } : {},
               edit: { edited: content },
               children: []
             };
 
-            let targetParent = node;
+            let targetParent = node.newParent || node;
             let insertIndex = null;
-            if (node.children?.length) {
-              targetParent = node;
-            } else if (node.parent) {
-              targetParent = node.parent;
+            if (targetParent !== node && targetParent === node.parent) {
               const idx = targetParent.children?.indexOf(node) ?? -1;
               if (idx >= 0) insertIndex = idx + 1;
             }
@@ -374,6 +378,10 @@ async function handleMove(action) {
         if (node.edit?.staged) {
           node.edit.staged = null;
           cleanupEdit(node);
+        } else if (node.edit?.edited && !node.edit?.staged && String(node.path || "").startsWith("__new__/")) {
+          removeNodeByPath(treeData, node.path);
+          if (selectedNodePath === node.path) selectedNodePath = null;
+          selectedNodePathRef.value = selectedNodePath;
         } else if (node.edit?.moved) {
           treeMoveActions.dropMove(node, treeData);
         } else if (node.edit?.edited) {
@@ -444,6 +452,21 @@ function findNodeByPath(nodes, path){
     }
   }
   return null;
+}
+
+function removeNodeByPath(nodes, path){
+  for (let i = 0; i < nodes.length; i++) {
+    const n = nodes[i];
+    if (n.path === path) {
+      nodes.splice(i, 1);
+      return true;
+    }
+    if (n.children?.length) {
+      const removed = removeNodeByPath(n.children, path);
+      if (removed) return true;
+    }
+  }
+  return false;
 }
 
 function wireEditDirtyTracking(){
@@ -569,6 +592,18 @@ function deriveTypeAndIndex(values){
   }
 
   return { type: "", isIndex: false };
+}
+
+function deriveQualification(values, derived){
+  const pageType = String(values.page_type || "").toLowerCase();
+  const contentType = String(values.content_type || "").toLowerCase();
+  const derivedType = String(derived?.type || "").toLowerCase();
+  if (pageType === "navigation") return "Navigation:";
+  if (pageType === "content") {
+    if (derivedType === "collated_page" || contentType.includes("section files")) return "Collated:";
+    return "Content:";
+  }
+  return "Content:";
 }
 
 function cleanupEdit(node){

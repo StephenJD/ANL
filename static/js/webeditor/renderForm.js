@@ -11,44 +11,26 @@ export async function renderForm(node, frontMatter, accessOptionsCache) {
   };
 
   function applyDerivedDefaults(values) {
-    const typeValue = String(frontMatter.type || "").toLowerCase();
-    const nodePath = String(node?.path || "").toLowerCase();
-    const isIndex = nodePath.endsWith("_index.md") || !nodePath.endsWith(".md");
-    const parentType = String(node?.parent?.frontMatterOriginal?.type || "").toLowerCase();
-    const qual = String(node?.qualification || "").toLowerCase();
-    const qualMap = {
-      "navigation:": "Navigation",
-      "collated:": "Content",
-      "section:": "Content",
-      "content:": "Content"
-    };
-    const qualPageType = qualMap[qual];
-
-    if (!values.page_type) {
-      if (qualPageType) {
-        values.page_type = qualPageType;
-      } else if (!isIndex) {
-        values.page_type = "Content";
-      } else if (typeValue === "document-folder" || typeValue === "see_also") {
-        values.page_type = "Navigation";
-      } else if (typeValue === "collated_page" || typeValue === "home") {
-        values.page_type = "Content";
-      }
+    const derive = fieldSchema.derive || {};
+    if (!node?._newEdit && !values.page_type && typeof derive.page_type === "function") {
+      values.page_type = derive.page_type({ node, frontMatter });
     }
-
-    if (!values.content_type && !isIndex) {
-      if (typeValue && typeValue !== "document") {
-        if (typeValue === "collated_page") values.content_type = "Collated_Page";
-        else values.content_type = typeValue;
-      } else if (typeValue === "document") {
-        if (parentType === "collated_page") values.content_type = "Page from section files";
-        else if (parentType === "document-folder" || parentType === "see_also") values.content_type = "Page from single file";
-      }
+    if (node?._newEdit && !values.page_type) {
+      const pageTypeField = fieldSchema.fields.find(f => f.key === "page_type");
+      if (pageTypeField?.options?.length) values.page_type = pageTypeField.options[0];
     }
-
-    if (!values.give_content_prev_next_buttons && values.page_type === "Navigation") {
-      if (typeValue === "see_also") values.give_content_prev_next_buttons = "true";
-      else if (typeValue === "document-folder") values.give_content_prev_next_buttons = "false";
+    if (!node?._newEdit && !values.content_type && values.page_type === "Content" && typeof derive.content_type === "function") {
+      values.content_type = derive.content_type({ node, frontMatter });
+    }
+    if (node?._newEdit && values.page_type === "Content" && !values.content_type) {
+      const contentField = fieldSchema.fields.find(f => f.key === "content_type");
+      let options = contentField?.options || [];
+      const parentOptions = contentField ? getOptionsByParentQualification(contentField) : null;
+      if (parentOptions) options = parentOptions;
+      if (options.length) values.content_type = options[0];
+    }
+    if (!node?._newEdit && !values.give_content_prev_next_buttons && values.page_type === "Navigation" && typeof derive.give_content_prev_next_buttons === "function") {
+      values.give_content_prev_next_buttons = derive.give_content_prev_next_buttons({ node, frontMatter });
     }
   }
 
@@ -94,6 +76,27 @@ export async function renderForm(node, frontMatter, accessOptionsCache) {
     return String(val);
   }
 
+  function deriveTypeFromSelections(values) {
+    const pageType = String(values.page_type || "").toLowerCase();
+    const contentType = String(values.content_type || "")
+      .toLowerCase()
+      .replace(/\s+/g, " ")
+      .trim();
+    const givePrevNext = String(values.give_content_prev_next_buttons || "").toLowerCase() === "true";
+
+    if (pageType === "navigation") {
+      return givePrevNext ? "see_also" : "document-folder";
+    }
+    if (pageType === "content" || pageType === "") {
+      if (contentType === "page from section files") return "collated_page";
+      if (contentType === "page from single file") return "document";
+      if (contentType === "document") return "document";
+      if (contentType === "form") return "form";
+      if (contentType === "dynamic") return "dynamic";
+    }
+    return "";
+  }
+
   function updateFrontMatterText(values) {
     const frontMatterText = document.getElementById("frontMatterText");
     if (!frontMatterText) return;
@@ -103,12 +106,19 @@ export async function renderForm(node, frontMatter, accessOptionsCache) {
       if (skipKeys.includes(field.key)) continue;
       if (!Object.prototype.hasOwnProperty.call(values, field.key)) continue;
       const v = values[field.key];
-      if (v === "" || v == null) {
-        delete derived[field.key];
+      const keyLower = field.key.toLowerCase();
+      Object.keys(derived).forEach(k => {
+        if (k.toLowerCase() === keyLower) delete derived[k];
+      });
+      if (v === "" || v == null || String(v).toLowerCase() === "false") {
+        delete derived[keyLower];
       } else {
-        derived[field.key] = v;
+        derived[keyLower] = v;
       }
     }
+
+    const derivedType = deriveTypeFromSelections(values);
+    if (derivedType) derived.type = derivedType;
 
     const orderedKeys = Array.isArray(node?.frontMatterOriginalOrder)
       ? node.frontMatterOriginalOrder
@@ -148,10 +158,14 @@ export async function renderForm(node, frontMatter, accessOptionsCache) {
     form.appendChild(heading);
   }
 
+  function getParentQualification() {
+    const parent = node?.newParent || node?.parent;
+    return String(parent?.qualification || "").toLowerCase();
+  }
+
   function getOptionsByParentQualification(field) {
     if (!field.optionsByParentQualification) return null;
-    const parent = node?.newParent || node?.parent;
-    const qual = String(parent?.qualification || "").toLowerCase();
+    const qual = getParentQualification();
     return field.optionsByParentQualification[qual] || null;
   }
 
@@ -178,9 +192,12 @@ export async function renderForm(node, frontMatter, accessOptionsCache) {
       if (!options.length) options = [""];
       const allowBlank = false;
       const firstOption = options[0];
-      const optionsLower = options.map(o => String(o).toLowerCase());
       const hasValue = !(value === "" || value == null);
-      const valueLower = hasValue ? String(value).toLowerCase() : "";
+      let valueLower = hasValue ? String(value).toLowerCase() : "";
+      if (field.key === "content_type" && valueLower === "collated_page") {
+        valueLower = "page from section files";
+      }
+      const optionsLower = options.map(o => String(o).toLowerCase());
       const currentValue = hasValue ? valueLower : (allowBlank ? "" : String(firstOption).toLowerCase());
       const isIllegal = hasValue && !optionsLower.includes(valueLower);
       if (isIllegal) {
@@ -245,7 +262,11 @@ export async function renderForm(node, frontMatter, accessOptionsCache) {
       form.appendChild(label);
     } else {
       const label = document.createElement("label");
-      label.textContent = field.label || field.key;
+      let labelText = field.label || field.key;
+      if (field.key === "content_type" && getParentQualification() === "collated:") {
+        labelText = "Section Type";
+      }
+      label.textContent = labelText;
       label.style.display = "block";
       label.style.marginTop = "10px";
       form.appendChild(label);
@@ -263,5 +284,12 @@ export async function renderForm(node, frontMatter, accessOptionsCache) {
   }
 
   updateFrontMatterText(getCurrentFormValues());
+  setTimeout(() => {
+    try {
+      updateFrontMatterText(getCurrentFormValues());
+    } catch (e) {
+      // no-op
+    }
+  }, 0);
 
 }

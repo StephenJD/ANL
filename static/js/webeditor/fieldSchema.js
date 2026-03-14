@@ -1,7 +1,32 @@
 // static/js/webeditor/fieldSchema.js
 export const fieldSchema = {
+  derive: {
+    page_type({ node }) {
+      const qual = String(node?.qualification || "").toLowerCase();
+      if (qual === "navigation:") return "Navigation";
+      return "Content";
+    },
+    content_type({ node, frontMatter }) {
+      const typeValue = String(frontMatter.type || "").toLowerCase();
+      const parentQual = String(node?.parent?.qualification || "").toLowerCase();
+      if (typeValue === "collated_page") return "Page from section files";
+      if (typeValue === "document") {
+        if (parentQual === "collated:") return "Document";
+        if (parentQual === "navigation:") return "Page from single file";
+      }
+      if (typeValue === "form") return "Form";
+      if (typeValue === "dynamic") return "Dynamic";
+      return "";
+    },
+    give_content_prev_next_buttons({ frontMatter }) {
+      const typeValue = String(frontMatter.type || "").toLowerCase();
+      if (typeValue === "see_also") return "true";
+      if (typeValue === "document-folder") return "false";
+      return "";
+    }
+  },
   fields: [
-    { key: "page_type", label: "Page Type", type: "select", options: ["Navigation", "Content"], required: true },
+    { key: "page_type", label: "Page Type", type: "select", options: ["Content", "Navigation"], required: true },
     {
       key: "content_type",
       label: "Content Type",

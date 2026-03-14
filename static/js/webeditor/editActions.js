@@ -24,6 +24,9 @@ export function setupEditActions(treeDataRef = [], selectedNodePathRef = { value
     if (node?.frontMatterOriginal && Object.prototype.hasOwnProperty.call(node.frontMatterOriginal, "page_type")) {
       dataObj.page_type = node.frontMatterOriginal.page_type;
     }
+    if (node?.frontMatterOriginal && Object.prototype.hasOwnProperty.call(node.frontMatterOriginal, "type")) {
+      dataObj.type = node.frontMatterOriginal.type;
+    }
     if (overrides && typeof overrides === "object") {
       for (const [k, v] of Object.entries(overrides)) {
         if (v === "" || v == null) delete dataObj[k];
@@ -33,8 +36,12 @@ export function setupEditActions(treeDataRef = [], selectedNodePathRef = { value
 
     let front = "---\n";
     for (const [k, v] of Object.entries(dataObj)) {
-      if (v === "" || v == null) continue;
-      front += `${k}: ${v}\n`;
+      if (v === "" || v == null || String(v).toLowerCase() === "false") continue;
+      let outVal = v;
+      if (k !== "title" && k !== "summary") {
+        outVal = String(v).toLowerCase();
+      }
+      front += `${k}: ${outVal}\n`;
     }
     front += "---\n";
 
@@ -96,6 +103,8 @@ export function setupEditActions(treeDataRef = [], selectedNodePathRef = { value
         // reload tree or reposition logic if needed
         node.edit.moved = null;
         cleanupEdit(node);
+      } else if (node.edit?.edited && !node.edit?.staged && String(node.path || "").startsWith("__new__/")) {
+        removeNodeByPath(treeDataRef, node.path);
       } else if (node.edit?.edited) {
         // Drop unsaved edits
         node.edit.edited = null;
@@ -135,6 +144,21 @@ export function setupEditActions(treeDataRef = [], selectedNodePathRef = { value
       }
     }
     return null;
+  }
+
+  function removeNodeByPath(nodes, path) {
+    for (let i = 0; i < nodes.length; i++) {
+      const n = nodes[i];
+      if (n.path === path) {
+        nodes.splice(i, 1);
+        return true;
+      }
+      if (n.children?.length) {
+        const removed = removeNodeByPath(n.children, path);
+        if (removed) return true;
+      }
+    }
+    return false;
   }
 
   function cleanupEdit(node) {
