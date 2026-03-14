@@ -2,6 +2,39 @@
 window.log("renderTree FILE LOADED 2026-03-11");
 import { editStateColors } from "./fieldSchema.js";
 
+function extractTitleFromEditedContent(content) {
+    const text = String(content || "");
+    if (!text) return "";
+    const frontMatch = text.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+    const front = frontMatch ? frontMatch[1] : "";
+    if (!front) return "";
+    const lines = front.split(/\r?\n/);
+    for (const line of lines) {
+        const idx = line.indexOf(":");
+        if (idx <= 0) continue;
+        const key = line.slice(0, idx).trim().toLowerCase();
+        if (key !== "title") continue;
+        let value = line.slice(idx + 1).trim();
+        if ((value.startsWith("\"") && value.endsWith("\"")) || (value.startsWith("'") && value.endsWith("'"))) {
+            value = value.slice(1, -1);
+        }
+        return value;
+    }
+    return "";
+}
+
+function resolveNodeTitle(node) {
+    if (node?.edit?.edited) {
+        const editedTitle = extractTitleFromEditedContent(node.edit.edited);
+        if (editedTitle) return editedTitle;
+    }
+    const originalTitle = String(node?.frontMatterOriginal?.title || "").trim();
+    if (originalTitle) return originalTitle;
+    const nodeTitle = String(node?.title || "").trim();
+    if (nodeTitle) return nodeTitle;
+    return node?.rawName || "";
+}
+
 export function renderTree(nodes, selectedNodePath = null, onSelectNode = null) {
 
     if (!nodes) return document.createTextNode("Tree missing");
@@ -13,9 +46,10 @@ export function renderTree(nodes, selectedNodePath = null, onSelectNode = null) 
         const li = document.createElement("li");
         const span = document.createElement("span");
 
+        const resolvedTitle = resolveNodeTitle(node);
         const displayTitle =
             (node.qualification ? node.qualification + " " : "") +
-            (node.title || node.rawName);
+            resolvedTitle;
 
         span.textContent = displayTitle;
         span.classList.add("tree-node");
@@ -33,7 +67,7 @@ export function renderTree(nodes, selectedNodePath = null, onSelectNode = null) 
         
         if (selectedNodePath === node.path) {
             span.classList.add("tree-node--selected");
-          window.log(`[renderTreeView] Rendering node: ${node.title} moved=${!!node.edit?.moved} edited=${!!node.edit?.edited} staged=${!!node.edit?.staged} deleted=${!!node.edit?.deleted}`);
+                    window.log(`[renderTreeView] Rendering node: ${resolvedTitle} moved=${!!node.edit?.moved} edited=${!!node.edit?.edited} staged=${!!node.edit?.staged} deleted=${!!node.edit?.deleted}`);
       
         }
 
