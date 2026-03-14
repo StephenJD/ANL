@@ -6,7 +6,7 @@ let buttons = {};
 let moveCallback = null;
 let showEditorCallback = null;
 
-export function setupEditButtons(containerId, treeData, moveFn, showEditorFn) {
+export function setupEditButtons(containerId, treeData, moveFn, showEditorFn, publishLocalFn, publishWebFn) {
   const container = document.getElementById(containerId);
   if (!container) {
     window.log(`[editButtons] ERROR: container ${containerId} not found`);
@@ -36,7 +36,8 @@ export function setupEditButtons(containerId, treeData, moveFn, showEditorFn) {
     { id: "new", label: "📝" },
     { id: "save", label: "✔" },
     { id: "drop", label: "✘" },
-    { id: "publish", label: "📤" }
+    { id: "publishLocal", label: "🏠" },
+    { id: "publishWeb", label: "📤" }
   ];
 
   buttons = {};
@@ -59,16 +60,16 @@ export function setupEditButtons(containerId, treeData, moveFn, showEditorFn) {
   });
 
   // Save button
-  if(buttons.save){
+  if (buttons.save) {
     buttons.save.addEventListener("click", () => {
-      if(moveCallback) moveCallback("save");
+      if (moveCallback) moveCallback("save");
     });
   }
 
   // Drop button
-  if(buttons.drop){
+  if (buttons.drop) {
     buttons.drop.addEventListener("click", () => {
-      if(moveCallback) moveCallback("drop");
+      if (moveCallback) moveCallback("drop");
     });
   }
 
@@ -76,7 +77,7 @@ export function setupEditButtons(containerId, treeData, moveFn, showEditorFn) {
   if (buttons.edit) {
     buttons.edit.addEventListener("click", () => {
       const treeDiv = document.getElementById("tree");
-      if(treeDiv) treeDiv.style.display = "none";
+      if (treeDiv) treeDiv.style.display = "none";
       if (showEditorCallback) showEditorCallback();
     });
   }
@@ -88,35 +89,51 @@ export function setupEditButtons(containerId, treeData, moveFn, showEditorFn) {
     });
   }
 
+  if (buttons.publishLocal) {
+    buttons.publishLocal.addEventListener("click", () => {
+      if (typeof publishLocalFn === "function") publishLocalFn();
+    });
+  }
+  if (buttons.publishWeb) {
+    buttons.publishWeb.addEventListener("click", () => {
+      if (typeof publishWebFn === "function") publishWebFn();
+    });
+  }
+
   // Update button states based on node edit flags
   let isEditing = false;
   let isDirty = false;
   let lastSelectedPath = null;
 
-  function update(selectedPath){
+  const isLocalHost = ["localhost", "127.0.0.1"].includes(window.location.hostname);
+  if (!isLocalHost && buttons.publishLocal) {
+    buttons.publishLocal.style.display = "none";
+  }
+
+  function update(selectedPath) {
     lastSelectedPath = selectedPath;
     const anySelected = !!selectedPath;
 
-    for(const id in buttons){
+    for (const id in buttons) {
       buttons[id].disabled = !anySelected;
     }
 
-    if(!anySelected){
+    if (!anySelected) {
       window.log("[editButtons] buttons updated selected=false");
       return;
     }
 
     const node = findNodeByPath(treeData, selectedPath);
 
-    if(node){
-      if(buttons.save){
+    if (node) {
+      if (buttons.save) {
         if (isEditing) {
           buttons.save.disabled = !isDirty;
         } else {
           buttons.save.disabled = !(node.edit?.moved || node.edit?.edited);
         }
       }
-      if(buttons.drop){
+      if (buttons.drop) {
         if (isEditing) {
           buttons.drop.disabled = false;
         } else {
@@ -127,18 +144,24 @@ export function setupEditButtons(containerId, treeData, moveFn, showEditorFn) {
         ["up","down","to","new"].forEach(id => {
           if (buttons[id]) buttons[id].disabled = true;
         });
+        if (buttons.publishLocal) buttons.publishLocal.disabled = true;
+        if (buttons.publishWeb) buttons.publishWeb.disabled = true;
+      } else {
+        const anyStaged = hasAnyStaged(treeData);
+        if (buttons.publishLocal) buttons.publishLocal.disabled = !anyStaged;
+        if (buttons.publishWeb) buttons.publishWeb.disabled = !anyStaged;
       }
     }
 
     window.log(`[editButtons] buttons updated selected=true`);
   }
 
-  function setEditing(value){
+  function setEditing(value) {
     isEditing = !!value;
     update(lastSelectedPath);
   }
 
-  function setDirty(value){
+  function setDirty(value) {
     isDirty = !!value;
     update(lastSelectedPath);
   }
@@ -146,13 +169,23 @@ export function setupEditButtons(containerId, treeData, moveFn, showEditorFn) {
   return { update, setEditing, setDirty };
 }
 
-function findNodeByPath(nodes, path){
-  for(const n of nodes){
-    if(n.path === path) return n;
-    if(n.children?.length){
+function findNodeByPath(nodes, path) {
+  for (const n of nodes) {
+    if (n.path === path) return n;
+    if (n.children?.length) {
       const found = findNodeByPath(n.children, path);
-      if(found) return found;
+      if (found) return found;
     }
   }
   return null;
+}
+
+function hasAnyStaged(nodes) {
+  for (const n of nodes) {
+    if (n.edit?.staged) return true;
+    if (n.children?.length) {
+      if (hasAnyStaged(n.children)) return true;
+    }
+  }
+  return false;
 }

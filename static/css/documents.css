@@ -158,6 +158,33 @@ center {
   border-right: 1px solid #ccc;
   padding-right: 20px;
 }
+.document-content #tree ul {
+  list-style: none;
+  padding-left: 15px;
+}
+.document-content #tree .tree-node {
+  cursor: pointer;
+  padding: 2px 4px;
+  color: blue;
+}
+.document-content #tree .tree-node--staged {
+  color: orange;
+}
+.document-content #tree .tree-node--moved,
+.document-content #tree .tree-node--edited {
+  color: red;
+}
+.document-content #tree .tree-node--selected {
+  font-weight: bold;
+  background-color: #def;
+}
+
+.document-content .webeditor-input {
+  width: 320px;
+}
+.document-content .webeditor-input--wide {
+  width: 100%;
+}
 
 .document-content #editorContainer {
   width: 100%;

@@ -6,8 +6,6 @@ export function renderTree(nodes, selectedNodePath = null, onSelectNode = null) 
     if (!nodes) return document.createTextNode("Tree missing");
 
     const ul = document.createElement("ul");
-    ul.style.listStyle = "none";
-    ul.style.paddingLeft = "15px";
 
     nodes.forEach((node) => {
 
@@ -19,19 +17,17 @@ export function renderTree(nodes, selectedNodePath = null, onSelectNode = null) 
             (node.title || node.rawName);
 
         span.textContent = displayTitle;
-        span.style.cursor = "pointer";
-        span.style.padding = "2px 4px";
+        span.classList.add("tree-node");
 
         // colour based on edit state
-        if (!node.edit) span.style.color = "blue"; // default color
-        else if (node.edit.staged) span.style.color = "orange";
-        else if (node.edit.moved || node.edit.edited) span.style.color = "red";
-        else span.style.color = "blue";
+        if (node.edit?.staged) span.classList.add("tree-node--staged");
+        else if (node.edit?.moved) span.classList.add("tree-node--moved");
+        else if (node.edit?.edited) span.classList.add("tree-node--edited");
+        else span.classList.add("tree-node--default");
         // bold if selected
         
         if (selectedNodePath === node.path) {
-            span.style.fontWeight = "bold";
-            span.style.backgroundColor = "#def";
+            span.classList.add("tree-node--selected");
           window.log(`[renderTreeView] Rendering node: ${node.title} moved=${!!node.edit?.moved} edited=${!!node.edit?.edited} staged=${!!node.edit?.staged}`);
       
         }

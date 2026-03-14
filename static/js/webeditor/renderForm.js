@@ -76,34 +76,12 @@ export async function renderForm(node, frontMatter, accessOptionsCache) {
     return String(val);
   }
 
-  function deriveTypeFromSelections(values) {
-    const pageType = String(values.page_type || "").toLowerCase();
-    const contentType = String(values.content_type || "")
-      .toLowerCase()
-      .replace(/\s+/g, " ")
-      .trim();
-    const givePrevNext = String(values.give_content_prev_next_buttons || "").toLowerCase() === "true";
-
-    if (pageType === "navigation") {
-      return givePrevNext ? "see_also" : "document-folder";
-    }
-    if (pageType === "content" || pageType === "") {
-      if (contentType === "page from section files") return "collated_page";
-      if (contentType === "page from single file") return "document";
-      if (contentType === "document") return "document";
-      if (contentType === "form") return "form";
-      if (contentType === "dynamic") return "dynamic";
-    }
-    return "";
-  }
-
   function updateFrontMatterText(values) {
     const frontMatterText = document.getElementById("frontMatterText");
     if (!frontMatterText) return;
     const derived = { ...(node?.frontMatterOriginal || {}) };
-    const skipKeys = ["page_type", "content_type", "give_content_prev_next_buttons"];
     for (const field of fieldSchema.fields) {
-      if (skipKeys.includes(field.key)) continue;
+      if (field.frontMatter === false) continue;
       if (!Object.prototype.hasOwnProperty.call(values, field.key)) continue;
       const v = values[field.key];
       const keyLower = field.key.toLowerCase();
@@ -117,7 +95,9 @@ export async function renderForm(node, frontMatter, accessOptionsCache) {
       }
     }
 
-    const derivedType = deriveTypeFromSelections(values);
+    const derivedType = typeof fieldSchema.deriveType === "function"
+      ? fieldSchema.deriveType(values)
+      : "";
     if (derivedType) derived.type = derivedType;
 
     const orderedKeys = Array.isArray(node?.frontMatterOriginalOrder)
@@ -173,7 +153,7 @@ export async function renderForm(node, frontMatter, accessOptionsCache) {
     if (!isVisible(field)) return;
 
     let input = null;
-    const value = resolvedFront[field.key] ?? field.default ?? "";
+    const rawValue = resolvedFront[field.key] ?? field.default ?? "";
 
     if (field.type === "hidden") {
       input = document.createElement("input");
@@ -192,11 +172,11 @@ export async function renderForm(node, frontMatter, accessOptionsCache) {
       if (!options.length) options = [""];
       const allowBlank = false;
       const firstOption = options[0];
-      const hasValue = !(value === "" || value == null);
-      let valueLower = hasValue ? String(value).toLowerCase() : "";
-      if (field.key === "content_type" && valueLower === "collated_page") {
-        valueLower = "page from section files";
-      }
+      const normalized = typeof field.normalizeValue === "function"
+        ? field.normalizeValue(rawValue, { node, frontMatter })
+        : rawValue;
+      const hasValue = !(normalized === "" || normalized == null);
+      let valueLower = hasValue ? String(normalized).toLowerCase() : "";
       const optionsLower = options.map(o => String(o).toLowerCase());
       const currentValue = hasValue ? valueLower : (allowBlank ? "" : String(firstOption).toLowerCase());
       const isIllegal = hasValue && !optionsLower.includes(valueLower);
@@ -218,29 +198,28 @@ export async function renderForm(node, frontMatter, accessOptionsCache) {
     } else if (field.type === "textarea") {
       input = document.createElement("textarea");
       input.rows = field.rows || 3;
-      input.value = value || "";
+      input.value = rawValue || "";
     } else if (field.type === "boolean") {
       input = document.createElement("input");
       input.type = "checkbox";
-      const valStr = String(value).toLowerCase();
-      input.checked = valStr === "true" || valStr === "1" || valStr === "yes" || value === true;
+      const valStr = String(rawValue).toLowerCase();
+      input.checked = valStr === "true" || valStr === "1" || valStr === "yes" || rawValue === true;
     } else if (field.type === "date") {
       input = document.createElement("input");
       input.type = "date";
-      input.value = value || "";
+      input.value = rawValue || "";
     } else {
       input = document.createElement("input");
       input.type = "text";
-      input.value = value || "";
+      input.value = rawValue || "";
     }
 
     input.name = field.key;
-    const wideKeys = ["title", "summary", "background_image", "logo_image"];
-    const isWide = wideKeys.includes(field.key);
     if (field.type === "boolean") {
-      input.style.width = "auto";
+      input.classList.add("webeditor-checkbox");
     } else {
-      input.style.width = isWide ? "100%" : "320px";
+      input.classList.add("webeditor-input");
+      if (field.width === "wide") input.classList.add("webeditor-input--wide");
     }
     if (field.disabled) input.disabled = true;
 
@@ -263,8 +242,11 @@ export async function renderForm(node, frontMatter, accessOptionsCache) {
     } else {
       const label = document.createElement("label");
       let labelText = field.label || field.key;
-      if (field.key === "content_type" && getParentQualification() === "collated:") {
-        labelText = "Section Type";
+      if (field.labelByParentQualification) {
+        const qual = getParentQualification();
+        if (field.labelByParentQualification[qual]) {
+          labelText = field.labelByParentQualification[qual];
+        }
       }
       label.textContent = labelText;
       label.style.display = "block";

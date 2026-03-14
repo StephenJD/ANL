@@ -50,6 +50,8 @@ let renderTreeFn = null;
 let renderFormFn = null;
 let saveEdit = ()=>log("saveEdit not loaded yet");
 let publishEdits = ()=>log("publishEdits not loaded yet");
+let publishLocal = ()=>log("publishLocal not loaded yet");
+let publishWeb = ()=>log("publishWeb not loaded yet");
 let cancelEdit = ()=>log("cancelEdit not loaded yet");
 let dropEdits = ()=>log("dropEdits not loaded yet");
 let buildContentFromForm = null;
@@ -115,6 +117,109 @@ function renderTree(){
   treeContainer.scrollLeft = scrollLeft;
   window.scrollTo(pageScrollLeft, pageScrollTop);
 }
+
+// =====================
+// Publish
+// =====================
+function serializeTreeForPublish(nodes) {
+  return (nodes || []).map(n => ({
+    path: n.path,
+    title: n.title || "",
+    rawName: n.rawName || "",
+    qualification: n.qualification || "",
+    isIndex: !!n.isIndex,
+    edit: n.edit ? {
+      staged: !!n.edit.staged,
+      moved: !!n.edit.moved,
+      edited: n.edit.edited || null
+    } : null,
+    children: serializeTreeForPublish(n.children || [])
+  }));
+}
+
+function clearStagedEdits(nodes) {
+  for (const n of nodes || []) {
+    if (n.edit?.staged) {
+      delete n.edit;
+    }
+    if (n.children?.length) clearStagedEdits(n.children);
+  }
+}
+
+async function publishEditsInternal(mode, localRootOverride = "") {
+  try {
+    const payload = { tree: serializeTreeForPublish(treeData), mode, localRoot: localRootOverride || "" };
+    const res = await fetch("/.netlify/functions/publish_edits", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    const text = await res.text();
+    if (!res.ok) {
+      try {
+        const obj = JSON.parse(text);
+        if (obj?.needLocalRoot) return { needLocalRoot: true };
+      } catch (e) {
+        // ignore
+      }
+      log("[publish] error status=" + res.status + " body=" + text);
+      return null;
+    }
+    log("[publish] ok " + text);
+    clearStagedEdits(treeData);
+    renderTree();
+    if (editButtons) editButtons.update(selectedNodePath);
+    return { ok: true };
+  } catch (err) {
+    log("[publish] exception: " + err);
+    return null;
+  }
+}
+
+function pickLocalRootAndPublish() {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.multiple = true;
+  input.webkitdirectory = true;
+  input.onchange = async () => {
+    const file = input.files && input.files[0];
+    if (!file) return;
+    let rootPath = "";
+    const rel = file.webkitRelativePath || "";
+    if (file.path) {
+      const normalized = String(file.path).replace(/\\\\/g, "/");
+      if (rel) {
+        const relParts = rel.split("/");
+        relParts.pop();
+        const relSuffix = relParts.join("/");
+        if (relSuffix && normalized.endsWith(relSuffix)) {
+          rootPath = normalized.slice(0, -relSuffix.length);
+          rootPath = rootPath.replace(/\\/$/, "");
+        }
+      }
+      if (!rootPath) {
+        rootPath = normalized.replace(/\\/[^\\/]+$/, "");
+      }
+    }
+    if (!rootPath) {
+      log("[publish] local path unavailable; set LOCAL_GIT_ROOT env");
+      return;
+    }
+    await publishEditsInternal("local", rootPath);
+  };
+  input.click();
+}
+
+publishLocal = async function publishLocal() {
+  const result = await publishEditsInternal("local", "");
+  if (result?.needLocalRoot) {
+    pickLocalRootAndPublish();
+  }
+};
+
+publishWeb = async function publishWeb() {
+  await publishEditsInternal("web", "");
+};
 
 // =====================
 // Show editor on edit button
@@ -256,7 +361,9 @@ async function loadHelpers(){
         "treeEditButtons",
         treeData,
         handleMove,
-        showEditorForSelectedNode
+        showEditorForSelectedNode,
+        publishLocal,
+        publishWeb
       );
       log("editButtons loaded and initialized");
     }catch(e){ log("editButtons load failed: " + e); }
