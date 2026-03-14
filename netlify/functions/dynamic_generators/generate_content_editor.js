@@ -12,7 +12,7 @@ export default async function generate_content_editor() {
     <form id="editForm"></form>
 
     <label for="frontMatterText">Front Matter:</label>
-    <textarea id="frontMatterText" style="width:100%;height:200px;margin-bottom:10px;"></textarea>
+    <textarea id="frontMatterText" style="width:100%;min-height:80px;height:auto;overflow:hidden;margin-bottom:10px;"></textarea>
 
     <div style="margin-top:10px;"></div>
   </div>
@@ -33,6 +33,12 @@ window.log = function(msg){
   }
   console.log(msg);
 };
+
+const showLog = (location.hostname === "localhost" || location.hostname === "127.0.0.1" || location.search.includes("debug=1"));
+const logDiv = document.getElementById("logDiv");
+if (logDiv && !showLog) {
+  logDiv.style.display = "none";
+}
 
 log("Step 1: Content editor script started");
 
@@ -198,7 +204,16 @@ async function publishEditsInternal(mode, localRootOverride = "") {
       log("[publish] error status=" + res.status + " body=" + text);
       return null;
     }
+    let obj = null;
+    try { obj = JSON.parse(text); } catch (e) { /* ignore */ }
     log("[publish] ok " + text);
+    if (obj?.rebuild) {
+      if (obj.rebuild.ok) {
+        log("[publish] rebuild ok" + (obj.rebuild.skipped ? " (skipped)" : ""));
+      } else {
+        log("[publish] rebuild failed: " + (obj.rebuild.detail || "unknown error"));
+      }
+    }
     if (mode === "local") {
       markLocalPublished(treeData);
     } else {
@@ -639,8 +654,15 @@ function wireEditDirtyTracking(){
 
   editorContainer.oninput = markDirty;
   editorContainer.onchange = markDirty;
-  frontMatterText.oninput = markDirty;
-  frontMatterText.onchange = markDirty;
+  frontMatterText.oninput = () => { markDirty(); autoSizeFrontMatter(); };
+  frontMatterText.onchange = () => { markDirty(); autoSizeFrontMatter(); };
+}
+
+function autoSizeFrontMatter(){
+  const frontMatterText = document.getElementById("frontMatterText");
+  if (!frontMatterText) return;
+  frontMatterText.style.height = "auto";
+  frontMatterText.style.height = frontMatterText.scrollHeight + "px";
 }
 
 async function loadEditorFromContent(node, content, rawFrontMatterOverride = null){
@@ -676,6 +698,7 @@ async function loadEditorFromContent(node, content, rawFrontMatterOverride = nul
     .filter(line => line.includes(":"))
     .map(line => line.split(":")[0].trim().toLowerCase());
   wireEditDirtyTracking();
+  autoSizeFrontMatter();
 }
 
 async function ensureParentFrontMatter(node) {
@@ -770,6 +793,40 @@ function cleanupEdit(node){
   if (!e.moved && !e.edited && !e.staged) delete node.edit;
 }
 
+function normalizeRequestedNodePath(rawPath) {
+  let p = String(rawPath || "").trim();
+  if (!p) return "";
+  while (p.charAt(0) === "/") p = p.slice(1);
+  while (p.charAt(p.length - 1) === "/") p = p.slice(0, p.length - 1);
+  p = p.split("\\\\").join("/");
+  const lo = p.toLowerCase();
+  if (lo.slice(-10) === "/_index.md") p = p.slice(0, -10);
+  if (lo.slice(-9) === "/index.md") p = p.slice(0, -9);
+  return p;
+}
+
+function openRequestedNodeFromQuery() {
+  const params = new URLSearchParams(window.location.search);
+  const requestedRaw = params.get("node") || params.get("path") || "";
+  const requested = normalizeRequestedNodePath(requestedRaw);
+  if (!requested) return;
+
+  let node = findNodeByPath(treeData, requested);
+  if (!node && !requested.endsWith(".md")) {
+    node = findNodeByPath(treeData, requested + ".md");
+  }
+  if (!node) {
+    log("[open] requested node not found: " + requested);
+    return;
+  }
+
+  selectNode(node.path);
+  const shouldOpenEditor = String(params.get("open") || params.get("edit") || "").toLowerCase();
+  if (shouldOpenEditor === "1" || shouldOpenEditor === "true" || shouldOpenEditor === "yes") {
+    showEditorForSelectedNode();
+  }
+}
+
 // =====================
 // Initialize
 // =====================
@@ -777,6 +834,7 @@ async function init(){
   log("Step 0: Initializing editor");
   await loadHelpers();
   await loadTree();
+  openRequestedNodeFromQuery();
   log("Step 4: Initialization complete");
 }
 

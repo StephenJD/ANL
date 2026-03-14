@@ -192,6 +192,44 @@ center {
   width: 100%;
 }
 
+.document-content .webeditor-upload-row {
+  margin-top: 8px;
+}
+
+.document-content .webeditor-dropzone {
+  border: 1px dashed #888;
+  background: #f7f7f7;
+  padding: 10px 12px;
+  cursor: pointer;
+  color: #333;
+  max-width: 420px;
+}
+
+.document-content .webeditor-dropzone--active {
+  background: #e9f3ff;
+  border-color: #3a7bd5;
+}
+
+.document-content .webeditor-dropzone--busy {
+  opacity: 0.7;
+  cursor: progress;
+}
+
+.document-content .webeditor-file-input {
+  display: none;
+}
+
+.document-content .webeditor-image-preview {
+  display: block;
+  margin-top: 8px;
+  max-width: 320px;
+  max-height: 180px;
+  width: auto;
+  height: auto;
+  border: 1px solid #ddd;
+  background: #fff;
+}
+
 .document-content #editorContainer {
   width: 100%;
 }

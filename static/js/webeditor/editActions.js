@@ -1,5 +1,13 @@
 // static/js/webeditor/editActions.js
+import { fieldSchema } from "./fieldSchema.js";
+
 window.log("editActions FILE LOADED 2026-03-11");
+
+const caseSensitiveFields = new Set(
+  (fieldSchema.fields || [])
+    .filter(field => field?.caseSensitive === true)
+    .map(field => String(field.key || "").toLowerCase())
+);
 
 export function setupEditActions(treeDataRef = [], selectedNodePathRef = { value: null }) {
 
@@ -38,7 +46,8 @@ export function setupEditActions(treeDataRef = [], selectedNodePathRef = { value
     for (const [k, v] of Object.entries(dataObj)) {
       if (v === "" || v == null || String(v).toLowerCase() === "false") continue;
       let outVal = v;
-      if (k !== "title" && k !== "summary") {
+      const keyLower = String(k).toLowerCase();
+      if (k !== "title" && k !== "summary" && !caseSensitiveFields.has(keyLower)) {
         outVal = String(v).toLowerCase();
       }
       front += `${k}: ${outVal}\n`;
@@ -82,7 +91,7 @@ export function setupEditActions(treeDataRef = [], selectedNodePathRef = { value
       document.getElementById("editorContainer").style.display = "none";
       renderTreeAndButtons();
 
-      window.log(`[editActions] Node "${node.title || node.path}" staged`);
+      window.log(`[editActions] Node "${node.title || node.path}" edited`);
     } catch (err) {
       console.error("saveEditFrontmatter error:", err);
     }

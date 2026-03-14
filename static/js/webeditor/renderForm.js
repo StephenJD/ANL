@@ -1,14 +1,19 @@
 // static/js/webeditor/renderForm.js
 import { fieldSchema } from "./fieldSchema.js";
 
+let sharedImageOptionsCacheGlobal = null;
+
 export async function renderForm(node, frontMatter, accessOptionsCache) {
   const form = document.getElementById("editForm");
   form.innerHTML = "";
 
   const resolvedFront = { ...frontMatter };
   const editState = {
-    accessOptionsCache: accessOptionsCache || null
+    accessOptionsCache: accessOptionsCache || null,
+    sharedImageOptionsCache: sharedImageOptionsCacheGlobal
   };
+  let sharedImageDropZoneInserted = false;
+  let sharedImageTargetSelect = null;
 
   function applyDerivedDefaults(values) {
     const derive = fieldSchema.derive || {};
@@ -50,6 +55,34 @@ export async function renderForm(node, frontMatter, accessOptionsCache) {
       log("Access fetch error: " + err);
       editState.accessOptionsCache = ["Public"];
       return ["Public"];
+    }
+  }
+
+  async function getSharedImageOptions() {
+    if (editState.sharedImageOptionsCache) return editState.sharedImageOptionsCache;
+    try {
+      const res = await fetch("/.netlify/functions/list_shared_images");
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const data = await res.json();
+      const options = Array.isArray(data) ? data : [];
+      const normalized = options.map(opt => {
+        if (opt && typeof opt === "object") {
+          const value = String(opt.value ?? "");
+          const label = String(opt.label ?? opt.value ?? "");
+          return { value, label };
+        }
+        const value = String(opt);
+        const label = value.split("/").pop() || value;
+        return { value, label };
+      });
+      editState.sharedImageOptionsCache = normalized;
+      sharedImageOptionsCacheGlobal = normalized;
+      return normalized;
+    } catch (err) {
+      log("Shared images fetch error: " + err);
+      editState.sharedImageOptionsCache = [];
+      sharedImageOptionsCacheGlobal = [];
+      return [];
     }
   }
 
@@ -164,35 +197,64 @@ export async function renderForm(node, frontMatter, accessOptionsCache) {
       let options = field.options || [];
       if (field.optionsProvider === "get_role_options") {
         options = await getAccessOptions();
+      } else if (field.optionsProvider === "get_shared_images") {
+        options = await getSharedImageOptions();
       }
       const parentOptions = getOptionsByParentQualification(field);
       if (parentOptions) {
         options = parentOptions;
       }
-      if (!options.length) options = [""];
-      const allowBlank = false;
-      const firstOption = options[0];
+      const allowBlank = field.allowBlank === true;
+      if (!options.length && !allowBlank) options = [""];
+
       const normalized = typeof field.normalizeValue === "function"
         ? field.normalizeValue(rawValue, { node, frontMatter })
         : rawValue;
       const hasValue = !(normalized === "" || normalized == null);
-      let valueLower = hasValue ? String(normalized).toLowerCase() : "";
-      const optionsLower = options.map(o => String(o).toLowerCase());
-      const currentValue = hasValue ? valueLower : (allowBlank ? "" : String(firstOption).toLowerCase());
-      const isIllegal = hasValue && !optionsLower.includes(valueLower);
+
+      const isCaseSensitive = field.caseSensitive === true;
+      const toCompare = (val) => isCaseSensitive ? String(val) : String(val).toLowerCase();
+
+      const normalizedOptions = options.map(opt => {
+        if (opt && typeof opt === "object") {
+          const value = String(opt.value ?? "");
+          const label = String(opt.label ?? opt.value ?? "");
+          return { value, label };
+        }
+        const value = String(opt);
+        return { value, label: value };
+      });
+
+      const compareOptions = normalizedOptions.map(o => toCompare(o.value));
+      const compareValue = hasValue ? toCompare(normalized) : "";
+      const matchIndex = hasValue ? compareOptions.indexOf(compareValue) : -1;
+      const isIllegal = hasValue && matchIndex === -1;
+
+      if (allowBlank) {
+        const blankOpt = document.createElement("option");
+        blankOpt.value = "";
+        blankOpt.textContent = field.blankLabel || "None";
+        if (!hasValue) blankOpt.selected = true;
+        input.appendChild(blankOpt);
+      }
+
       if (isIllegal) {
         const illegalOpt = document.createElement("option");
-        illegalOpt.value = valueLower;
+        illegalOpt.value = String(normalized);
         illegalOpt.textContent = "Illegal";
         illegalOpt.selected = true;
         input.appendChild(illegalOpt);
         input.dataset.illegal = "true";
       }
-      options.forEach(optVal => {
+
+      normalizedOptions.forEach((optVal, index) => {
         const opt = document.createElement("option");
-        opt.value = String(optVal).toLowerCase();
-        opt.textContent = String(optVal);
-        if (!isIllegal && currentValue === opt.value) opt.selected = true;
+        opt.value = isCaseSensitive ? optVal.value : toCompare(optVal.value);
+        opt.textContent = optVal.label;
+        if (!isIllegal) {
+          if (hasValue && matchIndex === index) opt.selected = true;
+          if (!hasValue && !allowBlank && index === 0) opt.selected = true;
+        }
         input.appendChild(opt);
       });
     } else if (field.type === "textarea") {
@@ -251,9 +313,148 @@ export async function renderForm(node, frontMatter, accessOptionsCache) {
       label.textContent = labelText;
       label.style.display = "block";
       label.style.marginTop = "10px";
-      form.appendChild(label);
-      form.appendChild(input);
+
+      if (field.type === "select" && field.optionsProvider === "get_shared_images") {
+        input.addEventListener("focus", () => {
+          sharedImageTargetSelect = input;
+        });
+        input.addEventListener("click", () => {
+          sharedImageTargetSelect = input;
+        });
+        if (!sharedImageTargetSelect) sharedImageTargetSelect = input;
+
+        if (!sharedImageDropZoneInserted) {
+          sharedImageDropZoneInserted = true;
+          const uploadRow = document.createElement("div");
+          uploadRow.className = "webeditor-upload-row";
+
+          const dropZone = document.createElement("div");
+          dropZone.className = "webeditor-dropzone";
+          dropZone.textContent = "Drop image here or click to browse";
+
+          const fileInput = document.createElement("input");
+          fileInput.type = "file";
+          fileInput.accept = "image/*";
+          fileInput.className = "webeditor-file-input";
+
+          dropZone.addEventListener("click", () => fileInput.click());
+          dropZone.addEventListener("dragover", e => {
+            e.preventDefault();
+            dropZone.classList.add("webeditor-dropzone--active");
+          });
+          dropZone.addEventListener("dragleave", () => {
+            dropZone.classList.remove("webeditor-dropzone--active");
+          });
+          dropZone.addEventListener("drop", e => {
+            e.preventDefault();
+            dropZone.classList.remove("webeditor-dropzone--active");
+            const file = e.dataTransfer?.files?.[0];
+            if (file) handleImageUpload(file, dropZone, fileInput);
+          });
+
+          fileInput.addEventListener("change", () => {
+            const file = fileInput.files && fileInput.files[0];
+            if (file) handleImageUpload(file, dropZone, fileInput);
+          });
+
+          uploadRow.appendChild(dropZone);
+          uploadRow.appendChild(fileInput);
+          form.appendChild(uploadRow);
+        }
+
+        form.appendChild(label);
+        form.appendChild(input);
+
+        const preview = document.createElement("img");
+        preview.className = "webeditor-image-preview";
+        const initialValue = input.value || "";
+        if (initialValue) {
+          preview.src = initialValue;
+          preview.style.display = "block";
+        } else {
+          preview.style.display = "none";
+        }
+        input.addEventListener("change", () => {
+          const val = input.value || "";
+          const selectedOption = input.options[input.selectedIndex];
+          const previewUrl = selectedOption?.dataset?.preview || "";
+          if (previewUrl) {
+            preview.src = previewUrl;
+            preview.style.display = "block";
+          } else if (val) {
+            preview.src = val;
+            preview.style.display = "block";
+          } else {
+            preview.removeAttribute("src");
+            preview.style.display = "none";
+          }
+        });
+        form.appendChild(preview);
+      } else {
+        form.appendChild(label);
+        form.appendChild(input);
+      }
     }
+  }
+
+  async function handleImageUpload(file, dropZone, fileInput) {
+    const target = sharedImageTargetSelect;
+    if (!target) return;
+    try {
+      dropZone.classList.add("webeditor-dropzone--busy");
+      dropZone.textContent = "Uploading...";
+      const dataUrl = await readFileAsDataUrl(file);
+      const res = await fetch("/.netlify/functions/upload_shared_image", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: file.name, dataUrl, forceLocal: true })
+      });
+      const text = await res.text();
+      if (!res.ok) {
+        log("[upload] error status=" + res.status + " body=" + text);
+        return;
+      }
+      let payload = {};
+      try { payload = JSON.parse(text); } catch (e) {}
+      const url = payload?.url || "";
+      if (!url) {
+        log("[upload] missing url in response");
+        return;
+      }
+
+      const cache = editState.sharedImageOptionsCache || [];
+      if (!cache.find(o => (o.value || "") === url)) {
+        cache.push({ value: url, label: url.split("/").pop() || url });
+        editState.sharedImageOptionsCache = cache;
+        sharedImageOptionsCacheGlobal = cache;
+      }
+
+      let existingOpt = Array.from(target.options).find(o => o.value === url);
+      if (!existingOpt) {
+        existingOpt = document.createElement("option");
+        existingOpt.value = url;
+        existingOpt.textContent = url.split("/").pop() || url;
+        target.appendChild(existingOpt);
+      }
+      existingOpt.dataset.preview = dataUrl;
+      target.value = url;
+      target.dispatchEvent(new Event("change", { bubbles: true }));
+    } catch (err) {
+      log("[upload] exception: " + err);
+    } finally {
+      dropZone.classList.remove("webeditor-dropzone--busy");
+      dropZone.textContent = "Drop image here or click to browse";
+      if (fileInput) fileInput.value = "";
+    }
+  }
+
+  function readFileAsDataUrl(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ""));
+      reader.onerror = () => reject(reader.error || new Error("File read failed"));
+      reader.readAsDataURL(file);
+    });
   }
 
   let optionalHeadingInserted = false;

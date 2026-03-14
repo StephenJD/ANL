@@ -13,6 +13,15 @@
   {{ $show_breadcrumb = false }}
 {{ end }}
 
+{{ $nodePath := "" }}
+{{ with $current_page.File }}
+  {{ $nodePath = .Path }}
+{{ end }}
+{{ $nodePath = replace $nodePath "\\" "/" }}
+{{ $nodePath = replaceRE "/_index\\.md$" "" $nodePath }}
+{{ $webeditorBase := "/06_secure/05_edit-website/" }}
+{{ $webeditorHref := printf "%s?node=%s&open=1" $webeditorBase ($nodePath | urlquery) }}
+
 <link rel="stylesheet" href="{{ "css/anl_chrome.css" | absURL  }}">
 <div class="debug-message">
   DEBUG: partials\anl_page_chrome.html is running<br>
@@ -22,6 +31,11 @@
 </div>
 <div class="page-container" style="{{ if $background_image }}background-image: url('{{ $background_image }}');{{ end }}">
   <div class="no-print">
+    <div class="container">
+      <div id="webeditor-link-wrap" style="display:none; padding: 6px 0;">
+        <a id="webeditor-link" class="edit-page" href="{{ $webeditorHref }}">Edit This Page</a>
+      </div>
+    </div>
     {{ if $show_breadcrumb }}
       <div class="container">
         {{ partial "breadcrumb.html" $current_page }}
@@ -36,6 +50,39 @@
   {{ end }}
 
   {{ partial "qr_code.html" $current_page }}
+
+  <script>
+  (function () {
+    const wrap = document.getElementById("webeditor-link-wrap");
+    const token = localStorage.getItem("userLogin_token");
+    if (!wrap || !token) return;
+
+    function normalizeRole(value) {
+      return String(value || "").trim().toLowerCase().replace(/\s+/g, "-");
+    }
+
+    fetch("/.netlify/functions/verifyUser", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "check_userLoginToken", userLogin_token: token })
+    })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (!data || data.status !== "success") return;
+        const rawRoles = [].concat(data?.entry?.roles || data?.entry?.role || []);
+        const roles = rawRoles
+          .flatMap(r => String(r).split(","))
+          .map(normalizeRole)
+          .filter(Boolean);
+        if (roles.includes("web-editor")) {
+          wrap.style.display = "block";
+        }
+      })
+      .catch(() => {
+        // keep link hidden on validation failures
+      });
+  })();
+  </script>
     
 {{/* </div> Must be closed in another parial */}}
 

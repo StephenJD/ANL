@@ -196,6 +196,19 @@ function runGit(command, cwd) {
   return execSync(command, { cwd, stdio: "pipe" }).toString("utf8").trim();
 }
 
+function runHugoBuild(cwd) {
+  const baseCmd = process.env.LOCAL_HUGO_BUILD_CMD || "hugo -D --destination public --baseURL=http://localhost:8888/";
+  const env = { ...process.env };
+  const cacheDir = process.env.LOCAL_HUGO_CACHE_DIR || path.join(cwd, ".hugo_cache");
+  fs.mkdirSync(cacheDir, { recursive: true });
+  env.HUGO_CACHE_DIR = cacheDir;
+  env.HUGO_CACHEDIR = cacheDir;
+
+  const hasCacheArg = /(^|\s)--cacheDir(\s|=)/i.test(baseCmd);
+  const cmd = hasCacheArg ? baseCmd : `${baseCmd} --cacheDir "${cacheDir}"`;
+  return execSync(cmd, { cwd, stdio: "pipe", env }).toString("utf8").trim();
+}
+
 function getFileRelPath(node, pathValue) {
   if (String(pathValue || "").endsWith(".md")) return String(pathValue);
   if (!isFolderNode(node)) return String(pathValue || "") + ".md";
@@ -421,9 +434,22 @@ export async function handler(event) {
       runGit("git commit -m \"Publish edits\"", repoRoot);
     }
 
+    let rebuild = { ok: true, skipped: false, detail: "" };
+    const skipRebuild = String(process.env.LOCAL_HUGO_REBUILD || "true").toLowerCase() === "false";
+    if (!skipRebuild) {
+      try {
+        runHugoBuild(repoRoot);
+        rebuild = { ok: true, skipped: false, detail: "hugo rebuild complete" };
+      } catch (e) {
+        rebuild = { ok: false, skipped: false, detail: String(e?.message || e) };
+      }
+    } else {
+      rebuild = { ok: true, skipped: true, detail: "LOCAL_HUGO_REBUILD=false" };
+    }
+
     return {
       statusCode: 200,
-      body: JSON.stringify({ published: true, renamed: renames.length, renames, diagnostics, deleteFiles, deleteFolders, contentRoot })
+      body: JSON.stringify({ published: true, renamed: renames.length, renames, diagnostics, deleteFiles, deleteFolders, contentRoot, rebuild })
     };
   } catch (err) {
     return { statusCode: 500, body: String(err) };

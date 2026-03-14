@@ -83,7 +83,31 @@ export const fieldSchema = {
     { key: "validation", label: "Validation", type: "select", options: ["None", "Request-Link", "Submit"], dependsOn: { key: "content_type", values: ["Form"] } },
     { key: "share", label: "Share", type: "boolean", dependsOnAll: [{ key: "access", values: ["public"] }, { key: "page_type", values: ["Content"] }] },
     { key: "qrCode", label: "QR Code", type: "boolean", dependsOnAll: [{ key: "access", values: ["public"] }, { key: "page_type", values: ["Content"] }] },
-    { key: "background_image", label: "Background image", type: "text", width: "wide" },
-    { key: "logo_image", label: "Logo image", type: "text", width: "wide" }
+    { key: "background_image", label: "Background image", type: "select", optionsProvider: "get_shared_images", allowBlank: true, blankLabel: "None", caseSensitive: true, width: "wide",
+      normalizeValue(value) {
+        let v = String(value ?? "").trim();
+        if ((v.startsWith("\"") && v.endsWith("\"")) || (v.startsWith("'") && v.endsWith("'"))) {
+          v = v.slice(1, -1);
+        }
+        v = v.replace(/\\\\/g, "/");
+        if (v && !v.includes("/")) {
+          v = `/images/shared/${v}`;
+        }
+        return v;
+      }
+    },
+    { key: "logo_image", label: "Logo image", type: "select", optionsProvider: "get_shared_images", allowBlank: true, blankLabel: "None", caseSensitive: true, width: "wide",
+      normalizeValue(value) {
+        let v = String(value ?? "").trim();
+        if ((v.startsWith("\"") && v.endsWith("\"")) || (v.startsWith("'") && v.endsWith("'"))) {
+          v = v.slice(1, -1);
+        }
+        v = v.replace(/\\\\/g, "/");
+        if (v && !v.includes("/")) {
+          v = `/images/shared/${v}`;
+        }
+        return v;
+      }
+    }
   ]
 };
