@@ -33,6 +33,7 @@ export function setupEditButtons(containerId, treeData, moveFn, showEditorFn, pu
     { id: "to", label: "↴" },
     { id: "copyUrl", label: "🔗" },
     { id: "edit", label: "✎" },
+    { id: "editPage", label: "📄" },
     { id: "new", label: "📝" },
     { id: "save", label: "✔" },
     { id: "drop", label: "✘" },
@@ -46,12 +47,14 @@ export function setupEditButtons(containerId, treeData, moveFn, showEditorFn, pu
     btn.id = id;
     btn.textContent = label;
     btn.disabled = true;
+    if (id === "edit") btn.title = "Edit front matter";
+    if (id === "editPage") btn.title = "Edit page body";
     buttonsWrapper.appendChild(btn);
     buttons[id] = btn;
   });
 
   // Move buttons
-  ["up","down","to"].forEach(dir => {
+  ["up", "down", "to"].forEach(dir => {
     if (buttons[dir]) {
       buttons[dir].addEventListener("click", () => {
         if (moveCallback) moveCallback(dir);
@@ -78,7 +81,16 @@ export function setupEditButtons(containerId, treeData, moveFn, showEditorFn, pu
     buttons.edit.addEventListener("click", () => {
       const treeDiv = document.getElementById("tree");
       if (treeDiv) treeDiv.style.display = "none";
-      if (showEditorCallback) showEditorCallback();
+      if (showEditorCallback) showEditorCallback({ openBody: false });
+    });
+  }
+
+  // Edit page button opens body editor too
+  if (buttons.editPage) {
+    buttons.editPage.addEventListener("click", () => {
+      const treeDiv = document.getElementById("tree");
+      if (treeDiv) treeDiv.style.display = "none";
+      if (showEditorCallback) showEditorCallback({ openBody: true });
     });
   }
 
@@ -110,8 +122,19 @@ export function setupEditButtons(containerId, treeData, moveFn, showEditorFn, pu
     buttons.publishLocal.style.display = "none";
   }
 
+  function applyModeVisibility() {
+    const showTreeMove = !isEditing;
+    ["up", "down", "to"].forEach(id => {
+      if (buttons[id]) buttons[id].style.display = showTreeMove ? "" : "none";
+    });
+    if (buttons.editPage) {
+      buttons.editPage.style.display = isEditing ? "" : "none";
+    }
+  }
+
   function update(selectedPath) {
     lastSelectedPath = selectedPath;
+    applyModeVisibility();
     const anySelected = !!selectedPath;
     const anyStaged = hasAnyStaged(treeData);
     const anyStagedOrLocal = hasAnyStagedOrLocal(treeData);

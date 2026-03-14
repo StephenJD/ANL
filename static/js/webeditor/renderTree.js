@@ -1,5 +1,6 @@
 // static/js/webeditor/renderTree.js
 window.log("renderTree FILE LOADED 2026-03-11");
+import { editStateColors } from "./fieldSchema.js";
 
 export function renderTree(nodes, selectedNodePath = null, onSelectNode = null) {
 
@@ -20,12 +21,14 @@ export function renderTree(nodes, selectedNodePath = null, onSelectNode = null) 
         span.classList.add("tree-node");
 
         // colour based on edit state
-        if (node.edit?.staged) span.classList.add("tree-node--staged");
-        else if (node.edit?.local) span.classList.add("tree-node--local");
-        else if (node.edit?.moved) span.classList.add("tree-node--moved");
-        else if (node.edit?.edited) span.classList.add("tree-node--edited");
-        if (node.edit?.deleted) span.classList.add("tree-node--deleted");
-        else span.classList.add("tree-node--default");
+        let color;
+        if (node.edit?.edited) color = editStateColors.edited;
+        else if (node.edit?.staged) color = editStateColors.staged;
+        else if (node.edit?.local) color = editStateColors.local;
+        else if (node.edit?.moved) color = editStateColors.moved;
+        else color = editStateColors.default;
+        span.style.color = color;
+        if (node.edit?.deleted) span.style.textDecoration = "line-through";
         // bold if selected
         
         if (selectedNodePath === node.path) {

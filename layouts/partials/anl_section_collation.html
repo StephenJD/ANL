@@ -63,6 +63,16 @@
   </div>
 
   {{ range $sections }}
+    {{/* Skip expired sections */}}
+    {{ $expires := .Params.expires }}
+    {{ $expired := false }}
+    {{ if $expires }}
+      {{ $expiresTime := time $expires }}
+      {{ if now.After $expiresTime }}
+        {{ $expired = true }}
+      {{ end }}
+    {{ end }}
+    {{ if not $expired }}
     <section id="{{ .File.BaseFileName }}" class="document-content">
       <h2>{{ .Title }}</h2>
       {{/* Clean access frontmatter into lowercase slice */}}
@@ -84,6 +94,7 @@
         {{ end }}
       {{ end }}
     </section>
+    {{ end }}{{/* end if not $expired */}}
   {{ end }}
 </div>
 

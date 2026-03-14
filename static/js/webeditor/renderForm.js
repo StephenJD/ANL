@@ -131,7 +131,12 @@ export async function renderForm(node, frontMatter, accessOptionsCache) {
     const derivedType = typeof fieldSchema.deriveType === "function"
       ? fieldSchema.deriveType(values)
       : "";
-    if (derivedType) derived.type = derivedType;
+    if (derivedType) {
+      const currentType = String(derived.type || "").toLowerCase();
+      if (!currentType.startsWith(derivedType.toLowerCase())) {
+        derived.type = derivedType;
+      }
+    }
 
     const orderedKeys = Array.isArray(node?.frontMatterOriginalOrder)
       ? node.frontMatterOriginalOrder

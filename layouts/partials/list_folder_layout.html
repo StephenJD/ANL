@@ -33,7 +33,12 @@
    
         {{ range .Pages }}
           {{ if and (eq .Type "document-folder") (not .IsSection) }}
+            {{ $expires := .Params.expires }}
+            {{ $expired := false }}
+            {{ if $expires }}{{ if now.After (time $expires) }}{{ $expired = true }}{{ end }}{{ end }}
+            {{ if not $expired }}
             <p><a href="{{ .Permalink }}">{{ .Title }}/</a></p>
+            {{ end }}
           {{ end }}
         {{ end }}
       </div>
@@ -41,6 +46,10 @@
       {{ range .Pages }}
         {{ $rawType := lower (printf "%v" .Params.type) }}
         {{ if or (eq .Type "document") (eq .Type "form") (hasPrefix .Type "dynamic") (hasPrefix $rawType "dynamic") }}
+          {{ $expires := .Params.expires }}
+          {{ $expired := false }}
+          {{ if $expires }}{{ if now.After (time $expires) }}{{ $expired = true }}{{ end }}{{ end }}
+          {{ if not $expired }}
           {{ $auto_summary_types := site.Params.auto_summary | default dict }}
           {{ $auto_summary := index $auto_summary_types .Type | default false }}
           <div class="summary-style">		
@@ -53,8 +62,9 @@
               {{ .Summary | plainify | emojify }}
             {{ end }}
           </div>
-        {{ end }}
-      {{ end }}
+          {{ end }}{{/* end if not $expired */}}
+        {{ end }}{{/* end if document/form/dynamic */}}
+      {{ end }}{{/* end range .Pages */}}
     {{ end }}
   </section>
 </div>

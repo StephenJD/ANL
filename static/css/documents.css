@@ -167,19 +167,6 @@ center {
   padding: 2px 4px;
   color: blue;
 }
-.document-content #tree .tree-node--staged {
-  color: orange;
-}
-.document-content #tree .tree-node--local {
-  color: green;
-}
-.document-content #tree .tree-node--deleted {
-  text-decoration: line-through;
-}
-.document-content #tree .tree-node--moved,
-.document-content #tree .tree-node--edited {
-  color: red;
-}
 .document-content #tree .tree-node--selected {
   font-weight: bold;
   background-color: #def;

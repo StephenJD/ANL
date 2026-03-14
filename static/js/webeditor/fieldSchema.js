@@ -3,6 +3,16 @@ export const fileTypeRules = {
   fileTypes: ["document", "form", "dynamic"]
 };
 
+// Tree node colours by edit state (single point of maintenance)
+// Priority: edited > staged > local > moved > default
+export const editStateColors = {
+  edited:  "red",      // saved locally, not yet staged
+  staged:  "orange",   // staged, ready to publish
+  local:   "green",    // published to home (local)
+  moved:   "red",      // moved (unsaved position change)
+  default: "blue"      // clean / published to web
+};
+
 export const fieldSchema = {
   derive: {
     page_type({ node }) {
@@ -14,12 +24,12 @@ export const fieldSchema = {
       const typeValue = String(frontMatter.type || "").toLowerCase();
       const parentQual = String(node?.parent?.qualification || "").toLowerCase();
       if (typeValue === "collated_page") return "Page from section files";
-      if (typeValue === "document") {
+      if (typeValue.startsWith("document")) {
         if (parentQual === "collated:") return "Document";
         if (parentQual === "navigation:") return "Page from single file";
       }
-      if (typeValue === "form") return "Form";
-      if (typeValue === "dynamic") return "Dynamic";
+      if (typeValue.startsWith("form")) return "Form";
+      if (typeValue.startsWith("dynamic")) return "Dynamic";
       return "";
     },
     give_content_prev_next_buttons({ frontMatter }) {
@@ -77,6 +87,7 @@ export const fieldSchema = {
     { key: "title", label: "Title", type: "text", required: true, width: "wide" },
     { key: "summary", label: "Summary (for navigation pages)", type: "textarea", rows: 3, width: "wide" },
     { key: "last_reviewed", label: "Last reviewed", type: "date" , dependsOn: { key: "page_type", values: ["Content"] } },
+    { key: "expires", label: "Expires", type: "date", dependsOn: { key: "page_type", values: ["Content"] } },
     { key: "review_period", label: "Review period", type: "text" , dependsOn: { key: "page_type", values: ["Content"] }},
     { key: "reviewed_by", label: "Reviewed by", type: "text" , dependsOn: { key: "page_type", values: ["Content"] }},
     { key: "include_unselected_options", label: "Include unselected options", type: "boolean", dependsOn: { key: "content_type", values: ["Form"] } },

@@ -14,6 +14,27 @@ export default async function generate_content_editor() {
     <label for="frontMatterText">Front Matter:</label>
     <textarea id="frontMatterText" style="width:100%;min-height:80px;height:auto;overflow:hidden;margin-bottom:10px;"></textarea>
 
+    <div id="bodyTextWrap" style="display:none;">
+      <div id="bodyImageTools" style="margin-bottom:8px;">
+        <label for="bodyImageSelect">Images in this folder:</label>
+        <select id="bodyImageSelect" style="display:block;width:100%;margin:4px 0 4px 0;">
+          <option value="">Select an image...</option>
+        </select>
+        <div style="margin:4px 0;font-size:0.9em;">
+          <label style="margin-right:12px;"><input type="radio" name="imageAction" value="paste" checked /> Paste at cursor</label>
+          <label><input type="radio" name="imageAction" value="copy" /> Copy link</label>
+        </div>
+        <span id="bodyImageCopyFeedback" style="font-size:0.85em;color:green;display:none;margin-bottom:4px;">Link copied!</span>
+        <img id="bodyImagePreview" src="" alt="" style="display:none;max-width:100%;max-height:180px;border:1px solid #ccc;border-radius:4px;margin-bottom:8px;" />
+        <div id="bodyImageDrop" style="border:1px dashed #888;padding:10px;border-radius:6px;cursor:pointer;user-select:none;">
+          Drop image here or click to upload to this folder
+        </div>
+        <input id="bodyImageFile" type="file" accept="image/*" style="display:none;" />
+      </div>
+      <label for="bodyText">Page Body:</label>
+      <textarea id="bodyText" style="width:100%;min-height:220px;height:auto;overflow:auto;margin-bottom:10px;"></textarea>
+    </div>
+
     <div style="margin-top:10px;"></div>
   </div>
 
@@ -66,6 +87,8 @@ let treeMoveActions = null;
 let editButtons = null;
 let editDirty = false;
 let newMode = false;
+let showBodyEditor = false;
+let bodyImageToolsBound = false;
 
 // =====================
 // Selection
@@ -277,7 +300,8 @@ publishWeb = async function publishWeb() {
 // =====================
 // Show editor on edit button
 // =====================
-async function showEditorForSelectedNode(){
+async function showEditorForSelectedNode(options = {}){
+  showBodyEditor = !!options?.openBody;
   newMode = false;
   if(!selectedNodePath) return;
   const node = findNodeByPath(treeData, selectedNodePath);
@@ -289,10 +313,26 @@ async function showEditorForSelectedNode(){
   const editForm = document.getElementById("editForm");
   const editorHeader = document.getElementById("editorHeader");
   const frontMatterText = document.getElementById("frontMatterText");
+  const bodyText = document.getElementById("bodyText");
 
   if(editorContainer && editForm && frontMatterText){
+    const editorAlreadyOpen = editorContainer.style.display === "block";
+    if (editorAlreadyOpen) {
+      setBodyEditorVisible(showBodyEditor);
+      if (showBodyEditor && bodyText && !bodyText.value) {
+        bodyText.value = node?.rawBody || rawBody || "";
+      }
+      if (showBodyEditor) {
+        await loadBodyFolderImages(node.path);
+        autoSizeBody();
+        scrollToBodyEditor();
+      }
+      return;
+    }
+
     document.getElementById("tree").style.display = "none";
     editorContainer.style.display = "block";
+    setBodyEditorVisible(showBodyEditor);
     if (editButtons?.setEditing) editButtons.setEditing(true);
     if (editorHeader) {
       const parent = node.parent;
@@ -313,6 +353,10 @@ async function showEditorForSelectedNode(){
       editDirty = true;
       if (editButtons?.setDirty) editButtons.setDirty(true);
       await loadEditorFromContent(node, node.edit.edited);
+      if (showBodyEditor) {
+        await loadBodyFolderImages(node.path);
+        scrollToBodyEditor();
+      }
       if (newMode && renderFormFn) renderFormFn(node, {});
       await ensureParentFrontMatter(node);
       return;
@@ -331,13 +375,18 @@ async function showEditorForSelectedNode(){
           const data = await res.json();
           const rawFrontMatter = data.rawFrontMatter || "";
           const content = data.content || "";
-          loadEditorFromContent(node, content, rawFrontMatter);
+          await loadEditorFromContent(node, content, rawFrontMatter);
+          if (showBodyEditor) {
+            await loadBodyFolderImages(node.path);
+            scrollToBodyEditor();
+          }
           ensureParentFrontMatter(node);
           log("[frontmatter] loaded length=" + rawFrontMatter.length);
         } else {
           const errText = await res.text();
           log("[frontmatter] start_edit error: " + errText);
           frontMatterText.value = "";
+          if (bodyText) bodyText.value = "";
           if(renderFormFn) renderFormFn(node, {});
           ensureParentFrontMatter(node);
           wireEditDirtyTracking();
@@ -345,6 +394,7 @@ async function showEditorForSelectedNode(){
       }catch(err){
         log("[frontmatter] start_edit exception: " + err);
         frontMatterText.value = "";
+        if (bodyText) bodyText.value = "";
         if(renderFormFn) renderFormFn(node, {});
         ensureParentFrontMatter(node);
         wireEditDirtyTracking();
@@ -356,6 +406,7 @@ async function showEditorForSelectedNode(){
 window.showEditorForSelectedNode = showEditorForSelectedNode;
 
 function showBlankEditorForSelectedNode(){
+  showBodyEditor = false;
   newMode = true;
   if(!selectedNodePath) return;
   const node = findNodeByPath(treeData, selectedNodePath);
@@ -384,6 +435,10 @@ function showBlankEditorForSelectedNode(){
     editDirty = false;
     if (editButtons?.setDirty) editButtons.setDirty(false);
     frontMatterText.value = "";
+    if (node) node.rawBody = "";
+    setBodyEditorVisible(showBodyEditor);
+    const bodyText = document.getElementById("bodyText");
+    if (bodyText) bodyText.value = "";
     if(renderFormFn) renderFormFn(node, {});
     wireEditDirtyTracking();
   }
@@ -643,6 +698,7 @@ function wireEditDirtyTracking(){
   const editorContainer = document.getElementById("editorContainer");
   const form = document.getElementById("editForm");
   const frontMatterText = document.getElementById("frontMatterText");
+  const bodyText = document.getElementById("bodyText");
   if (!editorContainer || !form || !frontMatterText) return;
 
   const markDirty = () => {
@@ -656,6 +712,10 @@ function wireEditDirtyTracking(){
   editorContainer.onchange = markDirty;
   frontMatterText.oninput = () => { markDirty(); autoSizeFrontMatter(); };
   frontMatterText.onchange = () => { markDirty(); autoSizeFrontMatter(); };
+  if (bodyText) {
+    bodyText.oninput = () => { markDirty(); autoSizeBody(); };
+    bodyText.onchange = () => { markDirty(); autoSizeBody(); };
+  }
 }
 
 function autoSizeFrontMatter(){
@@ -665,8 +725,216 @@ function autoSizeFrontMatter(){
   frontMatterText.style.height = frontMatterText.scrollHeight + "px";
 }
 
+function autoSizeBody(){
+  const bodyText = document.getElementById("bodyText");
+  if (!bodyText) return;
+  bodyText.style.height = "auto";
+  bodyText.style.height = bodyText.scrollHeight + "px";
+}
+
+function setBodyEditorVisible(visible){
+  const bodyWrap = document.getElementById("bodyTextWrap");
+  if (!bodyWrap) return;
+  bodyWrap.style.display = visible ? "block" : "none";
+  if (visible) {
+    setupBodyImageTools();
+    autoSizeBody();
+  }
+}
+
+function scrollToBodyEditor(){
+  const bodyWrap = document.getElementById("bodyTextWrap");
+  if (!bodyWrap || bodyWrap.style.display === "none") return;
+  requestAnimationFrame(() => {
+    bodyWrap.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+}
+
+function setupBodyImageTools(){
+  if (bodyImageToolsBound) return;
+  const imageSelect = document.getElementById("bodyImageSelect");
+  const dropZone = document.getElementById("bodyImageDrop");
+  const fileInput = document.getElementById("bodyImageFile");
+  if (!imageSelect || !dropZone || !fileInput) return;
+
+  const imagePreview = document.getElementById("bodyImagePreview");
+  const copyFeedback = document.getElementById("bodyImageCopyFeedback");
+  let feedbackTimer = null;
+
+  imageSelect.addEventListener("change", () => {
+    const imageName = String(imageSelect.value || "").trim();
+    if (!imageName) {
+      if (imagePreview) { imagePreview.src = ""; imagePreview.style.display = "none"; }
+      if (copyFeedback) copyFeedback.style.display = "none";
+      return;
+    }
+    // Show preview using the correct public URL
+    if (imagePreview) {
+      const folderUrl = imageSelect.dataset.folderUrl || "";
+      imagePreview.src = folderUrl + imageName;
+      imagePreview.style.display = "block";
+      requestAnimationFrame(() => { imagePreview.scrollIntoView({ behavior: "smooth", block: "nearest" }); });
+    }
+    // Build markdown link, paste or copy depending on radio selection
+    const mdLink = "![](" + imageName + ")";
+    const actionRadio = document.querySelector('input[name="imageAction"]:checked');
+    const action = actionRadio ? actionRadio.value : "paste";
+    if (action === "paste") {
+      const bodyText = document.getElementById("bodyText");
+      if (bodyText) {
+        const start = bodyText.selectionStart || 0;
+        const end = bodyText.selectionEnd || 0;
+        const before = bodyText.value.substring(0, start);
+        const after = bodyText.value.substring(end);
+        bodyText.value = before + mdLink + after;
+        bodyText.selectionStart = bodyText.selectionEnd = start + mdLink.length;
+        bodyText.focus();
+        bodyText.dispatchEvent(new Event("input"));
+      }
+    } else {
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(mdLink).then(() => {
+          if (copyFeedback) {
+            copyFeedback.style.display = "inline";
+            clearTimeout(feedbackTimer);
+            feedbackTimer = setTimeout(() => { copyFeedback.style.display = "none"; }, 2500);
+          }
+        }).catch(() => {});
+      }
+    }
+  });
+
+  dropZone.addEventListener("click", () => fileInput.click());
+  dropZone.addEventListener("dragover", e => {
+    e.preventDefault();
+    dropZone.style.borderColor = "#444";
+    dropZone.style.background = "#f5f5f5";
+  });
+  dropZone.addEventListener("dragleave", () => {
+    dropZone.style.borderColor = "#888";
+    dropZone.style.background = "";
+  });
+  dropZone.addEventListener("drop", e => {
+    e.preventDefault();
+    dropZone.style.borderColor = "#888";
+    dropZone.style.background = "";
+    const file = e.dataTransfer?.files?.[0];
+    if (file) uploadImageToCurrentFolder(file);
+  });
+
+  fileInput.addEventListener("change", () => {
+    const file = fileInput.files?.[0];
+    if (file) uploadImageToCurrentFolder(file);
+  });
+
+  bodyImageToolsBound = true;
+}
+
+async function loadBodyFolderImages(filePath){
+  const imageSelect = document.getElementById("bodyImageSelect");
+  if (!imageSelect) return;
+
+  // Derive the public folder URL from the content-relative filePath
+  // e.g. "01_whats_on/_index.md" -> "/01_whats_on/"
+  let folderUrl = String(filePath || "");
+  while (folderUrl.charAt(0) === "/") folderUrl = folderUrl.slice(1);
+  if (folderUrl.endsWith("_index.md")) {
+    folderUrl = folderUrl.slice(0, folderUrl.length - "_index.md".length);
+  } else if (folderUrl.endsWith(".md")) {
+    const slash = folderUrl.lastIndexOf("/");
+    folderUrl = slash >= 0 ? folderUrl.slice(0, slash + 1) : "";
+  } else if (folderUrl.length > 0 && folderUrl.charAt(folderUrl.length - 1) !== "/") {
+    folderUrl = folderUrl + "/";
+  }
+  if (folderUrl && folderUrl.charAt(0) !== "/") folderUrl = "/" + folderUrl;
+  imageSelect.dataset.folderUrl = folderUrl;
+
+  const placeholder = '<option value="">Insert image from current folder...</option>';
+  imageSelect.innerHTML = placeholder;
+
+  try {
+    const res = await fetch("/.netlify/functions/list_page_folder_images", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ file: filePath })
+    });
+    if (!res.ok) {
+      log("[folder-images] list failed status=" + res.status);
+      return;
+    }
+    const payload = await res.json();
+    const images = Array.isArray(payload?.images) ? payload.images : [];
+    for (const img of images) {
+      const name = String(img?.name || "").trim();
+      if (!name) continue;
+      const opt = document.createElement("option");
+      opt.value = name;
+      opt.textContent = name;
+      imageSelect.appendChild(opt);
+    }
+  } catch (err) {
+    log("[folder-images] list exception: " + err);
+  }
+}
+
+function insertImageIntoBody(imageName){
+  const bodyText = document.getElementById("bodyText");
+  if (!bodyText) return;
+  const start = Number.isInteger(bodyText.selectionStart) ? bodyText.selectionStart : bodyText.value.length;
+  const end = Number.isInteger(bodyText.selectionEnd) ? bodyText.selectionEnd : bodyText.value.length;
+  const cleanName = String(imageName || "").trim();
+  if (!cleanName) return;
+  const snippet = "![](" + cleanName + ")";
+  bodyText.setRangeText(snippet, start, end, "end");
+  bodyText.focus();
+  bodyText.dispatchEvent(new Event("input", { bubbles: true }));
+}
+
+async function uploadImageToCurrentFolder(file){
+  const dropZone = document.getElementById("bodyImageDrop");
+  const fileInput = document.getElementById("bodyImageFile");
+  const nodePath = String(selectedNodePath || "");
+  if (!nodePath) return;
+  if (!dropZone) return;
+
+  try {
+    dropZone.textContent = "Uploading...";
+    const dataUrl = await readFileAsDataUrl(file);
+    const res = await fetch("/.netlify/functions/upload_page_folder_image", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ file: nodePath, name: file.name, dataUrl, forceLocal: true })
+    });
+    const text = await res.text();
+    if (!res.ok) {
+      log("[folder-images] upload failed status=" + res.status + " body=" + text);
+      return;
+    }
+    let payload = {};
+    try { payload = JSON.parse(text); } catch (e) {}
+    const imageName = String(payload?.name || payload?.filename || file.name || "").trim();
+    await loadBodyFolderImages(nodePath);
+    if (imageName) insertImageIntoBody(imageName);
+  } catch (err) {
+    log("[folder-images] upload exception: " + err);
+  } finally {
+    dropZone.textContent = "Drop image here or click to upload to this folder";
+    if (fileInput) fileInput.value = "";
+  }
+}
+
+function readFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(reader.error || new Error("File read failed"));
+    reader.readAsDataURL(file);
+  });
+}
+
 async function loadEditorFromContent(node, content, rawFrontMatterOverride = null){
   const frontMatterText = document.getElementById("frontMatterText");
+  const bodyText = document.getElementById("bodyText");
   let rawFrontMatter = rawFrontMatterOverride;
   if (rawFrontMatter == null) {
     const match = content.match(/^---\\r?\\n([\\s\\S]*?)\\r?\\n---/);
@@ -677,9 +945,11 @@ async function loadEditorFromContent(node, content, rawFrontMatterOverride = nul
   const matchInner = rawFrontMatter.match(/^---\\r?\\n([\\s\\S]*?)\\r?\\n---/);
   if (matchInner) innerFrontMatter = matchInner[1];
 
-  const rawBody = rawFrontMatter ? content.slice(rawFrontMatter.length).replace(/^\\s*\\n/, "") : content;
-  node.rawBody = rawBody;
+  const contentBody = rawFrontMatter ? content.slice(rawFrontMatter.length).replace(/^\\s*\\n/, "") : content;
+  rawBody = contentBody;
+  node.rawBody = contentBody;
   if (frontMatterText) frontMatterText.value = innerFrontMatter;
+  if (bodyText) bodyText.value = contentBody;
 
   let frontMatterObj = {};
   try {
@@ -699,6 +969,7 @@ async function loadEditorFromContent(node, content, rawFrontMatterOverride = nul
     .map(line => line.split(":")[0].trim().toLowerCase());
   wireEditDirtyTracking();
   autoSizeFrontMatter();
+  if (showBodyEditor) autoSizeBody();
 }
 
 async function ensureParentFrontMatter(node) {

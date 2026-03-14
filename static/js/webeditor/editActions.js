@@ -54,7 +54,10 @@ export function setupEditActions(treeDataRef = [], selectedNodePathRef = { value
     }
     front += "---\n";
 
-    const content = front + (node?.rawBody || "");
+    const bodyText = document.getElementById("bodyText");
+    const body = bodyText ? bodyText.value : (node?.rawBody || "");
+    if (node) node.rawBody = body;
+    const content = front + body;
     return { content, dataObj };
   }
 

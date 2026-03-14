@@ -83,6 +83,30 @@
       });
   })();
   </script>
-    
+
+  {{ with $current_page.Params.expires }}
+  <script>
+  (function () {
+    var expires = new Date({{ . | jsonify }});
+    if (!isNaN(expires.getTime()) && Date.now() > expires.getTime()) {
+      document.addEventListener("DOMContentLoaded", function () {
+        var selectors = ["section.document-content", "main", ".page-content", ".container"];
+        var content = null;
+        for (var i = 0; i < selectors.length; i++) {
+          content = document.querySelector(selectors[i]);
+          if (content) break;
+        }
+        if (content) content.style.display = "none";
+        var msg = document.createElement("div");
+        msg.style.cssText = "padding:2em;text-align:center;font-size:1.2em;color:#666;";
+        msg.textContent = "This content has expired and is no longer available.";
+        var pc = document.querySelector(".page-container");
+        if (pc) pc.appendChild(msg); else document.body.appendChild(msg);
+      });
+    }
+  })();
+  </script>
+  {{ end }}
+
 {{/* </div> Must be closed in another parial */}}
 
