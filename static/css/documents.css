@@ -170,6 +170,9 @@ center {
 .document-content #tree .tree-node--staged {
   color: orange;
 }
+.document-content #tree .tree-node--local {
+  color: green;
+}
 .document-content #tree .tree-node--moved,
 .document-content #tree .tree-node--edited {
   color: red;

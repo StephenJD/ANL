@@ -38,6 +38,13 @@ function getTypeFromEdited(node) {
   return "";
 }
 
+function extractFrontMatterSnippet(edited) {
+  if (!edited || typeof edited !== "string") return { has: false, snippet: "" };
+  const match = edited.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+  if (!match) return { has: false, snippet: edited.slice(0, 200) };
+  return { has: true, snippet: match[1].slice(0, 200) };
+}
+
 function isFolderNode(node) {
   if (node?.isIndex === false) return false;
   if (node?.isIndex) return true;
@@ -200,11 +207,14 @@ function collectStagedDiagnostics(nodes, out = []) {
   for (const node of nodes || []) {
     if (node.edit?.staged && typeof node.edit.edited === "string") {
       const parsedType = getTypeFromEdited(node);
+      const fm = extractFrontMatterSnippet(node.edit.edited);
       out.push({
         path: node.path,
         newPath: node.__newPath || node.path,
         isIndex: node.isIndex,
-        parsedType
+        parsedType,
+        hasFrontMatter: fm.has,
+        frontMatterSnippet: fm.snippet
       });
     }
     if (node.children?.length) collectStagedDiagnostics(node.children, out);

@@ -113,10 +113,15 @@ export function setupEditButtons(containerId, treeData, moveFn, showEditorFn, pu
   function update(selectedPath) {
     lastSelectedPath = selectedPath;
     const anySelected = !!selectedPath;
+    const anyStaged = hasAnyStaged(treeData);
+    const anyStagedOrLocal = hasAnyStagedOrLocal(treeData);
 
     for (const id in buttons) {
       buttons[id].disabled = !anySelected;
     }
+
+    if (buttons.publishLocal) buttons.publishLocal.disabled = !anyStaged || isEditing;
+    if (buttons.publishWeb) buttons.publishWeb.disabled = !anyStagedOrLocal || isEditing;
 
     if (!anySelected) {
       window.log("[editButtons] buttons updated selected=false");
@@ -146,10 +151,6 @@ export function setupEditButtons(containerId, treeData, moveFn, showEditorFn, pu
         });
         if (buttons.publishLocal) buttons.publishLocal.disabled = true;
         if (buttons.publishWeb) buttons.publishWeb.disabled = true;
-      } else {
-        const anyStaged = hasAnyStaged(treeData);
-        if (buttons.publishLocal) buttons.publishLocal.disabled = !anyStaged;
-        if (buttons.publishWeb) buttons.publishWeb.disabled = !anyStaged;
       }
     }
 
@@ -185,6 +186,16 @@ function hasAnyStaged(nodes) {
     if (n.edit?.staged) return true;
     if (n.children?.length) {
       if (hasAnyStaged(n.children)) return true;
+    }
+  }
+  return false;
+}
+
+function hasAnyStagedOrLocal(nodes) {
+  for (const n of nodes) {
+    if (n.edit?.staged || n.edit?.local) return true;
+    if (n.children?.length) {
+      if (hasAnyStagedOrLocal(n.children)) return true;
     }
   }
   return false;

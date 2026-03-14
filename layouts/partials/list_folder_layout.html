@@ -39,7 +39,7 @@
       </div>
    
       {{ range .Pages }}
-        {{ if or (eq .Type "document") (eq .Type "form") (eq .Type "secure_page") }}
+        {{ if or (eq .Type "document") (eq .Type "form") (hasPrefix .Type "dynamic") }}
           {{ $auto_summary_types := site.Params.auto_summary | default dict }}
           {{ $auto_summary := index $auto_summary_types .Type | default false }}
           <div class="summary-style">		

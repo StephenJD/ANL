@@ -130,6 +130,7 @@ function serializeTreeForPublish(nodes) {
     isIndex: !!n.isIndex,
     edit: n.edit ? {
       staged: !!n.edit.staged,
+      local: !!n.edit.local,
       moved: !!n.edit.moved,
       edited: n.edit.edited || null
     } : null,
@@ -137,12 +138,25 @@ function serializeTreeForPublish(nodes) {
   }));
 }
 
-function clearStagedEdits(nodes) {
+function markLocalPublished(nodes) {
   for (const n of nodes || []) {
     if (n.edit?.staged) {
-      delete n.edit;
+      n.edit.local = true;
+      n.edit.staged = null;
+      if (!n.edit.moved && !n.edit.edited && !n.edit.local) delete n.edit;
     }
-    if (n.children?.length) clearStagedEdits(n.children);
+    if (n.children?.length) markLocalPublished(n.children);
+  }
+}
+
+function clearPublishedEdits(nodes) {
+  for (const n of nodes || []) {
+    if (n.edit?.staged || n.edit?.local) {
+      n.edit.staged = null;
+      n.edit.local = null;
+      if (!n.edit.moved && !n.edit.edited) delete n.edit;
+    }
+    if (n.children?.length) clearPublishedEdits(n.children);
   }
 }
 
@@ -166,7 +180,11 @@ async function publishEditsInternal(mode, localRootOverride = "") {
       return null;
     }
     log("[publish] ok " + text);
-    clearStagedEdits(treeData);
+    if (mode === "local") {
+      markLocalPublished(treeData);
+    } else {
+      clearPublishedEdits(treeData);
+    }
     renderTree();
     if (editButtons) editButtons.update(selectedNodePath);
     return { ok: true };
@@ -688,6 +706,9 @@ function deriveTypeAndIndex(values){
       return { type: "collated_page", isIndex: true };
     }
     if (contentType === "page from single file") {
+      return { type: "document", isIndex: false };
+    }
+    if (contentType === "document") {
       return { type: "document", isIndex: false };
     }
     if (contentType === "form") {

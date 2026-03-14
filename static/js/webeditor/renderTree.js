@@ -21,6 +21,7 @@ export function renderTree(nodes, selectedNodePath = null, onSelectNode = null) 
 
         // colour based on edit state
         if (node.edit?.staged) span.classList.add("tree-node--staged");
+        else if (node.edit?.local) span.classList.add("tree-node--local");
         else if (node.edit?.moved) span.classList.add("tree-node--moved");
         else if (node.edit?.edited) span.classList.add("tree-node--edited");
         else span.classList.add("tree-node--default");
