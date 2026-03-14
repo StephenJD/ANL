@@ -2,7 +2,6 @@
 import fs from "fs";
 import path from "path";
 import { execSync } from "child_process";
-import fetch from "node-fetch";
 
 const editsRoot = path.join(process.cwd(), "edits");
 // Keep in sync with static/js/webeditor/fieldSchema.js (fileTypeRules.fileTypes)
