@@ -3,7 +3,6 @@ access: public
 title: Dance Workshop
 summary: Free Dance Workshop on Monday 16th Feb    5.30 – 7pm
 share: true
-background_image: /images/shared/anl_logo_1024.png
 type: document
 ---
 # Dance Workshop
