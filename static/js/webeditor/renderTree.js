@@ -24,12 +24,13 @@ export function renderTree(nodes, selectedNodePath = null, onSelectNode = null) 
         else if (node.edit?.local) span.classList.add("tree-node--local");
         else if (node.edit?.moved) span.classList.add("tree-node--moved");
         else if (node.edit?.edited) span.classList.add("tree-node--edited");
+        if (node.edit?.deleted) span.classList.add("tree-node--deleted");
         else span.classList.add("tree-node--default");
         // bold if selected
         
         if (selectedNodePath === node.path) {
             span.classList.add("tree-node--selected");
-          window.log(`[renderTreeView] Rendering node: ${node.title} moved=${!!node.edit?.moved} edited=${!!node.edit?.edited} staged=${!!node.edit?.staged}`);
+          window.log(`[renderTreeView] Rendering node: ${node.title} moved=${!!node.edit?.moved} edited=${!!node.edit?.edited} staged=${!!node.edit?.staged} deleted=${!!node.edit?.deleted}`);
       
         }
 

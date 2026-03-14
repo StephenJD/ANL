@@ -131,6 +131,7 @@ function serializeTreeForPublish(nodes) {
     edit: n.edit ? {
       staged: !!n.edit.staged,
       local: !!n.edit.local,
+      deleted: !!n.edit.deleted,
       moved: !!n.edit.moved,
       edited: n.edit.edited || null
     } : null,
@@ -142,6 +143,7 @@ function markLocalPublished(nodes) {
   for (const n of nodes || []) {
     if (n.edit?.staged) {
       n.edit.local = true;
+      if (n.edit.deleted) n.edit.deleted = true;
       n.edit.staged = null;
       if (!n.edit.moved && !n.edit.edited && !n.edit.local) delete n.edit;
     }
@@ -154,9 +156,21 @@ function clearPublishedEdits(nodes) {
     if (n.edit?.staged || n.edit?.local) {
       n.edit.staged = null;
       n.edit.local = null;
+      n.edit.deleted = null;
       if (!n.edit.moved && !n.edit.edited) delete n.edit;
     }
     if (n.children?.length) clearPublishedEdits(n.children);
+  }
+}
+
+function pruneDeletedNodes(nodes) {
+  if (!nodes?.length) return;
+  for (let i = nodes.length - 1; i >= 0; i--) {
+    const n = nodes[i];
+    if (n.children?.length) pruneDeletedNodes(n.children);
+    if (n.edit?.deleted && (n.edit?.staged || n.edit?.local)) {
+      nodes.splice(i, 1);
+    }
   }
 }
 
@@ -176,6 +190,9 @@ async function publishEditsInternal(mode, localRootOverride = "") {
       } catch (e) {
         // ignore
       }
+      if (text.includes("Missing GITHUB_TOKEN")) {
+        log("[publish] Missing GITHUB_TOKEN. Create one at github.com/settings/personal-access-tokens and set GITHUB_TOKEN.");
+      }
       log("[publish] error status=" + res.status + " body=" + text);
       return null;
     }
@@ -185,6 +202,7 @@ async function publishEditsInternal(mode, localRootOverride = "") {
     } else {
       clearPublishedEdits(treeData);
     }
+    pruneDeletedNodes(treeData);
     renderTree();
     if (editButtons) editButtons.update(selectedNodePath);
     return { ok: true };
@@ -501,8 +519,14 @@ async function handleMove(action) {
           return;
         }
         if (node.edit?.staged) {
-          node.edit.staged = null;
-          cleanupEdit(node);
+          if (node.edit?.deleted) {
+            node.edit.staged = null;
+            node.edit.deleted = null;
+            cleanupEdit(node);
+          } else {
+            node.edit.staged = null;
+            cleanupEdit(node);
+          }
         } else if (node.edit?.edited && !node.edit?.staged && String(node.path || "").startsWith("__new__/")) {
           removeNodeByPath(treeData, node.path);
           if (selectedNodePath === node.path) selectedNodePath = null;
@@ -512,6 +536,10 @@ async function handleMove(action) {
         } else if (node.edit?.edited) {
           node.edit.edited = null;
           cleanupEdit(node);
+        } else {
+          if (!node.edit) node.edit = {};
+          node.edit.deleted = true;
+          node.edit.staged = true;
         }
         log('Dropped node "' + (node.title || node.path) + '"');
     }

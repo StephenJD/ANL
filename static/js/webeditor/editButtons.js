@@ -142,7 +142,7 @@ export function setupEditButtons(containerId, treeData, moveFn, showEditorFn, pu
         if (isEditing) {
           buttons.drop.disabled = false;
         } else {
-          buttons.drop.disabled = !(node.edit?.moved || node.edit?.staged || node.edit?.edited);
+          buttons.drop.disabled = false;
         }
       }
       if (isEditing) {

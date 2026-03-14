@@ -66,12 +66,13 @@ function hasDirectStagedChild(node) {
 }
 
 function computeNewPaths(nodes, parentNewPath = "") {
-  const shouldRenumber = nodes && nodes.length ? nodes.some(n => !!n.edit?.staged) : false;
-  const count = nodes?.length || 0;
+  const activeNodes = (nodes || []).filter(n => !(n.edit?.staged && n.edit?.deleted));
+  const shouldRenumber = activeNodes.length ? activeNodes.some(n => !!n.edit?.staged) : false;
+  const count = activeNodes.length || 0;
   const width = Math.max(2, String(count).length);
 
   for (let i = 0; i < count; i++) {
-    const node = nodes[i];
+    const node = activeNodes[i];
     const folder = isFolderNode(node);
     let baseName = getBasenameFromPath(node.path);
 
@@ -117,9 +118,10 @@ function findNodeByPath(nodes, pathValue) {
 
 function renameChildrenIfNeeded(nodes, contentRoot, parentNewPath = "") {
   if (!nodes?.length) return;
-  const shouldRenumber = nodes.some(n => !!n.edit?.staged);
+  const activeNodes = nodes.filter(n => !(n.edit?.staged && n.edit?.deleted));
+  const shouldRenumber = activeNodes.some(n => !!n.edit?.staged);
   if (!shouldRenumber) {
-    for (const node of nodes) {
+    for (const node of activeNodes) {
       if (node.children?.length) {
         renameChildrenIfNeeded(node.children, contentRoot, node.__newPath || parentNewPath);
       }
@@ -131,7 +133,7 @@ function renameChildrenIfNeeded(nodes, contentRoot, parentNewPath = "") {
   fs.mkdirSync(parentFsPath, { recursive: true });
 
   const toRename = [];
-  for (const node of nodes) {
+  for (const node of activeNodes) {
     const oldBase = getBasenameFromPath(node.path);
     if (!oldBase || String(node.path || "").startsWith("__new__/")) continue;
     const newBase = path.posix.basename(node.__newPath || oldBase);
@@ -161,7 +163,7 @@ function renameChildrenIfNeeded(nodes, contentRoot, parentNewPath = "") {
     }
   });
 
-  for (const node of nodes) {
+  for (const node of activeNodes) {
     if (node.children?.length) {
       renameChildrenIfNeeded(node.children, contentRoot, node.__newPath || parentNewPath);
     }
@@ -170,7 +172,7 @@ function renameChildrenIfNeeded(nodes, contentRoot, parentNewPath = "") {
 
 function writeStagedContent(nodes, contentRoot) {
   for (const node of nodes || []) {
-    if (node.edit?.staged && typeof node.edit.edited === "string") {
+    if (node.edit?.staged && !node.edit?.deleted && typeof node.edit.edited === "string") {
       const targetPath = node.__newPath || node.path;
       const filePath = isFolderNode(node)
         ? path.join(contentRoot, targetPath, "_index.md")
@@ -194,13 +196,43 @@ function getFileRelPath(node, pathValue) {
 
 function buildStagedContentMap(nodes, map = new Map()) {
   for (const node of nodes || []) {
-    if (node.edit?.staged && typeof node.edit.edited === "string") {
+    if (node.edit?.staged && !node.edit?.deleted && typeof node.edit.edited === "string") {
       const fileRel = getFileRelPath(node, node.__newPath || node.path);
       map.set(fileRel, node.edit.edited);
     }
     if (node.children?.length) buildStagedContentMap(node.children, map);
   }
   return map;
+}
+
+function collectDeletes(nodes, out = []) {
+  for (const node of nodes || []) {
+    if (node.edit?.staged && node.edit?.deleted) {
+      out.push(node);
+    }
+    if (node.children?.length) collectDeletes(node.children, out);
+  }
+  return out;
+}
+
+function collectFilesForNode(node, files = []) {
+  if (!node) return files;
+  const fileRel = getFileRelPath(node, node.path);
+  files.push(fileRel);
+  if (node.children?.length) {
+    for (const child of node.children) collectFilesForNode(child, files);
+  }
+  return files;
+}
+
+function collectDeletedFolders(nodes, out = []) {
+  for (const node of nodes || []) {
+    if (node.edit?.staged && node.edit?.deleted && isFolderNode(node)) {
+      out.push(node.path);
+    }
+    if (node.children?.length) collectDeletedFolders(node.children, out);
+  }
+  return out;
 }
 
 function collectStagedDiagnostics(nodes, out = []) {
@@ -278,12 +310,23 @@ export async function handler(event) {
     const renames = buildRenameList(tree, []);
     const diagnostics = collectStagedDiagnostics(tree, []);
 
+    const deletes = collectDeletes(tree, []);
+    const deleteFiles = deletes.flatMap(n => collectFilesForNode(n, []));
+    const deleteFolders = collectDeletedFolders(tree, []);
+
     if (mode === "web") {
       const repo = process.env.GITHUB_REPO || "StephenJD/ANL";
       const token = process.env.GITHUB_TOKEN;
       if (!token) return { statusCode: 500, body: "Missing GITHUB_TOKEN" };
 
       const stagedMap = buildStagedContentMap(tree);
+      // Delete staged deletions first
+      for (const rel of deleteFiles) {
+        const existing = await githubGetFile(repo, rel, token);
+        if (existing?.sha) {
+          await githubDeleteFile(repo, rel, token, existing.sha, `Delete ${rel}`);
+        }
+      }
       // Write staged content first
       for (const [fileRel, content] of stagedMap.entries()) {
         await githubPutFile(repo, fileRel, content, token, `Publish edit ${fileRel}`);
@@ -318,7 +361,7 @@ export async function handler(event) {
 
       return {
         statusCode: 200,
-        body: JSON.stringify({ published: true, renamed: renames.length, renames, diagnostics })
+        body: JSON.stringify({ published: true, renamed: renames.length, renames, diagnostics, deleteFiles, deleteFolders })
       };
     }
 
@@ -336,6 +379,16 @@ export async function handler(event) {
     const renamePath = path.join(editsRoot, "rename_map.json");
     fs.writeFileSync(renamePath, JSON.stringify(renames, null, 2), "utf8");
 
+    // Delete staged deletions first to avoid rename conflicts
+    for (const rel of deleteFiles) {
+      const full = path.join(contentRoot, rel);
+      if (fs.existsSync(full)) fs.rmSync(full, { recursive: true, force: true });
+    }
+    for (const rel of deleteFolders) {
+      const full = path.join(contentRoot, rel);
+      if (fs.existsSync(full)) fs.rmSync(full, { recursive: true, force: true });
+    }
+
     renameChildrenIfNeeded(tree, contentRoot, "");
     writeStagedContent(tree, contentRoot);
 
@@ -347,7 +400,7 @@ export async function handler(event) {
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ published: true, renamed: renames.length, renames, diagnostics })
+      body: JSON.stringify({ published: true, renamed: renames.length, renames, diagnostics, deleteFiles, deleteFolders, contentRoot })
     };
   } catch (err) {
     return { statusCode: 500, body: String(err) };

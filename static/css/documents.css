@@ -173,6 +173,9 @@ center {
 .document-content #tree .tree-node--local {
   color: green;
 }
+.document-content #tree .tree-node--deleted {
+  text-decoration: line-through;
+}
 .document-content #tree .tree-node--moved,
 .document-content #tree .tree-node--edited {
   color: red;
