@@ -10,7 +10,7 @@ type: document
 
 ![](dancing.png)
 
-Free Dance Workshop on Monday 16th Feb    5.30 – 7pm
+Free Dance Workshop on Monday 16th Feb    5.30 – 7pm - great event!
 
 led by a qualified dancer and teacher, in Whaley Bridge.
 
