@@ -200,9 +200,9 @@ async function publishEditsInternal(mode, localRootOverride = "") {
     if (mode === "local") {
       markLocalPublished(treeData);
     } else {
+      pruneDeletedNodes(treeData);
       clearPublishedEdits(treeData);
     }
-    pruneDeletedNodes(treeData);
     renderTree();
     if (editButtons) editButtons.update(selectedNodePath);
     return { ok: true };

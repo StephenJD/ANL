@@ -50,6 +50,9 @@ function isFolderNode(node) {
   if (node?.isIndex) return true;
   const p = String(node?.path || "");
   if (p.endsWith(".md")) return false;
+  const qual = String(node?.qualification || "").toLowerCase();
+  if (qual === "navigation:" || qual === "collated:") return true;
+  if (node?.children?.length) return true;
   const typeValue = getTypeFromEdited(node);
   if (fileTypeRules.fileTypes.includes(typeValue)) return false;
   return true;
@@ -65,9 +68,15 @@ function hasDirectStagedChild(node) {
   return (node.children || []).some(c => !!c.edit?.staged);
 }
 
-function computeNewPaths(nodes, parentNewPath = "") {
-  const activeNodes = (nodes || []).filter(n => !(n.edit?.staged && n.edit?.deleted));
-  const shouldRenumber = activeNodes.length ? activeNodes.some(n => !!n.edit?.staged) : false;
+function hasPublishableEdit(node, mode) {
+  if (node?.edit?.staged) return true;
+  if (mode === "web" && node?.edit?.local) return true;
+  return false;
+}
+
+function computeNewPaths(nodes, parentNewPath = "", mode = "local") {
+  const activeNodes = (nodes || []).filter(n => !(hasPublishableEdit(n, mode) && n.edit?.deleted));
+  const shouldRenumber = activeNodes.length ? activeNodes.some(n => hasPublishableEdit(n, mode)) : false;
   const count = activeNodes.length || 0;
   const width = Math.max(2, String(count).length);
 
@@ -86,7 +95,7 @@ function computeNewPaths(nodes, parentNewPath = "") {
     node.__newPath = newPath;
 
     if (node.children?.length) {
-      computeNewPaths(node.children, newPath);
+      computeNewPaths(node.children, newPath, mode);
     }
   }
 }
@@ -116,14 +125,14 @@ function findNodeByPath(nodes, pathValue) {
   return null;
 }
 
-function renameChildrenIfNeeded(nodes, contentRoot, parentNewPath = "") {
+function renameChildrenIfNeeded(nodes, contentRoot, parentNewPath = "", mode = "local") {
   if (!nodes?.length) return;
-  const activeNodes = nodes.filter(n => !(n.edit?.staged && n.edit?.deleted));
-  const shouldRenumber = activeNodes.some(n => !!n.edit?.staged);
+  const activeNodes = nodes.filter(n => !(hasPublishableEdit(n, mode) && n.edit?.deleted));
+  const shouldRenumber = activeNodes.some(n => hasPublishableEdit(n, mode));
   if (!shouldRenumber) {
     for (const node of activeNodes) {
       if (node.children?.length) {
-        renameChildrenIfNeeded(node.children, contentRoot, node.__newPath || parentNewPath);
+        renameChildrenIfNeeded(node.children, contentRoot, node.__newPath || parentNewPath, mode);
       }
     }
     return;
@@ -165,14 +174,14 @@ function renameChildrenIfNeeded(nodes, contentRoot, parentNewPath = "") {
 
   for (const node of activeNodes) {
     if (node.children?.length) {
-      renameChildrenIfNeeded(node.children, contentRoot, node.__newPath || parentNewPath);
+      renameChildrenIfNeeded(node.children, contentRoot, node.__newPath || parentNewPath, mode);
     }
   }
 }
 
-function writeStagedContent(nodes, contentRoot) {
+function writeStagedContent(nodes, contentRoot, mode = "local") {
   for (const node of nodes || []) {
-    if (node.edit?.staged && !node.edit?.deleted && typeof node.edit.edited === "string") {
+    if (hasPublishableEdit(node, mode) && !node.edit?.deleted && typeof node.edit.edited === "string") {
       const targetPath = node.__newPath || node.path;
       const filePath = isFolderNode(node)
         ? path.join(contentRoot, targetPath, "_index.md")
@@ -180,7 +189,7 @@ function writeStagedContent(nodes, contentRoot) {
       fs.mkdirSync(path.dirname(filePath), { recursive: true });
       fs.writeFileSync(filePath, node.edit.edited, "utf8");
     }
-    if (node.children?.length) writeStagedContent(node.children, contentRoot);
+    if (node.children?.length) writeStagedContent(node.children, contentRoot, mode);
   }
 }
 
@@ -194,43 +203,50 @@ function getFileRelPath(node, pathValue) {
   return String(pathValue || "") + "/_index.md";
 }
 
-function buildStagedContentMap(nodes, map = new Map()) {
+function buildStagedContentMap(nodes, map = new Map(), mode = "local") {
   for (const node of nodes || []) {
-    if (node.edit?.staged && !node.edit?.deleted && typeof node.edit.edited === "string") {
+    if (hasPublishableEdit(node, mode) && !node.edit?.deleted && typeof node.edit.edited === "string") {
       const fileRel = getFileRelPath(node, node.__newPath || node.path);
       map.set(fileRel, node.edit.edited);
     }
-    if (node.children?.length) buildStagedContentMap(node.children, map);
+    if (node.children?.length) buildStagedContentMap(node.children, map, mode);
   }
   return map;
 }
 
-function collectDeletes(nodes, out = []) {
+function collectDeletes(nodes, out = [], mode = "local") {
   for (const node of nodes || []) {
-    if (node.edit?.staged && node.edit?.deleted) {
+    if (hasPublishableEdit(node, mode) && node.edit?.deleted) {
       out.push(node);
     }
-    if (node.children?.length) collectDeletes(node.children, out);
+    if (node.children?.length) collectDeletes(node.children, out, mode);
   }
   return out;
 }
 
+function getDeleteFileRelPath(node) {
+  const p = String(node?.path || "");
+  if (p.endsWith(".md")) return p;
+  return p ? `${p}/_index.md` : "";
+}
+
 function collectFilesForNode(node, files = []) {
   if (!node) return files;
-  const fileRel = getFileRelPath(node, node.path);
-  files.push(fileRel);
+  const fileRel = getDeleteFileRelPath(node);
+  if (fileRel) files.push(fileRel);
   if (node.children?.length) {
     for (const child of node.children) collectFilesForNode(child, files);
   }
   return files;
 }
 
-function collectDeletedFolders(nodes, out = []) {
+function collectDeletedFolders(nodes, out = [], mode = "local") {
   for (const node of nodes || []) {
-    if (node.edit?.staged && node.edit?.deleted && isFolderNode(node)) {
-      out.push(node.path);
+    if (hasPublishableEdit(node, mode) && node.edit?.deleted) {
+      const p = String(node.path || "");
+      if (p && !p.endsWith(".md")) out.push(p);
     }
-    if (node.children?.length) collectDeletedFolders(node.children, out);
+    if (node.children?.length) collectDeletedFolders(node.children, out, mode);
   }
   return out;
 }
@@ -262,18 +278,20 @@ async function githubGetFile(repo, relPath, token) {
   return res.json();
 }
 
-async function githubPutFile(repo, relPath, content, token, message) {
+async function githubPutFile(repo, relPath, content, token, message, sha = null) {
   const encoded = Buffer.from(content || "").toString("base64");
+  const body = {
+    message,
+    content: encoded
+  };
+  if (sha) body.sha = sha;
   const res = await fetch(`https://api.github.com/repos/${repo}/contents/content/${relPath}`, {
     method: "PUT",
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json"
     },
-    body: JSON.stringify({
-      message,
-      content: encoded
-    })
+    body: JSON.stringify(body)
   });
   if (!res.ok) {
     const text = await res.text();
@@ -296,6 +314,12 @@ async function githubDeleteFile(repo, relPath, token, sha, message) {
   }
 }
 
+async function githubPutFileWithLookup(repo, relPath, content, token, message) {
+  const existing = await githubGetFile(repo, relPath, token);
+  const sha = existing?.sha || null;
+  await githubPutFile(repo, relPath, content, token, message, sha);
+}
+
 export async function handler(event) {
   try {
     const body = JSON.parse(event.body || "{}");
@@ -306,20 +330,20 @@ export async function handler(event) {
       return { statusCode: 400, body: "Missing tree" };
     }
 
-    computeNewPaths(tree, "");
+    computeNewPaths(tree, "", mode);
     const renames = buildRenameList(tree, []);
     const diagnostics = collectStagedDiagnostics(tree, []);
 
-    const deletes = collectDeletes(tree, []);
+    const deletes = collectDeletes(tree, [], mode);
     const deleteFiles = deletes.flatMap(n => collectFilesForNode(n, []));
-    const deleteFolders = collectDeletedFolders(tree, []);
+    const deleteFolders = collectDeletedFolders(tree, [], mode);
 
     if (mode === "web") {
       const repo = process.env.GITHUB_REPO || "StephenJD/ANL";
       const token = process.env.GITHUB_TOKEN;
       if (!token) return { statusCode: 500, body: "Missing GITHUB_TOKEN" };
 
-      const stagedMap = buildStagedContentMap(tree);
+      const stagedMap = buildStagedContentMap(tree, new Map(), "web");
       // Delete staged deletions first
       for (const rel of deleteFiles) {
         const existing = await githubGetFile(repo, rel, token);
@@ -329,7 +353,7 @@ export async function handler(event) {
       }
       // Write staged content first
       for (const [fileRel, content] of stagedMap.entries()) {
-        await githubPutFile(repo, fileRel, content, token, `Publish edit ${fileRel}`);
+        await githubPutFileWithLookup(repo, fileRel, content, token, `Publish edit ${fileRel}`);
       }
 
       // Handle renames (move/renumber), including unstaged items
@@ -353,7 +377,7 @@ export async function handler(event) {
         const existing = await githubGetFile(repo, oldRel, token);
         if (!existing?.content) continue;
         const decoded = Buffer.from(existing.content, "base64").toString("utf8");
-        await githubPutFile(repo, newRel, decoded, token, `Move ${oldRel} -> ${newRel}`);
+        await githubPutFileWithLookup(repo, newRel, decoded, token, `Move ${oldRel} -> ${newRel}`);
         if (oldRel !== newRel && existing?.sha) {
           await githubDeleteFile(repo, oldRel, token, existing.sha, `Remove old ${oldRel}`);
         }
@@ -389,8 +413,8 @@ export async function handler(event) {
       if (fs.existsSync(full)) fs.rmSync(full, { recursive: true, force: true });
     }
 
-    renameChildrenIfNeeded(tree, contentRoot, "");
-    writeStagedContent(tree, contentRoot);
+    renameChildrenIfNeeded(tree, contentRoot, "", "local");
+    writeStagedContent(tree, contentRoot, "local");
 
     runGit("git add content", repoRoot);
     const staged = runGit("git diff --cached --name-only", repoRoot);

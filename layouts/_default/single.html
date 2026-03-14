@@ -3,5 +3,10 @@
   <div class="debug-message">
     DEBUG: layouts\_default\single.html is running
   </div>
-  {{ partial "anl_section_collation.html" . }}
+  {{ $rawType := lower (printf "%v" .Params.type) }}
+  {{ if hasPrefix $rawType "dynamic" }}
+    {{ partial "anl_single_page.html" . }}
+  {{ else }}
+    {{ partial "anl_section_collation.html" . }}
+  {{ end }}
 {{ end }}
