@@ -29,6 +29,7 @@ let editButtons = null;
 
 function selectNode(path) {
   selectedNodePath = path;
+  window.selectedNodePath = path;
   if (editButtons) editButtons.update(selectedNodePath);
   renderTreeUI();
 }

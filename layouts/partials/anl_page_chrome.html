@@ -13,14 +13,13 @@
   {{ $show_breadcrumb = false }}
 {{ end }}
 
-{{ $nodePath := "" }}
+
+{{ $filePath := "" }}
 {{ with $current_page.File }}
-  {{ $nodePath = .Path }}
+  {{ $filePath = .Path }}
 {{ end }}
-{{ $nodePath = replace $nodePath "\\" "/" }}
-{{ $nodePath = replaceRE "/_index\\.md$" "" $nodePath }}
-{{ $webeditorBase := "/06_secure/05_edit-website/" }}
-{{ $webeditorHref := printf "%s?node=%s&open=1" $webeditorBase ($nodePath | urlquery) }}
+{{ $filePath = replace $filePath "\\" "/" }}
+{{ $webeditorHref := printf "/06_secure/website_updates/content-editor/?file=%s" ($filePath | urlquery) }}
 
 <link rel="stylesheet" href="{{ "css/anl_chrome.css" | absURL  }}">
 <div class="debug-message">

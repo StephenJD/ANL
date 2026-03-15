@@ -22,18 +22,24 @@ export async function loadGatedPage(container, pagePath, msgBox) {
   }
 
   async function injectHtml(html) {
+    console.log("[injectHtml] Injecting HTML:", html);
     container.innerHTML = html;
     const scripts = Array.from(container.querySelectorAll("script"));
     for (const oldScript of scripts) {
       const isModule = oldScript.type === "module";
       const isSrc = !!oldScript.src;
       let newScript;
+      console.log("[injectHtml] Found <script> tag. type:", oldScript.type, "src:", oldScript.src, "content:", oldScript.textContent);
       if (isModule && !isSrc) {
         // Inline module: must append to <head> for execution
         newScript = document.createElement("script");
         newScript.type = "module";
         newScript.textContent = oldScript.textContent;
-        document.head.appendChild(newScript);
+        try {
+          document.head.appendChild(newScript);
+        } catch (e) {
+          console.error("[injectHtml] Error appending inline module script:", e, "script content:", newScript.textContent);
+        }
       } else {
         newScript = document.createElement("script");
         if (oldScript.type) newScript.type = oldScript.type;
@@ -43,7 +49,11 @@ export async function loadGatedPage(container, pagePath, msgBox) {
         } else {
           newScript.textContent = oldScript.textContent;
         }
-        oldScript.replaceWith(newScript);
+        try {
+          oldScript.replaceWith(newScript);
+        } catch (e) {
+          console.error("[injectHtml] Error replacing script:", e, "script content:", newScript.textContent);
+        }
         if (newScript.type === "module" && newScript.src) await new Promise(r => newScript.onload = r);
       }
     }
@@ -59,9 +69,11 @@ export async function loadGatedPage(container, pagePath, msgBox) {
     });
 
     const contentType = res.headers.get("Content-Type") || "";
+    console.log("[loadGatedPage] Response Content-Type:", contentType);
 
     if (contentType.includes("application/json")) {
       const data = await res.json();
+      console.log("[loadGatedPage] JSON response:", data);
       switch (data.action) {
         case "public": showMessage("Public page should not be gate-loaded!"); return;
         case "redirect": return window.location.href = data.location;
@@ -77,6 +89,7 @@ export async function loadGatedPage(container, pagePath, msgBox) {
 
     if (res.status === 200) {
       const html = await res.text();
+      console.log("[loadGatedPage] HTML response:", html);
       await injectHtml(html);
     } else {
       showMessage(`Unexpected status: ${res.status}`);

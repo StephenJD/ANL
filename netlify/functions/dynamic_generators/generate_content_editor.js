@@ -1,9 +1,13 @@
 // netlify/functions/dynamic_generators/generate_content_editor.js
 export default async function generate_content_editor() {
-  return `
+
+  // Assign the HTML to a variable and return it as a string
+  const html = `
 <h1>Content Editor</h1>
+
 <div>
-  <div id="editorContainer">
+  <div id="tree"></div>
+  <div id="editorContainer" style="display:block;">
     <div id="editorHeader" style="font-weight:bold;margin-bottom:8px;"></div>
     <form id="editForm"></form>
     <label for="frontMatterText">Front Matter:</label>
@@ -32,17 +36,8 @@ export default async function generate_content_editor() {
   </div>
 </div>
 <div id="logDiv"></div>
-<script type="module">
-window.log = function(msg) {
-  const logDiv = document.getElementById("logDiv");
-  if (logDiv) {
-    logDiv.textContent += String(msg) + "\n";
-    logDiv.scrollTop = logDiv.scrollHeight;
-  }
-  console.log(msg);
-};
-window.log("Content editor only script started");
-// TODO: Add content editor only logic here (form handling, save, etc.)
-</script>
+<div id="treeEditButtons"></div>
+<script type="module" src="/js/webeditor/contentEditorMain.js"></script>
 `;
+  return html;
 }

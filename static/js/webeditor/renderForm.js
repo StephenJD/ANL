@@ -468,7 +468,16 @@ export async function renderForm(node, frontMatter, accessOptionsCache) {
   }
 
   let optionalHeadingInserted = false;
+  const debugLog = (msg, ...args) => {
+    if (typeof window !== 'undefined' && typeof window.log === 'function') {
+      window.log(msg, ...args);
+    } else {
+      console.log(msg, ...args);
+    }
+  };
+  debugLog('[renderForm] Rendering fields:', fieldSchema.fields.map(f => f.key));
   for (const field of fieldSchema.fields) {
+    //debugLog('[renderForm] Rendering field:', field.key, 'type:', field.type);
     if (!field.required && !optionalHeadingInserted) {
       renderOptionalHeading();
       optionalHeadingInserted = true;

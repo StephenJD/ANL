@@ -76,12 +76,14 @@ export function setupEditButtons(containerId, treeData, moveFn, showEditorFn, pu
     });
   }
 
-  // Edit button hides tree
+  // Edit button redirects to content editor with selected node
   if (buttons.edit) {
     buttons.edit.addEventListener("click", () => {
-      const treeDiv = document.getElementById("tree");
-      if (treeDiv) treeDiv.style.display = "none";
-      if (showEditorCallback) showEditorCallback({ openBody: false });
+      if (window.selectedNodePath) {
+        window.location.href = `/06_secure/website_updates/content-editor/?node=${encodeURIComponent(window.selectedNodePath)}`;
+      } else {
+        window.log("[editButtons] No node selected for editing");
+      }
     });
   }
 

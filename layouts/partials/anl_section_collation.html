@@ -28,8 +28,11 @@
 {{/* <div> Opened in this parial */}}
 {{ partial "anl_page_chrome.html" . }} 
   
+
+  {{/* Exclude gate logic for dynamic/editor/document-list pages by type or function_key */}}
+  {{ $isEditor := or (in (lower .File.Path) "/content-editor/") (in (lower .File.BaseFileName) "content-editor") (eq .Type "dynamic") (in (lower .Params.function_key | default "") (slice "content_editor" "tree_view" "document_list")) }}
   <section id="main-content" class="document-content">
-    {{ if not (in $access "public") }}
+    {{ if and (not (in $access "public")) (not $isEditor) }}
       <div class="gated_page_placeholder" data-path="{{ .File.Path }}">
         <div class="page_access_message">Loading page…</div>
       </div>
@@ -37,7 +40,6 @@
       {{ if $content }}
         {{ $content | safeHTML }}
       {{ end }}
-
     {{ end }}
   </section>
   
@@ -74,6 +76,15 @@
     {{ end }}
     {{ if not $expired }}
     <section id="{{ .File.BaseFileName }}" class="document-content">
+      {{/* Clean access frontmatter into lowercase slice */}}
+      {{ $sectionAccess := slice }}
+      {{ range (split (printf "%v" (.Params.access | default "public")) ",") }}
+        {{ $clean := trim . " " }}
+        {{ if $clean }}{{ $sectionAccess = $sectionAccess | append (lower $clean) }}{{ end }}
+      {{ end }}
+      {{ if and (in $sectionAccess "edit-content") (not $expired) }}
+        <a class="edit-section-link" href="/06_secure/website_updates/content-editor/?file={{ .File.Path }}" style="float:right; margin-left:12px; font-size:0.95em;">✏️ Edit This Section</a>
+      {{ end }}
       <h2>{{ .Title }}</h2>
       {{/* Clean access frontmatter into lowercase slice */}}
       {{ $sectionAccess := slice }}
@@ -82,7 +93,7 @@
         {{ if $clean }}{{ $sectionAccess = $sectionAccess | append (lower $clean) }}{{ end }}
       {{ end }}
   
-      {{ if not (in $sectionAccess "public") }}
+      {{ if and (not (in $sectionAccess "public")) (not (in (slice (lower .File.BaseFileName)) "content-editor")) }}
         <div class="gated_page_placeholder" data-path="{{ .File.Path }}">
           <div class="page_access_message">Loading page…</div>
         </div>
@@ -98,6 +109,9 @@
   {{ end }}
 </div>
 
+
+{{/* Only include gate loader script if not a dynamic/editor/document-list page */}}
+{{ if not $isEditor }}
 <script type="module">
 import { loadGatedPage } from "{{ "js/gated_page_loader.js" | relURL }}";
 
@@ -127,3 +141,16 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 </script>
+{{ end }}
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Debug: log all edit-section links rendered
+      document.querySelectorAll('.edit-section-link').forEach(function(link) {
+        console.log('[DEBUG] Edit link rendered:', link.href);
+        link.addEventListener('click', function(e) {
+          console.log('[DEBUG] Edit link clicked:', link.href);
+        });
+      });
+    });
+  </script>
