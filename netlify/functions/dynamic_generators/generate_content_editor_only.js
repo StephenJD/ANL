@@ -1,5 +1,5 @@
-// netlify/functions/dynamic_generators/generate_content_editor.js
-export default async function generate_content_editor() {
+// netlify/functions/dynamic_generators/generate_content_editor_only.js
+export default async function generate_content_editor_only() {
   return `
 <h1>Content Editor</h1>
 <div>
@@ -32,17 +32,6 @@ export default async function generate_content_editor() {
   </div>
 </div>
 <div id="logDiv"></div>
-<script type="module">
-window.log = function(msg) {
-  const logDiv = document.getElementById("logDiv");
-  if (logDiv) {
-    logDiv.textContent += String(msg) + "\n";
-    logDiv.scrollTop = logDiv.scrollHeight;
-  }
-  console.log(msg);
-};
-window.log("Content editor only script started");
-// TODO: Add content editor only logic here (form handling, save, etc.)
-</script>
+<script type="module">document.getElementById('logDiv').textContent = 'Script ran!';</script>
 `;
 }
