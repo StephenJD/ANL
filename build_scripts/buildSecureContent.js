@@ -1,3 +1,20 @@
+// --- Auto-generate generator_imports.js for dynamic page generators ---
+function updateGeneratorImports() {
+  const genDir = path.join(process.cwd(), "netlify", "functions", "dynamic_generators");
+  const files = fs.readdirSync(genDir).filter(f => f.startsWith("generate_") && f.endsWith(".js"));
+  const imports = files.map(f => {
+    const base = f.replace(/\.js$/, "");
+    return `import ${base} from \"./${f}\";`;
+  });
+  const exports = files.map(f => f.replace(/\.js$/, "")).join(",\n  ");
+  const content = `${imports.join("\n")}
+\nexport const dynamicRuntimes = {\n  ${exports}\n};\n`;
+  const outPath = path.join(genDir, "generator_imports.js");
+  fs.writeFileSync(outPath, content);
+  console.log("[buildSecureContent] Updated generator_imports.js with:", files);
+}
+
+updateGeneratorImports();
 // \build_scripts\buildSecureContent.js
 import fs from "fs";
 import path from "path";

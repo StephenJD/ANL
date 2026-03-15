@@ -1,4 +1,7 @@
 // static/js/webeditor/renderTree.js
+if (typeof window !== "undefined" && typeof window.log !== "function") {
+    window.log = function (...args) { console.log(...args); };
+}
 window.log("renderTree FILE LOADED 2026-03-11");
 import { editStateColors } from "./fieldSchema.js";
 

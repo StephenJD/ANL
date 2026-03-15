@@ -25,16 +25,27 @@ export async function loadGatedPage(container, pagePath, msgBox) {
     container.innerHTML = html;
     const scripts = Array.from(container.querySelectorAll("script"));
     for (const oldScript of scripts) {
-      const newScript = document.createElement("script");
-      if (oldScript.type) newScript.type = oldScript.type;
-      if (oldScript.src) {
-        newScript.src = oldScript.src;
-        newScript.async = false;
-      } else {
+      const isModule = oldScript.type === "module";
+      const isSrc = !!oldScript.src;
+      let newScript;
+      if (isModule && !isSrc) {
+        // Inline module: must append to <head> for execution
+        newScript = document.createElement("script");
+        newScript.type = "module";
         newScript.textContent = oldScript.textContent;
+        document.head.appendChild(newScript);
+      } else {
+        newScript = document.createElement("script");
+        if (oldScript.type) newScript.type = oldScript.type;
+        if (isSrc) {
+          newScript.src = oldScript.src;
+          newScript.async = false;
+        } else {
+          newScript.textContent = oldScript.textContent;
+        }
+        oldScript.replaceWith(newScript);
+        if (newScript.type === "module" && newScript.src) await new Promise(r => newScript.onload = r);
       }
-      oldScript.replaceWith(newScript);
-      if (newScript.type === "module" && newScript.src) await new Promise(r => newScript.onload = r);
     }
     document.dispatchEvent(new Event("gated-page-loaded"));
   }
