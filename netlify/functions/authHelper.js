@@ -203,10 +203,21 @@ export async function requireAuth(event, allowedRoles = []) {
     };
   }
 
-  const userRole = String(check.entry?.role || "").toLowerCase().trim();
+  // Support multiple roles per user (comma-separated or array)
+  let userRoles = check.entry?.role;
+  if (Array.isArray(userRoles)) {
+    userRoles = userRoles.map(r => String(r).toLowerCase().trim());
+  } else if (typeof userRoles === "string") {
+    userRoles = userRoles.split(",").map(r => r.toLowerCase().trim()).filter(Boolean);
+  } else {
+    userRoles = [];
+  }
 
-  if (allowedRoles.length > 0 && !allowedRoles.includes(userRole)) {
-    console.warn("[authHelper] Forbidden: user role", userRole, "not in", allowedRoles);
+  const allowed = allowedRoles.map(r => String(r).toLowerCase().trim());
+  const hasRole = userRoles.some(r => allowed.includes(r));
+
+  if (allowed.length > 0 && !hasRole) {
+    console.warn("[authHelper] Forbidden: user roles", userRoles, "not in", allowed);
     return {
       unauthorized: true,
       response: {
@@ -219,7 +230,7 @@ export async function requireAuth(event, allowedRoles = []) {
 
   return {
     unauthorized: false,
-    user: { userName: check.entry.user_name, role: userRole }
+    user: { userName: check.entry.user_name, roles: userRoles }
   };
 }
 

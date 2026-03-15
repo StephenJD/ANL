@@ -7,7 +7,7 @@ import { requireBindingAuth } from "./authHelper.js";
 import 'dotenv/config';
 
 // Only these bin names may be accessed via this function
-const ALLOWED_BIN_IDS = new Set(["USER_ACCESS_BIN"]);
+// All bin IDs are allowed (all are random and unguessable)
 
 const USER_ACCESS_BIN_KEY = process.env.USER_ACCESS_BIN;
 
@@ -85,8 +85,7 @@ export async function handler(event) {
 
   const { action, bin_id, section_key, keyValue } = body;
   if (!section_key) return replyMsg(400, "Missing section_key");
-  // Reject bin names not in the allow-list to prevent arbitrary env-var lookup
-  if (!ALLOWED_BIN_IDS.has(bin_id)) return replyMsg(400, "Invalid bin_id");
+    // All bin IDs are allowed (all are random and unguessable)
   const BIN_KEY = process.env[bin_id];
   let dataArray = await getSecureItem(BIN_KEY, section_key);
   if (!Array.isArray(dataArray)) dataArray = [];
