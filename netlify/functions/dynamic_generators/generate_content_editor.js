@@ -45,6 +45,7 @@ export default async function generate_content_editor() {
 <div id="treeEditButtons"></div>
 
 <script type="module">
+import { getNetlifyAuthHeaders } from "/js/netlifyAuthFetch.js";
 
 window.log = function(msg){
   const logDiv = document.getElementById("logDiv");
@@ -210,7 +211,7 @@ async function publishEditsInternal(mode, localRootOverride = "") {
     const payload = { tree: serializeTreeForPublish(treeData), mode, localRoot: localRootOverride || "" };
     const res = await fetch("/.netlify/functions/publish_edits", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: getNetlifyAuthHeaders({ json: true }),
       body: JSON.stringify(payload)
     });
     const text = await res.text();
@@ -367,7 +368,7 @@ async function showEditorForSelectedNode(options = {}){
         log("[frontmatter] start_edit request for " + node.path);
         const res = await fetch("/.netlify/functions/start_edit", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: getNetlifyAuthHeaders({ json: true }),
           body: JSON.stringify({ file: node.path })
         });
         log("[frontmatter] start_edit status " + res.status);
@@ -647,7 +648,9 @@ document.addEventListener("click", e=>{
 async function loadTree(){
   log("Step 3: Loading tree...");
   try{
-    const res = await fetch("/.netlify/functions/list_content_tree");
+    const res = await fetch("/.netlify/functions/list_content_tree", {
+      headers: getNetlifyAuthHeaders()
+    });
     log("Tree HTTP status: " + res.status);
       if(res.ok) {
         const jsonSafeTree = await res.json();
@@ -855,7 +858,7 @@ async function loadBodyFolderImages(filePath){
   try {
     const res = await fetch("/.netlify/functions/list_page_folder_images", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: getNetlifyAuthHeaders({ json: true }),
       body: JSON.stringify({ file: filePath })
     });
     if (!res.ok) {
@@ -902,7 +905,7 @@ async function uploadImageToCurrentFolder(file){
     const dataUrl = await readFileAsDataUrl(file);
     const res = await fetch("/.netlify/functions/upload_page_folder_image", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: getNetlifyAuthHeaders({ json: true }),
       body: JSON.stringify({ file: nodePath, name: file.name, dataUrl, forceLocal: true })
     });
     const text = await res.text();
@@ -981,7 +984,7 @@ async function ensureParentFrontMatter(node) {
   try {
     const res = await fetch("/.netlify/functions/start_edit", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: getNetlifyAuthHeaders({ json: true }),
       body: JSON.stringify({ file: parentPath })
     });
     if (!res.ok) return;

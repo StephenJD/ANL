@@ -1,5 +1,6 @@
 // static/js/webeditor/renderForm.js
 import { fieldSchema } from "./fieldSchema.js";
+import { getNetlifyAuthHeaders } from "./authHeaders.js";
 
 let sharedImageOptionsCacheGlobal = null;
 
@@ -44,7 +45,9 @@ export async function renderForm(node, frontMatter, accessOptionsCache) {
   async function getAccessOptions() {
     if (editState.accessOptionsCache) return editState.accessOptionsCache;
     try {
-      const res = await fetch("/.netlify/functions/get_role_options");
+      const res = await fetch("/.netlify/functions/get_role_options", {
+        headers: getNetlifyAuthHeaders()
+      });
       if (!res.ok) throw new Error("HTTP " + res.status);
       let options = await res.json();
       options = options.map(o => o.Role || o.role || o);
@@ -61,7 +64,9 @@ export async function renderForm(node, frontMatter, accessOptionsCache) {
   async function getSharedImageOptions() {
     if (editState.sharedImageOptionsCache) return editState.sharedImageOptionsCache;
     try {
-      const res = await fetch("/.netlify/functions/list_shared_images");
+      const res = await fetch("/.netlify/functions/list_shared_images", {
+        headers: getNetlifyAuthHeaders()
+      });
       if (!res.ok) throw new Error("HTTP " + res.status);
       const data = await res.json();
       const options = Array.isArray(data) ? data : [];
@@ -411,7 +416,7 @@ export async function renderForm(node, frontMatter, accessOptionsCache) {
       const dataUrl = await readFileAsDataUrl(file);
       const res = await fetch("/.netlify/functions/upload_shared_image", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getNetlifyAuthHeaders({ json: true }),
         body: JSON.stringify({ name: file.name, dataUrl, forceLocal: true })
       });
       const text = await res.text();

@@ -1,5 +1,6 @@
 // static/js/webeditor/editActions.js
 import { fieldSchema } from "./fieldSchema.js";
+import { getNetlifyAuthHeaders } from "./authHeaders.js";
 
 window.log("editActions FILE LOADED 2026-03-11");
 
@@ -74,7 +75,7 @@ export function setupEditActions(treeDataRef = [], selectedNodePathRef = { value
       window.log(`[editActions] save_edit start file=${node.path} fields=${Object.keys(dataObj).join(",")}`);
       const res = await fetch("/.netlify/functions/save_edit", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getNetlifyAuthHeaders({ json: true }),
         body: JSON.stringify({ file: node.path, content })
       });
       if (!res.ok) {

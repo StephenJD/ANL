@@ -1,4 +1,5 @@
 // \static/js\webeditor\renderAccessOptions.js
+import { getNetlifyAuthHeaders } from "./authHeaders.js";
 
 export async function renderAccessOptions(form, frontMatter, cache){
     const accessLabel = document.createElement("label");
@@ -19,7 +20,9 @@ export async function renderAccessOptions(form, frontMatter, cache){
     let options = cache || [];
     if(!cache) {
         try {
-            const res = await fetch("/.netlify/functions/get_role_options");
+            const res = await fetch("/.netlify/functions/get_role_options", {
+                headers: getNetlifyAuthHeaders()
+            });
             if(!res.ok) throw new Error("HTTP " + res.status);
             options = await res.json();
             options = options.map(o => o.Role || o.role || o);

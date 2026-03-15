@@ -4,6 +4,7 @@ import 'dotenv/config';
 // --- Import local modules as ESM ---
 import { getSecureItem, setSecureItem } from "./multiSecureStore.js";
 import { generateUserToken, generateTempAccessToken } from "./generateSecureToken.js";
+import { check_userLoginToken as _authCheck, requireAuth } from "./authHelper.js";
 
 // --- Bin keys from .env ---
 const USER_ACCESS_BIN = process.env.USER_ACCESS_BIN;
@@ -11,6 +12,29 @@ const ACCESS_TOKEN_BIN = process.env.ACCESS_TOKEN_BIN;
 const PERMITTED_USERS_KEY = process.env.PERMITTED_USERS_KEY;
 const ADMIN_SUPERUSER_HASH = process.env.ADMIN_SUPERUSER_HASH;
 const USER_ACCESS_TIMEOUT_mS = process.env.USER_ACCESS_TIMEOUT_HRS * 60 * 60 * 1000;
+const AUTH_WINDOW_MS = 10 * 60 * 1000;
+const AUTH_MAX_ATTEMPTS = 40;
+const authAttemptCache = new Map();
+
+function getClientKey(event) {
+  const forwarded = String(event?.headers?.["x-forwarded-for"] || "").split(",")[0].trim();
+  const nfIp = String(event?.headers?.["x-nf-client-connection-ip"] || "").trim();
+  const ip = forwarded || nfIp || "unknown";
+  const ua = String(event?.headers?.["user-agent"] || "unknown").slice(0, 120);
+  return `${ip}|${ua}`;
+}
+
+function isRateLimited(event, action) {
+  const now = Date.now();
+  const key = `${action}|${getClientKey(event)}`;
+  let bucket = authAttemptCache.get(key);
+  if (!bucket || now - bucket.startedAt > AUTH_WINDOW_MS) {
+    bucket = { startedAt: now, count: 0 };
+  }
+  bucket.count += 1;
+  authAttemptCache.set(key, bucket);
+  return bucket.count > AUTH_MAX_ATTEMPTS;
+}
 
 // --- 1) Check if email is in permitted_users ---
 export async function checkIsPermittedUser(email) {
@@ -20,7 +44,7 @@ export async function checkIsPermittedUser(email) {
     const permitted = permittedUsers.some(u => u.Email.toLowerCase() === email.toLowerCase());
     if (permitted) return permitted;
     else {
-      console.log("[verifyUser] checkIsPermittedUser: False:", email, permittedUsers); 
+      console.log("[verifyUser] checkIsPermittedUser: False for request");
       return false;
     }
   } catch (err) {
@@ -35,7 +59,7 @@ export async function addUserLogin(email, userName, password) {
     //console.log("[verifyUser] addUserLogin:", email, userName, password); 
     const permittedUsers = await getSecureItem(USER_ACCESS_BIN, PERMITTED_USERS_KEY) || [];
     const userEntry = permittedUsers.find(u => u.Email.toLowerCase() === email.toLowerCase());
-    if (!userEntry) return { status: "Not permitted" };
+    if (!userEntry) return { status: "failed" };
 
     const loginToken = generateUserToken(userName, password);
     userEntry.login_token = loginToken;
@@ -49,7 +73,7 @@ export async function addUserLogin(email, userName, password) {
 }
 
 // --- 3) Get a userlogin token  ---
-export async function get_UserLoginToken(userName, password) {
+export async function get_UserLoginToken(userName, password, deviceId = null, userAgent = null) {
   try {
     console.log("[verifyUser] get_UserLoginToken:", userName); 
     const loginToken = generateUserToken(userName, password);
@@ -61,14 +85,14 @@ export async function get_UserLoginToken(userName, password) {
       if (currentUser) {
         if (currentUser.login_token) {
 		console.log("[verifyUser] get_UserLoginToken invalid login_token for:", userName );
-		return { status: "Invalid login_token" };
+    return { status: "invalid_credentials" };
         } else {
 		console.log("[verifyUser] get_UserLoginToken No login_token for:", userName );
-		return { status: "Missing login_token" };
+    return { status: "invalid_credentials" };
 	  }
 	} else {
 		console.log("[verifyUser] get_UserLoginToken Not Registered:", userName );	
-		return { status: "Not Registered" };
+    return { status: "invalid_credentials" };
 	}
     }
 
@@ -76,7 +100,12 @@ export async function get_UserLoginToken(userName, password) {
     await setSecureItem(
       ACCESS_TOKEN_BIN,
       userLoginToken,
-      { user_name: currentUser["User name"], role: currentUser["Role"] },
+      {
+        user_name: currentUser["User name"],
+        role: currentUser["Role"],
+        deviceId: deviceId || null,
+        userAgent: userAgent || null
+      },
       USER_ACCESS_TIMEOUT_mS
     );
 
@@ -88,29 +117,9 @@ export async function get_UserLoginToken(userName, password) {
 }
 
 // --- 4) Check userLogin token is valid ---
-export async function check_userLoginToken(userLogin_token) {
-  try {
-    const entry = await getSecureItem(ACCESS_TOKEN_BIN, userLogin_token);
-    if (!entry) return { status: "Not found" };
-
-    if (entry.expires > Date.now()) { 
-      await setSecureItem(
-        ACCESS_TOKEN_BIN,
-        userLogin_token,
-        {
-          user_name: entry.user_name,
-          role: entry.role
-        },
-        USER_ACCESS_TIMEOUT_mS
-      );
-      return { status: "success", entry };
-    } else {
-      return { status: "expired" };
-    }
-  } catch (err) {
-    console.error("[verifyUser] check_userLoginToken error:", err);
-    return { status: "error" };
-  }
+// Delegates to authHelper which enforces exact role match, device binding, and caching.
+export async function check_userLoginToken(userLogin_token, deviceId = null, userAgent = null) {
+  return _authCheck(userLogin_token, deviceId, userAgent);
 }
 
 // --- 5) Delete a user login ---
@@ -136,24 +145,39 @@ export async function handler(event) {
   }
 
   try {
-    const { action, email, userName, password, userLogin_token } = JSON.parse(event.body || "{}");
+    const { action, email, userName, password, userLogin_token, deviceId } = JSON.parse(event.body || "{}");
+    const userAgent = (event.headers?.["user-agent"] || "").trim() || null;
     let result;
+
+    const rateLimitedActions = new Set(["checkIsPermittedUser", "addUserLogin", "get_UserLoginToken", "check_userLoginToken"]);
+    if (rateLimitedActions.has(action) && isRateLimited(event, action)) {
+      return { statusCode: 429, body: JSON.stringify({ status: "error", error: "Too many requests" }) };
+    }
 
     switch (action) {
       case "checkIsPermittedUser":
         result = await checkIsPermittedUser(email);
-        return { statusCode: 200, body: JSON.stringify({ success: result }) };
+        // Enumeration-resistant: never reveal if an email exists.
+        return { statusCode: 200, body: JSON.stringify({ success: true }) };
       case "addUserLogin":
         result = await addUserLogin(email, userName, password);
         return { statusCode: 200, body: JSON.stringify(result) };
       case "get_UserLoginToken":
-        result = await get_UserLoginToken(userName, password);
+        result = await get_UserLoginToken(userName, password, deviceId || null, userAgent);
         return { statusCode: 200, body: JSON.stringify(result) };
-      case "deleteUserLogin":
+      case "deleteUserLogin": {
+        // Requires authentication — only the account owner or an admin may call this
+        const auth = await requireAuth(event, []);
+        if (auth.unauthorized) return auth.response;
+        // Non-admins may only delete their own login
+        if (auth.user.role !== "admin" && auth.user.userName.toLowerCase() !== (userName || "").toLowerCase()) {
+          return { statusCode: 403, body: JSON.stringify({ status: "error", error: "Forbidden" }) };
+        }
         result = await deleteUserLogin(email);
         return { statusCode: 200, body: JSON.stringify(result) };
+      }
       case "check_userLoginToken":
-        result = await check_userLoginToken(userLogin_token);
+        result = await check_userLoginToken(userLogin_token, deviceId || null, userAgent);
         return { statusCode: 200, body: JSON.stringify(result) };
       default:
         return { statusCode: 400, body: JSON.stringify({ status: "error", error: "Invalid action" }) };

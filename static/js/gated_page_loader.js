@@ -1,5 +1,12 @@
 // \static\js\gated_page_loader.js
 import { urlizePath } from "/js/urlize.js";
+import { getNetlifyAuthHeaders } from "/js/netlifyAuthFetch.js";
+
+/** Clear session credentials and redirect to the login page. */
+function forceLogout(redirectUrl) {
+  localStorage.removeItem("userLogin_token");
+  window.location.href = `/user-login?redirect=${encodeURIComponent(redirectUrl)}&logout=1`;
+}
 
 export async function loadGatedPage(container, pagePath, msgBox) {
   // pagePath can be raw .File.Path
@@ -33,12 +40,11 @@ export async function loadGatedPage(container, pagePath, msgBox) {
   }
 
   try {
-    const token = localStorage.getItem("userLogin_token");
     const normalizedPath = urlizePath(pagePath);
 
     const res = await fetch(`/.netlify/functions/gatedPage?page=${encodeURIComponent(normalizedPath)}`, {
       method: "GET",
-      headers: token ? { "Authorization": `Bearer ${token}` } : {}
+      headers: getNetlifyAuthHeaders()
     });
 
     const contentType = res.headers.get("Content-Type") || "";
@@ -48,6 +54,7 @@ export async function loadGatedPage(container, pagePath, msgBox) {
       switch (data.action) {
         case "public": showMessage("Public page should not be gate-loaded!"); return;
         case "redirect": return window.location.href = data.location;
+        case "forceLogout": return forceLogout(window.location.pathname);
         case "accessDenied": showMessage("Access denied"); return;
         case "notFound": showMessage("Page not found"); return;
         case "error": showMessage("Error loading page"); return;
@@ -67,3 +74,4 @@ export async function loadGatedPage(container, pagePath, msgBox) {
     console.error("Exception in loadGatedPage fetch:", err);
   }
 }
+

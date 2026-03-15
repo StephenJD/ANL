@@ -2,7 +2,7 @@
 import fs from "fs";
 import path from "path";
 import { execSync } from "child_process";
-
+import { requireBindingAuth } from "./authHelper.js";
 const editsRoot = path.join(process.cwd(), "edits");
 // Keep in sync with static/js/webeditor/fieldSchema.js (fileTypeRules.fileTypes)
 const fileTypeRules = {
@@ -333,6 +333,9 @@ async function githubPutFileWithLookup(repo, relPath, content, token, message) {
 }
 
 export async function handler(event) {
+  const auth = await requireBindingAuth(event, "edit_website");
+  if (auth.unauthorized) return auth.response;
+
   try {
     const body = JSON.parse(event.body || "{}");
     const tree = Array.isArray(body.tree) ? body.tree : [];

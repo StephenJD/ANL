@@ -113,7 +113,8 @@ function collectEntries(dir, out = []) {
       last_reviewed: frontMatter.last_reviewed || "",
       review_period: frontMatter.review_period || "",
       reviewed_by: frontMatter.reviewed_by || "",
-      rawContent
+      rawContent,
+      frontMatter // keep all original front matter fields for later merging
     });
   });
 
@@ -204,7 +205,10 @@ try {
       fs.writeFileSync(outHtmlPath, html);
     }
 
+    // Copy all front matter fields, but ensure normalized/required fields are present and correct
     const json = {
+      ...entry.frontMatter, // all original front matter fields
+      // override/ensure these fields are always present and normalized
       title: entry.title,
       summary: entry.summary,
       type: entry.rawType,

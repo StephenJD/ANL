@@ -5,4 +5,5 @@ type: dynamic generate_vist_stats
 logo_image: "/images/shared/anl_logo_transparent_1024.png"
 background_image: "/images/shared/pagewash.jpg"
 access: admin
+function_key: visit_stats
 ---

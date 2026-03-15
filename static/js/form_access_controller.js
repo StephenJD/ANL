@@ -37,6 +37,7 @@ Server-side:
 */
 
 import { loadGatedPage } from './gated_page_loader.js';
+import { getNetlifyAuthHeaders } from '/js/netlifyAuthFetch.js';
 
 export let restrictUsers = false;
 let requireRequestLink = false;
@@ -94,7 +95,7 @@ async function fetchFrontMatter() {
   try {
     const res = await fetch("/.netlify/functions/getFormFrontMatter", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: getNetlifyAuthHeaders({ json: true, includeAuth: false }),
       body: JSON.stringify({ formPath: window.location.pathname })
     });
     const fm = await res.json();
@@ -142,18 +143,8 @@ function setupAccessControls() {
 async function sendAccessLink(email) {
   const resp = await fetch("/.netlify/functions/sendFormAccessLink", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: getNetlifyAuthHeaders({ json: true, includeAuth: false }),
     body: JSON.stringify({ email, formPath: window.location.pathname, formName: cleanTitle, site_root: window.location.origin })
-  });
-  return resp.json();
-}
-
-async function isEmailAllowed(email) {
-  if (!restrictUsers) return { success: true };
-  const resp = await fetch("/.netlify/functions/verifyUser", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ action: "checkIsPermittedUser", email })
   });
   return resp.json();
 }
@@ -162,19 +153,15 @@ async function handleRequestButtonClick() {
   const email = emailInput?.value.trim();
   if (!email) return alert("Enter your email");
 
-  const checkData = await isEmailAllowed(email);
-  if (!checkData.success) {
-    if (messageBox) {
-      messageBox.textContent = "This email is not authorized to request access for this form.";
-    }
-    console.log("[form_access_controller] email is not authorized", email);
-    return false;
-  }
-
   const result = await sendAccessLink(email);
-  console.log("[form_access_controller] email sent");
-  //alert(result.success ? "Check your email for the link." : "Error sending link: " + (result.error || "unknown"));
-  return true;
+  if (result?.success) {
+    console.log("[form_access_controller] Access-link request accepted");
+    return true;
+  }
+  if (messageBox) {
+    messageBox.textContent = "Unable to process link request right now. Please try again shortly.";
+  }
+  return false;
 }
 
   async function requestAccount(email) {
@@ -195,8 +182,8 @@ async function verifyFormAccessToken() {
   try {
     const resp = await fetch("/.netlify/functions/secureStore_ClientAccess", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ bin: "ACCESS_TOKEN_BIN", token: urlToken, formPath: window.location.pathname })
+      headers: getNetlifyAuthHeaders({ json: true, includeAuth: false }),
+      body: JSON.stringify({ token: urlToken, formPath: window.location.pathname })
     });
     const data = await resp.json();
     const valid = data.valid && data.email && data.formPath === window.location.pathname;
@@ -267,7 +254,7 @@ async function handleFormSubmission(e) {
   try {
     const resp = await fetch("/.netlify/functions/submitFormController", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: getNetlifyAuthHeaders({ json: true, includeAuth: false }),
       body: JSON.stringify(payload)
     });
     const data = await resp.json();

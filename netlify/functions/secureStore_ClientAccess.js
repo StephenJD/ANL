@@ -1,9 +1,16 @@
 // /.netlify/functions/secureStore_ClientAccess.js
-import { getSecureItem, setSecureItem } from "./multiSecureStore.js";
+// Read-only public endpoint: clients may verify a form-access token they hold.
+// Write access has been removed — only server-side functions may write tokens.
+// Only ACCESS_TOKEN_BIN is exposed; USER_ACCESS_BIN is never accessible here.
+import { getSecureItem } from "./multiSecureStore.js";
 
 export async function handler(event) {
+  if (event.httpMethod !== "POST") {
+    return { statusCode: 405, body: JSON.stringify({ success: false, error: "Method Not Allowed" }) };
+  }
+
   try {
-    const { bin, token, value, ttl = null } = JSON.parse(event.body || "{}");
+    const { token, formPath } = JSON.parse(event.body || "{}");
 
     if (!token) {
       return {
@@ -12,28 +19,26 @@ export async function handler(event) {
       };
     }
 
-    // Validate bin against allowed environment variables
-    const allowedBins = ["ACCESS_TOKEN_BIN", "USER_ACCESS_BIN"];
-    if (!bin || !allowedBins.includes(bin)) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ success: false, error: "Invalid or missing bin" }),
-      };
-    }
-
-    const BIN_ID = process.env[bin]; // access env variable dynamically
-
-    if (value !== undefined) {
-      await setSecureItem(BIN_ID, token, value, ttl);
-      return { statusCode: 200, body: JSON.stringify({ success: true }) };
-    }
+    // Only ACCESS_TOKEN_BIN is allowed — never expose USER_ACCESS_BIN to clients
+    const BIN_ID = process.env.ACCESS_TOKEN_BIN;
 
     const record = await getSecureItem(BIN_ID, token);
     if (!record) {
       return { statusCode: 404, body: JSON.stringify({ success: false, error: "Not found" }) };
     }
 
-    return { statusCode: 200, body: JSON.stringify({ valid: true, token, ...record }) };
+    if (formPath) {
+      const tokenFormPath = String(record?.formPath || "").replace(/\/+$/, "");
+      const requestFormPath = String(formPath || "").replace(/\/+$/, "");
+      if (tokenFormPath && tokenFormPath !== requestFormPath) {
+        return { statusCode: 403, body: JSON.stringify({ success: false, error: "Token not valid for this form" }) };
+      }
+    }
+
+    // Return only the fields the client legitimately needs (email / formPath).
+    // Never return role, deviceId, or internal fields.
+    const { email, formPath: recordFormPath, formName } = record;
+    return { statusCode: 200, body: JSON.stringify({ valid: true, email, formPath: recordFormPath, formName }) };
   } catch (err) {
     return { statusCode: 500, body: JSON.stringify({ success: false, error: err.message }) };
   }

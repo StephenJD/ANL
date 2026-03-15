@@ -1,5 +1,6 @@
 // \static\js/form-init.js
 import { manageBinArrayForm } from "/js/binArrayInterface.js";
+import { getNetlifyAuthHeaders } from "/js/netlifyAuthFetch.js";
 
 document.addEventListener("gated-page-loaded", async () => {
 
@@ -35,7 +36,7 @@ async function populateCheckList(form, config) {
   try {
     const res = await fetch("/.netlify/functions/manageBinArrays", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: getNetlifyAuthHeaders({ json: true }),
       body: JSON.stringify({
         action: "list",
         bin_id: config.checkList_bin_id,

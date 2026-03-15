@@ -1,8 +1,12 @@
 // netlify/functions/list_content_tree.js
 import path from "path";
 import { walkDir } from "./webeditor/walkDir.js";
+import { requireBindingAuth } from "./authHelper.js";
 
 export async function handler(event, context) {
+    const auth = await requireBindingAuth(event, "edit_website");
+    if (auth.unauthorized) return auth.response;
+
     try {
         const rootDir = path.join(process.cwd(), "content");
         console.log("[list_content_tree] Listing content at:", rootDir);
@@ -33,3 +37,4 @@ export async function handler(event, context) {
         };
     }
 }
+

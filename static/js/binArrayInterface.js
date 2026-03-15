@@ -1,5 +1,6 @@
 // /static/js/binArrayInterface.js 
 import { setInputsFromRecord } from "/js/loadFormFromRecord.js";
+import { getNetlifyAuthHeaders } from "/js/netlifyAuthFetch.js";
 
 export function populateForm(form, record) {
   setInputsFromRecord(form, record);
@@ -108,7 +109,7 @@ async function apiCall(action, payload = {}, keyValue = null) {
 
   const res = await fetch("/.netlify/functions/manageBinArrays", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: getNetlifyAuthHeaders({ json: true }),
     body: JSON.stringify(body)
   });
   return res.json();

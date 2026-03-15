@@ -1,11 +1,15 @@
 // /netlify/functions/get_role_options.js
 import { getSecureItem } from "./multiSecureStore.js";
+import { requireBindingAuth } from "./authHelper.js";
 
 let cachedRoles = null;
 let cacheTimestamp = 0;
 const CACHE_TTL = 60 * 1000; // 1 minute cache
 
 export async function handler(event) {
+    const auth = await requireBindingAuth(event, "edit_website");
+    if (auth.unauthorized) return auth.response;
+
     try {
         const now = Date.now();
         if (cachedRoles && now - cacheTimestamp < CACHE_TTL) {
@@ -39,3 +43,4 @@ export async function handler(event) {
         };
     }
 }
+

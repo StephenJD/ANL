@@ -26,8 +26,13 @@ export async function handler(event) {
     console.debug("[submitFormController] Parsed frontMatter:", parsed);
 
     const validation = Array.isArray(parsed.validation) ? parsed.validation : ["none"];
+    const requireRequestLink = validation.includes("requestLink");
     const requireFinalSubmit = validation.includes("submit");
     const { include_unselected_options } = parsed;
+
+    if (requireRequestLink && !token) {
+      return { statusCode: 403, body: JSON.stringify({ success: false, error: "Access token required for this form" }) };
+    }
 
     let effectiveSubmittedBy = null;
     let existing = null;
@@ -38,6 +43,14 @@ export async function handler(event) {
         console.debug("[submitFormController] Invalid or expired token");
         return { statusCode: 403, body: JSON.stringify({ success: false, error: "Invalid or expired token" }) };
       }
+
+      // Token must be bound to the same form path.
+      const tokenFormPath = String(existing.formPath || "").replace(/\/+$/, "");
+      const requestFormPath = String(formPath || "").replace(/\/+$/, "");
+      if (tokenFormPath && tokenFormPath !== requestFormPath) {
+        return { statusCode: 403, body: JSON.stringify({ success: false, error: "Token not valid for this form" }) };
+      }
+
       effectiveSubmittedBy = existing.email || null;
       console.debug("[submitFormController] SubmittedBy from server:", effectiveSubmittedBy);
     } else if (submittedBy) {

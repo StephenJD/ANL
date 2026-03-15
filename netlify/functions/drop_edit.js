@@ -1,8 +1,12 @@
 // netlify/functions/drop_edit.js
 import fs from "fs";
 import path from "path";
+import { requireBindingAuth } from "./authHelper.js";
 
 export default async function handler(event){
+
+const auth = await requireBindingAuth(event, "edit_website");
+if (auth.unauthorized) return new Response(auth.response.body, { status: auth.response.statusCode, headers: auth.response.headers });
 
 try{
 
@@ -31,3 +35,4 @@ headers:{"Content-Type":"application/json"}
 }
 
 }
+

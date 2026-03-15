@@ -1,8 +1,12 @@
 import fs from "fs";
 import path from "path";
 import { ALLOWED_EXTENSIONS, resolveFolderRel, isSafeRelative } from "./imageUtils.js";
+import { requireBindingAuth } from "./authHelper.js";
 
 export async function handler(event) {
+  const auth = await requireBindingAuth(event, "edit_website");
+  if (auth.unauthorized) return auth.response;
+
   try {
     const body = JSON.parse(event.body || "{}");
     const file = body.file || "";
@@ -42,3 +46,4 @@ export async function handler(event) {
     };
   }
 }
+

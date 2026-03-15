@@ -51,7 +51,8 @@
 
   {{ partial "qr_code.html" $current_page }}
 
-  <script>
+  <script type="module">
+  import { getDeviceId, getNetlifyAuthHeaders } from "/js/netlifyAuthFetch.js";
   (function () {
     const wrap = document.getElementById("webeditor-link-wrap");
     const token = localStorage.getItem("userLogin_token");
@@ -63,11 +64,15 @@
 
     fetch("/.netlify/functions/verifyUser", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "check_userLoginToken", userLogin_token: token })
+      headers: getNetlifyAuthHeaders({ json: true, includeAuth: false }),
+      body: JSON.stringify({ action: "check_userLoginToken", userLogin_token: token, deviceId: getDeviceId() })
     })
       .then(r => r.ok ? r.json() : null)
       .then(data => {
+        if (data && (data.status === "role_mismatch" || data.status === "device_mismatch")) {
+          localStorage.removeItem("userLogin_token");
+          return;
+        }
         if (!data || data.status !== "success") return;
         const rawRoles = [].concat(data?.entry?.roles || data?.entry?.role || []);
         const roles = rawRoles

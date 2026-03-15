@@ -1,4 +1,3 @@
-// netlify/functions/upload_shared_image.js
 import fs from "fs";
 import path from "path";
 import { execSync } from "child_process";
@@ -7,6 +6,7 @@ import {
   parseDataUrl, resolveFilename,
   resolveSiteRoot, mirrorSharedImagesToPublic
 } from "./imageUtils.js";
+import { requireBindingAuth } from "./authHelper.js";
 
 function runGit(command, cwd) {
   return execSync(command, { cwd, stdio: "pipe" }).toString("utf8").trim();
@@ -38,6 +38,9 @@ async function githubPutFile(repo, relPath, base64Content, token, message, sha =
 }
 
 export async function handler(event) {
+  const auth = await requireBindingAuth(event, "edit_website");
+  if (auth.unauthorized) return auth.response;
+
   try {
     const body = JSON.parse(event.body || "{}");
     const name = body.name || body.filename || "";
@@ -102,3 +105,4 @@ export async function handler(event) {
     return { statusCode: 500, body: String(err) };
   }
 }
+

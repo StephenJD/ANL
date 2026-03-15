@@ -1,4 +1,5 @@
 // static/js/visitTracker.js
+import { netlifyFetch } from "/js/netlifyAuthFetch.js";
 
 const token = localStorage.getItem("userLogin_token");
 const isLoggedIn =
@@ -9,5 +10,5 @@ const isLoggedIn =
 
 if (!isLoggedIn && !sessionStorage.getItem("visit_logged")) {
   sessionStorage.setItem("visit_logged", "1");
-  fetch("/.netlify/functions/trackVisit", { method: "POST" });
+  netlifyFetch("/.netlify/functions/trackVisit", { method: "POST" });
 }

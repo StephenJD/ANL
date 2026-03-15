@@ -1,6 +1,7 @@
 // /.netlify/functions/sendClientEmail.js
 import { getSecureItem } from "./multiSecureStore.js";
 import { sendEmail } from "./sendEmail.js";
+import { requireAuth } from "./authHelper.js";
 
 const ACCESS_TOKEN_BIN = process.env.ACCESS_TOKEN_BIN;
 
@@ -11,8 +12,11 @@ export async function handler(event) {
     return { statusCode: 405, body: "Method Not Allowed" };
   }
 
+  const auth = await requireAuth(event, []);
+  if (auth.unauthorized) return auth.response;
+
   try {
-    const { token, email, includeSubmissionLink = false } = JSON.parse(event.body);
+    const { token, email, includeSubmissionLink = false } = JSON.parse(event.body || "{}");
 
     if (!token || !email) {
       return { statusCode: 400, body: JSON.stringify({ success: false, error: "Missing token or email" }) };
@@ -23,6 +27,15 @@ export async function handler(event) {
 
     if (!storedData || !storedData.formattedHTML) {
       return { statusCode: 400, body: JSON.stringify({ success: false, error: "Missing formatted form data" }) };
+    }
+
+    // Non-admin callers may only send to the email bound into the token.
+    if (auth.user.role !== "admin") {
+      const tokenEmail = String(storedData.email || "").toLowerCase();
+      const requestedEmail = String(email || "").toLowerCase();
+      if (tokenEmail && tokenEmail !== requestedEmail) {
+        return { statusCode: 403, body: JSON.stringify({ success: false, error: "Forbidden" }) };
+      }
     }
 
     let htmlContent = storedData.formattedHTML;

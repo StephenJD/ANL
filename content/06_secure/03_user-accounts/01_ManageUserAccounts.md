@@ -5,6 +5,7 @@ review_period: 1y
 reviewed_by: Stephen Dolley
 type: form
 access: [Admin]
+function_key: user_accounts
 validation: [noSend] # options: requestLink, submit, none (default), noSend
 ---
 

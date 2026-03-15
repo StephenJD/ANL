@@ -2,8 +2,12 @@
 import fs from "fs";
 import path from "path";
 import { ALLOWED_EXTENSIONS, resolveSiteRoot, mirrorSharedImagesToPublic } from "./imageUtils.js";
+import { requireBindingAuth } from "./authHelper.js";
 
-export async function handler() {
+export async function handler(event) {
+  const auth = await requireBindingAuth(event, "edit_website");
+  if (auth.unauthorized) return auth.response;
+
   try {
     const siteRoot = resolveSiteRoot();
     const sharedDir = path.join(siteRoot, "static", "images", "shared");
@@ -35,3 +39,4 @@ export async function handler() {
     };
   }
 }
+

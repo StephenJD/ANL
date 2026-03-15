@@ -71,6 +71,7 @@ If a user clicks "Reset Account":
 
 <script type="module">
 //console.log("[user-login] Login form script loaded, waiting for access-validated event.");
+import { getDeviceId, getNetlifyAuthHeaders } from "/js/netlifyAuthFetch.js";
 
 document.addEventListener("access-validated", async () => {
   //console.log("[user-login] Access validated event triggered.");
@@ -213,20 +214,11 @@ document.addEventListener("access-validated", async () => {
 	  if (result.status === "success") {
 	    return LoginStates.SHOWING_USER;
 	  }
-	  
-	  if (result.status === "Invalid login_token") {
-	    messageBox.textContent = "Invalid Password. Reset Account if necessary.";
-	    return LoginStates.DISPLAY_LOGIN;
-	  }
-	  if (result.status === "Missing login_token") {
-	    messageBox.textContent = "You need to re-register. Please enter your email below and click 'Register'";
-	    registerDiv.style.display = "block";
-	    return LoginStates.LOGGED_OUT;
-	  }
-	  if (result.status === "Not Registered") {
-	    messageBox.textContent =
-	      `User name ${userName} not found. Please correct, or enter your email below and click "Register".`;
-	    return LoginStates.DISPLAY_LOGIN;
+
+    if (result.status === "invalid_credentials") {
+      messageBox.textContent = "Login failed. Check your details, or use Register/Reset below.";
+      registerDiv.style.display = "block";
+      return LoginStates.LOGGED_OUT;
         }
         if (result.status === "error") {
           messageBox.textContent = "Your browser failed to get a response. You may have a network problem.";
@@ -287,8 +279,8 @@ document.addEventListener("access-validated", async () => {
       console.log("[user-login] Sending check_UserLoginToken request...");
       const resp = await fetch("/.netlify/functions/verifyUser", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "check_userLoginToken", userLogin_token: token })
+        headers: getNetlifyAuthHeaders({ json: true, includeAuth: false }),
+        body: JSON.stringify({ action: "check_userLoginToken", userLogin_token: token, deviceId: getDeviceId() })
       });
 
       const data = await resp.json();
@@ -298,6 +290,12 @@ document.addEventListener("access-validated", async () => {
         userNameInput.value = data.entry.user_name;
         console.log("[user-login] userLoginToken valid for", userNameInput.value);
         return true;
+      }
+
+      if (data.status === "role_mismatch" || data.status === "device_mismatch") {
+        console.warn("[user-login] Session invalidated:", data.status);
+        removeSession_Login_token();
+        messageBox.textContent = "Your session is no longer valid. Please log in again.";
       }
 
       console.warn("[user-login] userLoginToken invalid", data.status);
@@ -314,11 +312,12 @@ document.addEventListener("access-validated", async () => {
     try {
       const resp = await fetch("/.netlify/functions/verifyUser", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getNetlifyAuthHeaders({ json: true, includeAuth: false }),
         body: JSON.stringify({
           action: "get_UserLoginToken",
           userName,
-          password
+          password,
+          deviceId: getDeviceId()
         })
       });
   
@@ -351,7 +350,7 @@ document.addEventListener("access-validated", async () => {
     try {
       const resp = await fetch("/.netlify/functions/verifyUser", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getNetlifyAuthHeaders({ json: true, includeAuth: false }),
         body: JSON.stringify({
           action: "addUserLogin",
           email: email,
@@ -378,10 +377,11 @@ document.addEventListener("access-validated", async () => {
     try {
       const resp = await fetch("/.netlify/functions/verifyUser", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getNetlifyAuthHeaders({ json: true, includeAuth: true }),
         body: JSON.stringify({
           action: "deleteUserLogin",
-          email: email
+          email: email,
+          userName: userName
         })
       });
       const data = await resp.json();

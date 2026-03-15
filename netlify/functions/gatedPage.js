@@ -1,7 +1,7 @@
 // \netlify\functions\gatedPage.js
 import fs from "fs";
 import path from "path";
-import { check_userLoginToken } from "./verifyUser.js";
+import { check_userLoginToken } from "./authHelper.js";
 import { urlizePath } from "../../lib/urlize.js";
 import { dynamicRuntimes } from "./dynamic_generators/generator_imports.js";
 
@@ -28,7 +28,9 @@ export async function handler(event) {
     return jsonResponse("methodNotAllowed");
   }
 
-  const token = event.headers["authorization"]?.replace("Bearer ", "");
+  const token = (event.headers["authorization"] || "").replace(/^Bearer\s+/i, "").trim() || null;
+  const deviceId = (event.headers["x-device-id"] || "").trim() || null;
+  const userAgent = (event.headers["user-agent"] || "").trim() || null;
   const queryPageName = event.queryStringParameters?.page;
   const pagePath = urlizePath(queryPageName);
   const pageUrl = branchPathToPageUrl(pagePath);
@@ -84,7 +86,14 @@ console.log("[gatedPage] Exists?", fs.existsSync(htmlPath));
   let userRoles = [];
 
   try {
-    const check = await check_userLoginToken(token);
+    const check = await check_userLoginToken(token, deviceId, userAgent);
+
+    // Role changed or device mismatch — force the client to log out
+    if (check.status === "role_mismatch" || check.status === "device_mismatch") {
+      return jsonResponse("forceLogout", {
+        location: `/user-login?redirect=${encodeURIComponent(pageUrl)}`
+      });
+    }
 
     if (check.status !== "success") {
       return jsonResponse("redirect", {
