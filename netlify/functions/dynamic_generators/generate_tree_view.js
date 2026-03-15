@@ -71,8 +71,8 @@ async function loadTree() {
   }
 }
 
-window.addEventListener("DOMContentLoaded", async () => {
-  window.log("[tree-view] DOMContentLoaded");
+function startTreeView() {
+  window.log("[tree-view] startTreeView called");
   editButtons = setupEditButtons(
     "treeEditButtons",
     treeData,
@@ -81,8 +81,14 @@ window.addEventListener("DOMContentLoaded", async () => {
     null,
     null
   );
-  await loadTree();
-});
+  loadTree();
+}
+
+if (document.readyState === "loading") {
+  window.addEventListener("DOMContentLoaded", startTreeView);
+} else {
+  startTreeView();
+}
 </script>
 `;
 }

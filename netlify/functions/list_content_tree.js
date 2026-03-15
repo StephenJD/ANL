@@ -4,7 +4,7 @@ import { walkDir } from "./webeditor/walkDir.js";
 import { requireBindingAuth } from "./authHelper.js";
 
 export async function handler(event, context) {
-    const auth = await requireBindingAuth(event, "edit_website");
+    const auth = await requireBindingAuth(event, "tree_view");
     if (auth.unauthorized) return auth.response;
 
     try {
