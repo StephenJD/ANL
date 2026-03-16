@@ -82,9 +82,9 @@
         {{ $clean := trim . " " }}
         {{ if $clean }}{{ $sectionAccess = $sectionAccess | append (lower $clean) }}{{ end }}
       {{ end }}
-      <span class="edit-section-link-wrap" style="display:none; float:right; margin-left:12px; font-size:0.95em;">
-        <a class="edit-section-link" href="/06_secure/website_updates/content-editor/?path={{ .File.Path }}">✏️ Edit This Section</a>
-      </span>
+        <span class="edit-section-link-wrap" style="display:none; margin-left:12px; font-size:0.95em;">
+          <a class="edit-section-link" href="/06_secure/website_updates/content-editor/?path={{ .File.Path }}">✏️ Edit This Section</a>
+        </span>
       <h2>{{ .Title }}</h2>
       {{/* Clean access frontmatter into lowercase slice */}}
       {{ $sectionAccess := slice }}
