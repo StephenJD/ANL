@@ -83,7 +83,7 @@
         {{ if $clean }}{{ $sectionAccess = $sectionAccess | append (lower $clean) }}{{ end }}
       {{ end }}
       {{ if and (in $sectionAccess "edit-content") (not $expired) }}
-        <a class="edit-section-link" href="/06_secure/website_updates/content-editor/?file={{ .File.Path }}" style="float:right; margin-left:12px; font-size:0.95em;">✏️ Edit This Section</a>
+        <a class="edit-section-link" href="/06_secure/website_updates/content-editor/?path={{ .File.Path }}" style="float:right; margin-left:12px; font-size:0.95em;">✏️ Edit This Section</a>
       {{ end }}
       <h2>{{ .Title }}</h2>
       {{/* Clean access frontmatter into lowercase slice */}}

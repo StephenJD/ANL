@@ -19,7 +19,7 @@
   {{ $filePath = .Path }}
 {{ end }}
 {{ $filePath = replace $filePath "\\" "/" }}
-{{ $webeditorHref := printf "/06_secure/website_updates/content-editor/?file=%s" ($filePath | urlquery) }}
+{{ $webeditorHref := printf "/06_secure/website_updates/content-editor/?path=%s" ($filePath | urlquery) }}
 
 <link rel="stylesheet" href="{{ "css/anl_chrome.css" | absURL  }}">
 <div class="debug-message">

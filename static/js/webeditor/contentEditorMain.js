@@ -1,5 +1,7 @@
+
 // static\js\webeditor\contentEditorMain.js
 // Main entry for the Content Editor UI (migrated from original generator)
+import { getNetlifyAuthHeaders } from "/js/netlifyAuthFetch.js";
 
 window.log = function(msg){
   const logDiv = document.getElementById("logDiv");
@@ -21,10 +23,8 @@ log("Step 0: Content editor script started");
 // =====================
 // Controller State
 // =====================
-// let selectedNodePath = null;
+
 let selectedNodePathRef = { value: null };
-// let treeData = [];
-// let pendingMoveNodePath = null;
 
 let renderFormFn = null;
 let saveEdit = ()=>log("saveEdit not loaded yet");
@@ -36,6 +36,55 @@ let dropEdits = ()=>log("dropEdits not loaded yet");
 let buildContentFromForm = null;
 
 let editButtons = null;
+// =====================
+// Initialize
+// =====================
+async function init(){
+  log("Step 1: Initializing editor");
+  await loadHelpers();
+  log("Step 2: Helper loading complete");
+  const requestedRaw = getFileNameFromQuery(); // step 3
+  const result = await fetchFile(requestedRaw); // step 4
+  if (result && result.data) {
+    const { data, filePath } = result;
+    const node = { path: filePath };
+    await loadEditorFromContent(node, data.content, data.rawFrontMatter); // step 5
+    document.getElementById("editorContainer").style.display = "block";
+    if (editButtons?.setEditing) editButtons.setEditing(true);
+    await loadBodyFolderImages(filePath);
+    log("Step 5: fetchFile: loaded and UI shown");
+  }
+  log("Step 6: Initialization complete");
+}
+
+function getFileNameFromQuery() {
+  log("Step 3: Get query " + window.location.search);
+  const params = new URLSearchParams(window.location.search);
+  const requestedRaw = params.get("node") || params.get("path") || "";
+  return requestedRaw;
+}
+
+async function fetchFile(filePath) {
+  log("Step 4:fetchFile: called with filePath=" + filePath);
+  try {
+    const res = await fetch("/.netlify/functions/start_edit", {
+      method: "POST",
+      headers: getNetlifyAuthHeaders({ json: true }),
+      body: JSON.stringify({ file: filePath })
+    });
+    if (!res.ok) {
+      log("[fetchFile] load failed status=" + res.status);
+      return null;
+    }
+    log("Step 4: got file: " + filePath);
+    const data = await res.json();
+    return { data, filePath };
+  } catch (err) {
+    log("[fetchFile] exception: " + err);
+    return null;
+  }
+}
+
 function showBlankEditorForSelectedNode(){
   showBodyEditor = false;
   newMode = true;
@@ -625,19 +674,21 @@ function readFileAsDataUrl(file) {
 }
 
 async function loadEditorFromContent(node, content, rawFrontMatterOverride = null){
+  log("Step 5: loadEditorFromContent");
   const frontMatterText = document.getElementById("frontMatterText");
   const bodyText = document.getElementById("bodyText");
+  let rawBody;
   let rawFrontMatter = rawFrontMatterOverride;
   if (rawFrontMatter == null) {
-    const match = content.match(/^---\\r?\\n([\\s\\S]*?)\\r?\\n---/);
+    const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
     rawFrontMatter = match ? match[0] : "";
   }
 
   let innerFrontMatter = "";
-  const matchInner = rawFrontMatter.match(/^---\\r?\\n([\\s\\S]*?)\\r?\\n---/);
+  const matchInner = rawFrontMatter.match(/^---\r?\n([\s\S]*?)\r?\n---/);
   if (matchInner) innerFrontMatter = matchInner[1];
 
-  const contentBody = rawFrontMatter ? content.slice(rawFrontMatter.length).replace(/^\\s*\\n/, "") : content;
+  const contentBody = rawFrontMatter ? content.slice(rawFrontMatter.length).replace(/^\s*\n/, "") : content;
   rawBody = contentBody;
   node.rawBody = contentBody;
   if (frontMatterText) frontMatterText.value = innerFrontMatter;
@@ -646,7 +697,7 @@ async function loadEditorFromContent(node, content, rawFrontMatterOverride = nul
   let frontMatterObj = {};
   try {
     const { normalizeFrontMatter } = await import("/js/webeditor/normalizeFrontMatter.js");
-    frontMatterObj = normalizeFrontMatter("---\\n" + innerFrontMatter + "\\n---");
+    frontMatterObj = normalizeFrontMatter("---\n" + innerFrontMatter + "\n---");
   } catch (err) {
     frontMatterObj = {};
   }
@@ -655,7 +706,7 @@ async function loadEditorFromContent(node, content, rawFrontMatterOverride = nul
   node.frontMatterOriginal = { ...frontMatterObj };
   node.frontMatterOriginalText = innerFrontMatter;
   node.frontMatterOriginalOrder = innerFrontMatter
-    .split(/\\r?\\n/)
+    .split(/\r?\n/)
     .map(line => line.split("#")[0].trim())
     .filter(line => line.includes(":"))
     .map(line => line.split(":")[0].trim().toLowerCase());
@@ -673,7 +724,7 @@ async function ensureParentFrontMatter(node) {
   try {
     const res = await fetch("/.netlify/functions/start_edit", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: getNetlifyAuthHeaders({ json: true }),
       body: JSON.stringify({ file: parentPath })
     });
     if (!res.ok) return;
@@ -685,7 +736,7 @@ async function ensureParentFrontMatter(node) {
     let frontMatterObj = {};
     try {
       const { normalizeFrontMatter } = await import("/js/webeditor/normalizeFrontMatter.js");
-      frontMatterObj = normalizeFrontMatter("---\\n" + innerFrontMatter + "\\n---");
+      frontMatterObj = normalizeFrontMatter("---\n" + innerFrontMatter + "\n---");
     } catch (err) {
       frontMatterObj = {};
     }
@@ -768,56 +819,9 @@ function normalizeRequestedNodePath(rawPath) {
   return p;
 }
 
-function openRequestedNodeFromQuery() {
-  const params = new URLSearchParams(window.location.search);
-  const requestedRaw = params.get("node") || params.get("path") || "";
-  const requested = normalizeRequestedNodePath(requestedRaw);
-  log("openRequestedNodeFromQuery: requestedRaw=" + requestedRaw + ", requested=" + requested);
-  if (!requested) return;
-  log("Step 2: Get file " + requested);
-  showEditorForFile(requested);
-}
-
-// =====================
-// Initialize
-// =====================
-async function init(){
-  log("Step 1: Initializing editor");
-  await loadHelpers();
-  openRequestedNodeFromQuery();
-  log("Step 4: Initialization complete");
-}
-
 if (document.readyState === 'loading') {
   window.addEventListener('DOMContentLoaded', init);
 } else {
   init();
 }
 
-// =====================
-// Restore showEditorForFile
-// =====================
-async function showEditorForFile(filePath) {
-  log("showEditorForFile: called with filePath=" + filePath);
-  try {
-    const res = await fetch("/.netlify/functions/start_edit", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ file: filePath })
-    });
-    if (!res.ok) {
-      log("[showEditorForFile] load failed status=" + res.status);
-      return;
-    }
-    log("Step 3: got file: " + filePath);
-    const data = await res.json();
-    const node = { path: filePath };
-    await loadEditorFromContent(node, data.content, data.rawFrontMatter);
-    document.getElementById("editorContainer").style.display = "block";
-    if (editButtons?.setEditing) editButtons.setEditing(true);
-    await loadBodyFolderImages(filePath);
-    log("Step 3: showEditorForFile: loaded and UI shown");
-  } catch (err) {
-    log("[showEditorForFile] exception: " + err);
-  }
-}
