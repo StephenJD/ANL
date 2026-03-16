@@ -398,6 +398,10 @@ export async function renderForm(node, frontMatter, accessOptionsCache) {
             preview.removeAttribute("src");
             preview.style.display = "none";
           }
+          // Always scroll preview into view
+          if (preview.style.display === "block") {
+            preview.scrollIntoView({ behavior: "smooth", block: "nearest" });
+          }
         });
         form.appendChild(preview);
       } else {
@@ -491,6 +495,10 @@ export async function renderForm(node, frontMatter, accessOptionsCache) {
       updateFrontMatterText(getCurrentFormValues());
     } catch (e) {
       // no-op
+    }
+    // Scroll form to top after render
+    if (form && form.scrollTo) {
+      form.scrollTo({ top: 0, behavior: "smooth" });
     }
   }, 0);
 

@@ -1,4 +1,6 @@
-// \static\js\webeditor\contentEditorActions.js
+// static\js\webeditor\contentEditorActions.js
+// Ensure window.log is defined before use
+import "./log.js";
 import { fieldSchema } from "./fieldSchema.js";
 import { getNetlifyAuthHeaders } from "./authHeaders.js";
 
@@ -91,10 +93,6 @@ export function setupEditActions(selectedNodePathRef = { value: null }) {
 
       window.log(`[editActions] save_edit ok file=${node.path} contentLen=${content.length}`);
 
-      // Close editor and update tree/buttons
-      document.getElementById("editorContainer").style.display = "none";
-      renderTreeAndButtons();
-
       window.log(`[editActions] Node "${node.title || node.path}" edited`);
     } catch (err) {
       console.error("saveEditFrontmatter error:", err);
@@ -116,8 +114,6 @@ export function setupEditActions(selectedNodePathRef = { value: null }) {
         // reload tree or reposition logic if needed
         node.edit.moved = null;
         cleanupEdit(node);
-      } else if (node.edit?.edited && !node.edit?.staged && String(node.path || "").startsWith("__new__/")) {
-        removeNodeByPath(treeDataRef, node.path);
       } else if (node.edit?.edited) {
         // Drop unsaved edits
         node.edit.edited = null;
@@ -157,21 +153,6 @@ export function setupEditActions(selectedNodePathRef = { value: null }) {
       }
     }
     return null;
-  }
-
-  function removeNodeByPath(nodes, path) {
-    for (let i = 0; i < nodes.length; i++) {
-      const n = nodes[i];
-      if (n.path === path) {
-        nodes.splice(i, 1);
-        return true;
-      }
-      if (n.children?.length) {
-        const removed = removeNodeByPath(n.children, path);
-        if (removed) return true;
-      }
-    }
-    return false;
   }
 
   function cleanupEdit(node) {

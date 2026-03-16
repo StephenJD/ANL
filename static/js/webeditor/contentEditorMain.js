@@ -4,15 +4,9 @@
 // static\js\webeditor\contentEditorMain.js
 // Main entry for the Content Editor UI (migrated from original generator)
 
-// Always define window.log before any imports or code that might use it
-window.log = function(msg){
-  const logDiv = document.getElementById("logDiv");
-  if(logDiv){
-    logDiv.textContent += msg + "\n";
-    logDiv.scrollTop = logDiv.scrollHeight;
-  }
-  console.log(msg);
-};
+
+// Import global log definition
+import "./log.js";
 
 import { getNetlifyAuthHeaders } from "/js/netlifyAuthFetch.js";
 import { setupEditActions } from "/js/webeditor/contentEditorActions.js";
@@ -69,9 +63,35 @@ async function init(){
     selectedNodePathRef.value = filePath;
     const node = { path: filePath };
     await loadEditorFromContent(node, data.content, data.rawFrontMatter); // step 5
-    document.getElementById("editorContainer").style.display = "block";
+    const editorContainer = document.getElementById("editorContainer");
+    editorContainer.style.display = "block";
+    // Scroll editor container to top and fit content
+    editorContainer.scrollTop = 0;
+    editorContainer.scrollIntoView({ behavior: "smooth", block: "start" });
     if (editButtons?.setEditing) editButtons.setEditing(true);
+    // Set parent label on load
+    const editorHeader = document.getElementById("editorHeader");
+    let parentLabel = "(root)";
+    let debugInfo = "";
+    if (data.parent) {
+      // Prefer title, fallback to fileName, fallback to first available field
+      if (typeof data.parent.title === "string" && data.parent.title.trim()) {
+        parentLabel = data.parent.title;
+      } else if (typeof data.parent.fileName === "string" && data.parent.fileName.trim()) {
+        parentLabel = data.parent.fileName;
+      } else {
+        // Try to use any available field
+        const keys = Object.keys(data.parent).filter(k => typeof data.parent[k] === "string" && data.parent[k].trim());
+        if (keys.length) parentLabel = data.parent[keys[0]];
+      }
+      debugInfo = " [" + Object.entries(data.parent).map(([k,v]) => `${k}='${v}'`).join(", ") + "]";
+    }
+    if (editorHeader) {
+      editorHeader.textContent = `Parent: ${parentLabel}${debugInfo}`;
+    }
     await loadBodyFolderImages(filePath);
+    autoSizeBody();
+    scrollToBodyEditor();
     log("Step 5: fetchFile: loaded and UI shown");
   }
   log("Step 6: Initialization complete");
@@ -106,32 +126,58 @@ async function fetchFile(filePath) {
 }
 
 function showBlankEditorForSelectedNode() {
-  showBodyEditor = false;
-  newMode = true;
+  showBodyEditor = true;
+  newMode = false;
   if (!selectedNodePath) return;
   const editorContainer = document.getElementById("editorContainer");
   const editForm = document.getElementById("editForm");
   const editorHeader = document.getElementById("editorHeader");
   const frontMatterText = document.getElementById("frontMatterText");
+  const bodyText = document.getElementById("bodyText");
+  // Find node and load its content
+  const node = window.findNodeByPath ? window.findNodeByPath(treeData, selectedNodePath) : null;
   if (editorContainer && editForm && frontMatterText) {
     document.getElementById("tree").style.display = "none";
     editorContainer.style.display = "block";
+    // Scroll editor container to top and fit content
+    editorContainer.scrollTop = 0;
+    editorContainer.scrollIntoView({ behavior: "smooth", block: "start" });
     if (editButtons?.setEditing) editButtons.setEditing(true);
     // Derive parent folder from file path
     let parentLabel = "(root)";
-    if (selectedNodePath.includes("/")) {
-      parentLabel = selectedNodePath.substring(0, selectedNodePath.lastIndexOf("/"));
+    let debugInfo = "";
+    if (node && node.parent) {
+      if (typeof node.parent.title === "string" && node.parent.title.trim()) {
+        parentLabel = node.parent.title;
+      } else if (typeof node.parent.fileName === "string" && node.parent.fileName.trim()) {
+        parentLabel = node.parent.fileName;
+      } else {
+        const keys = Object.keys(node.parent).filter(k => typeof node.parent[k] === "string" && node.parent[k].trim());
+        if (keys.length) parentLabel = node.parent[keys[0]];
+      }
+      debugInfo = " [" + Object.entries(node.parent).map(([k,v]) => `${k}='${v}'`).join(", ") + "]";
     }
     if (editorHeader) {
-      editorHeader.textContent = "Parent: " + parentLabel;
+      editorHeader.textContent = `Parent: ${parentLabel}${debugInfo}`;
     }
-    editDirty = false;
-    if (editButtons?.setDirty) editButtons.setDirty(false);
-    frontMatterText.value = "";
+    // Load current front matter and body
+    if (node && node.frontMatterOriginal) {
+      let front = "---\n";
+      for (const [k, v] of Object.entries(node.frontMatterOriginal)) {
+        if (v !== "" && v != null && String(v).toLowerCase() !== "false") {
+          front += `${k}: ${v}\n`;
+        }
+      }
+      front += "---\n";
+      frontMatterText.value = front;
+    }
+    if (bodyText && node) {
+      bodyText.value = node.rawBody || "";
+    }
     setBodyEditorVisible(showBodyEditor);
-    const bodyText = document.getElementById("bodyText");
-    if (bodyText) bodyText.value = "";
-    if (renderFormFn) renderFormFn({}, {});
+    if (renderFormFn && node && node.frontMatterOriginal) renderFormFn(node.frontMatterOriginal, node);
+    autoSizeBody();
+    scrollToBodyEditor();
     wireEditDirtyTracking();
   }
 }
@@ -482,7 +528,17 @@ function autoSizeBody(){
   const bodyText = document.getElementById("bodyText");
   if (!bodyText) return;
   bodyText.style.height = "auto";
-  bodyText.style.height = bodyText.scrollHeight + "px";
+  bodyText.style.height = Math.max(bodyText.scrollHeight, 200) + "px";
+  // Resize body editor container to fit textarea
+  const bodyWrap = document.getElementById("bodyTextWrap");
+  if (bodyWrap) {
+    bodyWrap.style.height = Math.max(bodyText.scrollHeight + 20, 220) + "px";
+    bodyWrap.style.minHeight = "220px";
+    bodyWrap.style.maxHeight = "80vh";
+    bodyWrap.style.overflowY = "auto";
+    // Scroll bodyWrap to top if content changes
+    bodyWrap.scrollTop = 0;
+  }
 }
 
 function setBodyEditorVisible(visible){
@@ -608,7 +664,10 @@ async function loadBodyFolderImages(filePath){
   try {
     const res = await fetch("/.netlify/functions/list_page_folder_images", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        ...getNetlifyAuthHeaders({ json: true }),
+        "Content-Type": "application/json"
+      },
       body: JSON.stringify({ file: filePath })
     });
     if (!res.ok) {

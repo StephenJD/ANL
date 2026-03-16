@@ -1,5 +1,7 @@
 
-// static\js\webeditor\editContentButtons.js
+
+// Ensure window.log is defined before use
+import "./log.js";
 window.log("editContentButtons FILE LOADED");
 
 let buttonsWrapper = null;

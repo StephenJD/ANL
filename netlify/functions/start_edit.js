@@ -3,6 +3,8 @@ import fs from "fs";
 import path from "path";
 import { requireBindingAuth } from "./authHelper.js";
 
+import { normalizeFrontMatter } from "../../static/js/webeditor/normalizeFrontMatter.js";
+
 export async function handler(event) {
   const auth = await requireBindingAuth(event, "content_editor");
   if (auth.unauthorized) return auth.response;
@@ -53,9 +55,42 @@ export async function handler(event) {
     const frontMatterMatch = rawContent.match(/^---\r?\n([\s\S]*?)\r?\n---/);
     const rawFrontMatter = frontMatterMatch ? frontMatterMatch[0] : "";
 
+    // Find parent _index.md
+    let parentPath = null;
+    let parentRawContent = null;
+    let parentRawFrontMatter = null;
+    let parentTitle = null;
+    let parentFileName = null;
+
+    const isIndex = fullPath.endsWith("_index.md");
+    let parentDir = isIndex ? path.dirname(path.dirname(fullPath)) : path.dirname(fullPath);
+    let parentIndexPath = path.join(parentDir, "_index.md");
+    if (fs.existsSync(parentIndexPath)) {
+      parentPath = parentIndexPath;
+      parentRawContent = fs.readFileSync(parentIndexPath, "utf-8");
+      const parentFMMatch = parentRawContent.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+      parentRawFrontMatter = parentFMMatch ? parentFMMatch[0] : "";
+      // Use normalizeFrontMatter to extract clean title
+      let parentFMObj = {};
+      try {
+        parentFMObj = normalizeFrontMatter(parentRawContent);
+      } catch (e) {
+        parentFMObj = {};
+      }
+      parentTitle = typeof parentFMObj.title === "string" ? parentFMObj.title : null;
+      parentFileName = path.basename(parentIndexPath);
+    }
+
     return {
       statusCode: 200,
-      body: JSON.stringify({ rawFrontMatter, content: rawContent }),
+      body: JSON.stringify({
+        rawFrontMatter,
+        content: rawContent,
+        parent: parentPath ? {
+          ...parentFMObj,
+          fileName: parentFileName
+        } : null
+      }),
     };
   } catch (err) {
     return { statusCode: 500, body: String(err) };
