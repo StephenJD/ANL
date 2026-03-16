@@ -218,45 +218,40 @@ function showBlankEditorForSelectedNode(){
 // =====================
 async function loadHelpers(){
   log("Step 2: Loading helpers...");
-    try {
-      const mod = await import('/js/webeditor/renderForm.js');
-      renderFormFn = mod.renderForm;
-      log("renderForm loaded");
-    } catch (e) {
-      log("renderForm load failed: " + e);
-    }
-    try {
-      const mod = await import('/js/webeditor/contentEditorActions.js');
-      const actions = mod.setupEditActions(selectedNodePathRef);
-      saveEdit = actions.saveEditFrontmatter;
-      buildContentFromForm = actions.buildContentFromForm;
-      dropEdits = actions.dropNode;
-      cancelEdit = actions.cancelEdit;
-      log("contentEditorActions loaded");
-    } catch (e) {
-      log("contentEditorActions load failed: " + e);
-    }
-
-    try {
-      const mod = await import('/js/webeditor/editContentButtons.js');
-      // New API: expects containerId and editActions object
-      const editActions = {
-        save: () => handleMove("save"),
-        drop: () => handleMove("drop"),
-        editPage: () => handleMove("new"),
-        publishLocal: () => publishLocal && publishLocal(),
-        publishWeb: () => publishWeb && publishWeb()
-      };
-      editButtons = mod.setupEditButtons("editButtonsContainer", editActions);
-      log("editContentButtons loaded and initialized");
-    } catch (e) {
-      log("editContentButtons load failed: " + e);
-    }
-
-    log("Step 2: Helper loading complete");
-  } catch (err) {
-    log("loadHelpers fatal error: " + err);
+  try {
+    const mod = await import('/js/webeditor/renderForm.js');
+    renderFormFn = mod.renderForm;
+    log("renderForm loaded");
+  } catch (e) {
+    log("renderForm load failed: " + e);
   }
+  try {
+    const mod = await import('/js/webeditor/contentEditorActions.js');
+    const actions = mod.setupEditActions(selectedNodePathRef);
+    saveEdit = actions.saveEditFrontmatter;
+    buildContentFromForm = actions.buildContentFromForm;
+    dropEdits = actions.dropNode;
+    cancelEdit = actions.cancelEdit;
+    log("contentEditorActions loaded");
+  } catch (e) {
+    log("contentEditorActions load failed: " + e);
+  }
+  try {
+    const mod = await import('/js/webeditor/editContentButtons.js');
+    // New API: expects containerId and editActions object
+    const editActions = {
+      save: () => handleMove("save"),
+      drop: () => handleMove("drop"),
+      editPage: () => handleMove("new"),
+      publishLocal: () => publishLocal && publishLocal(),
+      publishWeb: () => publishWeb && publishWeb()
+    };
+    editButtons = mod.setupEditButtons("editButtonsContainer", editActions);
+    log("editContentButtons loaded and initialized");
+  } catch (e) {
+    log("editContentButtons load failed: " + e);
+  }
+  log("Step 2: Helper loading complete");
 }
 
 // =====================
@@ -777,8 +772,9 @@ function openRequestedNodeFromQuery() {
   const params = new URLSearchParams(window.location.search);
   const requestedRaw = params.get("node") || params.get("path") || "";
   const requested = normalizeRequestedNodePath(requestedRaw);
+  log("openRequestedNodeFromQuery: requestedRaw=" + requestedRaw + ", requested=" + requested);
   if (!requested) return;
-  log("Step 2: Get file" + requested);
+  log("Step 2: Get file " + requested);
   showEditorForFile(requested);
 }
 
@@ -802,6 +798,7 @@ if (document.readyState === 'loading') {
 // Restore showEditorForFile
 // =====================
 async function showEditorForFile(filePath) {
+  log("showEditorForFile: called with filePath=" + filePath);
   try {
     const res = await fetch("/.netlify/functions/start_edit", {
       method: "POST",
@@ -812,14 +809,14 @@ async function showEditorForFile(filePath) {
       log("[showEditorForFile] load failed status=" + res.status);
       return;
     }
-    log("Step 2: got file: " + filePath);
+    log("Step 3: got file: " + filePath);
     const data = await res.json();
     const node = { path: filePath };
     await loadEditorFromContent(node, data.content, data.rawFrontMatter);
     document.getElementById("editorContainer").style.display = "block";
     if (editButtons?.setEditing) editButtons.setEditing(true);
     await loadBodyFolderImages(filePath);
-    log("showEditorForFile: loaded and UI shown");
+    log("Step 3: showEditorForFile: loaded and UI shown");
   } catch (err) {
     log("[showEditorForFile] exception: " + err);
   }

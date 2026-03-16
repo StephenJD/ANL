@@ -36,7 +36,7 @@ export default async function generate_content_editor() {
   </div>
 </div>
 <div id="logDiv"></div>
-<div id="treeEditButtons"></div>
+<div id="editButtonsContainer"></div>
 <script type="module" src="/js/webeditor/contentEditorMain.js"></script>
 `;
   return html;

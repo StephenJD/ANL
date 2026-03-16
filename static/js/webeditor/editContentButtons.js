@@ -100,4 +100,5 @@ export function setupEditButtons(containerId, editActions) {
   }
 
   return { update, setEditing, setDirty };
+}
 
