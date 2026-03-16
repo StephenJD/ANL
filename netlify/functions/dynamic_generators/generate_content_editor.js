@@ -30,7 +30,7 @@ export default async function generate_content_editor() {
     </div>
     <div id="bodyTextWrap" style="display:none;">
       <label for="bodyText">Page Body:</label>
-      <textarea id="bodyText" style="width:100%;min-height:220px;height:auto;overflow:auto;margin-bottom:10px;"></textarea>
+      <textarea id="bodyText" style="width:100%;min-height:220px;height:auto;margin-bottom:10px;"></textarea>
     </div>
     <div style="margin-top:10px;"></div>
   </div>

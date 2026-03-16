@@ -558,20 +558,17 @@ function autoSizeBody(){
   }
   log('[autoSizeBody] Before resize, scrollHeight:', bodyText.scrollHeight, 'offsetHeight:', bodyText.offsetHeight);
   bodyText.style.height = "auto";
-  bodyText.style.height = Math.max(bodyText.scrollHeight, 200) + "px";
-  log('[autoSizeBody] After resize, scrollHeight:', bodyText.scrollHeight, 'offsetHeight:', bodyText.offsetHeight);
-  // Resize body editor container to fit textarea
+  // Only grow, don't shrink below min-height
+  const minHeight = 50;
+  const newHeight = Math.max(bodyText.scrollHeight, minHeight);
+  bodyText.style.height = newHeight + "px";
+  // Auto-size the wrapper to match the textarea
   if (bodyWrap) {
-    log('[autoSizeBody] Before bodyWrap resize, scrollHeight:', bodyText.scrollHeight);
-    bodyWrap.style.height = Math.max(bodyText.scrollHeight + 20, 220) + "px";
-    bodyWrap.style.minHeight = "220px";
-    bodyWrap.style.maxHeight = "80vh";
-    bodyWrap.style.overflowY = "auto";
-    // Scroll bodyWrap to top if content changes
-    log('[autoSizeBody] Before bodyWrap.scrollTop=0, scrollTop:', bodyWrap.scrollTop);
-    bodyWrap.scrollTop = 0;
-    log('[autoSizeBody] After bodyWrap.scrollTop=0, scrollTop:', bodyWrap.scrollTop);
+    bodyWrap.style.height = newHeight + "px";
+    bodyWrap.style.minHeight = minHeight + "px";
+    bodyWrap.style.maxHeight = "none";
   }
+  log('[autoSizeBody] After resize, scrollHeight:', bodyText.scrollHeight, 'offsetHeight:', bodyText.offsetHeight);
 }
 
 function setBodyEditorVisible(visible){

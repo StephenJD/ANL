@@ -82,9 +82,9 @@
         {{ $clean := trim . " " }}
         {{ if $clean }}{{ $sectionAccess = $sectionAccess | append (lower $clean) }}{{ end }}
       {{ end }}
-      {{ if and (in $sectionAccess "edit-content") (not $expired) }}
-        <a class="edit-section-link" href="/06_secure/website_updates/content-editor/?path={{ .File.Path }}" style="float:right; margin-left:12px; font-size:0.95em;">✏️ Edit This Section</a>
-      {{ end }}
+      <span class="edit-section-link-wrap" style="display:none; float:right; margin-left:12px; font-size:0.95em;">
+        <a class="edit-section-link" href="/06_secure/website_updates/content-editor/?path={{ .File.Path }}">✏️ Edit This Section</a>
+      </span>
       <h2>{{ .Title }}</h2>
       {{/* Clean access frontmatter into lowercase slice */}}
       {{ $sectionAccess := slice }}
@@ -143,14 +143,48 @@ document.addEventListener("DOMContentLoaded", () => {
 </script>
 {{ end }}
 
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-      // Debug: log all edit-section links rendered
-      document.querySelectorAll('.edit-section-link').forEach(function(link) {
-        console.log('[DEBUG] Edit link rendered:', link.href);
-        link.addEventListener('click', function(e) {
-          console.log('[DEBUG] Edit link clicked:', link.href);
+<script type="module">
+import { getDeviceId, getNetlifyAuthHeaders } from "/js/netlifyAuthFetch.js";
+document.addEventListener('DOMContentLoaded', function() {
+  // Show edit-section links if user has web-editor role
+  const token = localStorage.getItem("userLogin_token");
+  if (!token) return;
+  function normalizeRole(value) {
+    return String(value || "").trim().toLowerCase().replace(/\s+/g, "-");
+  }
+  fetch("/.netlify/functions/verifyUser", {
+    method: "POST",
+    headers: getNetlifyAuthHeaders({ json: true, includeAuth: false }),
+    body: JSON.stringify({ action: "check_userLoginToken", userLogin_token: token, deviceId: getDeviceId() })
+  })
+    .then(r => r.ok ? r.json() : null)
+    .then(data => {
+      if (data && (data.status === "role_mismatch" || data.status === "device_mismatch")) {
+        localStorage.removeItem("userLogin_token");
+        return;
+      }
+      if (!data || data.status !== "success") return;
+      const rawRoles = [].concat(data?.entry?.roles || data?.entry?.role || []);
+      const roles = rawRoles
+        .flatMap(r => String(r).split(","))
+        .map(normalizeRole)
+        .filter(Boolean);
+      if (roles.includes("content-editor")) {
+        document.querySelectorAll('.edit-section-link-wrap').forEach(function(wrap) {
+          wrap.style.display = "inline";
         });
-      });
+      }
+    })
+    .catch(() => {
+      // keep links hidden on validation failures
     });
-  </script>
+
+  // Debug: log all edit-section links rendered
+  document.querySelectorAll('.edit-section-link').forEach(function(link) {
+    console.log('[DEBUG] Edit link rendered:', link.href);
+    link.addEventListener('click', function(e) {
+      console.log('[DEBUG] Edit link clicked:', link.href);
+    });
+  });
+});
+</script>
