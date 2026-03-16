@@ -53,9 +53,8 @@ function normalizeSharedImagePath(value) {
   return normalized;
 }
 
-function normalizeContentTypeValue(value) {
-  const lower = String(value || "").toLowerCase();
-  if (lower === "collated_page") return "page from section files";
+function getContentTypeToDisplay(value) {
+  if (value === "collated_page") return "page from section files";
   return value;
 }
 
@@ -125,7 +124,7 @@ const CORE_FIELDS = [
     dependsOn: DEPENDS_ON_CONTENT_PAGE,
     required: true,
     frontMatter: false,
-    normalizeValue: normalizeContentTypeValue,
+    normalizeValue: getContentTypeToDisplay,
     labelByParentQualification: CONTENT_TYPE_LABEL_BY_PARENT_QUALIFICATION,
     optionsByParentQualification: CONTENT_TYPE_OPTIONS_BY_PARENT_QUALIFICATION
   },
@@ -143,8 +142,8 @@ const CORE_FIELDS = [
 ];
 
 const REVIEW_FIELDS = [
+  { key: "expires", label: "Expires", type: "date", dependsOn: DEPENDS_ON_CONTENT_PAGE }, 
   { key: "last_reviewed", label: "Last reviewed", type: "date", dependsOn: DEPENDS_ON_CONTENT_PAGE },
-  { key: "expires", label: "Expires", type: "date", dependsOn: DEPENDS_ON_CONTENT_PAGE },
   { key: "review_period", label: "Review period", type: "text", dependsOn: DEPENDS_ON_CONTENT_PAGE },
   { key: "reviewed_by", label: "Reviewed by", type: "text", dependsOn: DEPENDS_ON_CONTENT_PAGE }
 ];
@@ -192,6 +191,32 @@ const fieldDefinitions = [
   ...MEDIA_FIELDS
 ];
 
+function matchDependency(dep, values) {
+  const value = (values[dep.key] ?? "").toString().toLowerCase();
+  return dep.values.map(v => v.toLowerCase()).includes(value);
+}
+
+function isVisible(field, values) {
+  if (field.dependsOnAll) {
+    return field.dependsOnAll.every(dep => matchDependency(dep, values));
+  }
+  if (field.dependsOn) {
+    return matchDependency(field.dependsOn, values);
+  }
+  return true;
+}
+
+function getParentQualification(node) {
+  const parent = node?.newParent || node?.parent;
+  return String(parent?.qualification || "").toLowerCase();
+}
+
+function getOptionsByParentQualification(field, node) {
+  if (!field.optionsByParentQualification) return null;
+  const qual = getParentQualification(node);
+  return field.optionsByParentQualification[qual] || null;
+}
+
 export const WEBEDITOR_FIELD_SCHEMA = {
   deriveDisplayValues: {
     page_type: derivePageType,
@@ -199,7 +224,11 @@ export const WEBEDITOR_FIELD_SCHEMA = {
     give_content_prev_next_buttons: derivePrevNextButtons
   },
   deriveFrontMatterType,
-  fieldDefinitions
+  fieldDefinitions,
+  isVisible,
+  matchDependency,
+  getParentQualification,
+  getOptionsByParentQualification
 };
 
 // ============================================================================
@@ -212,5 +241,9 @@ export const editStateColors = TREE_NODE_STATE_COLORS;
 export const fieldSchema = {
   derive: WEBEDITOR_FIELD_SCHEMA.deriveDisplayValues,
   deriveType: WEBEDITOR_FIELD_SCHEMA.deriveFrontMatterType,
-  fields: WEBEDITOR_FIELD_SCHEMA.fieldDefinitions
+  fields: WEBEDITOR_FIELD_SCHEMA.fieldDefinitions,
+  isVisible: WEBEDITOR_FIELD_SCHEMA.isVisible,
+  matchDependency: WEBEDITOR_FIELD_SCHEMA.matchDependency,
+  getParentQualification: WEBEDITOR_FIELD_SCHEMA.getParentQualification,
+  getOptionsByParentQualification: WEBEDITOR_FIELD_SCHEMA.getOptionsByParentQualification
 };

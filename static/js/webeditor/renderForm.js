@@ -1,42 +1,54 @@
 // static/js/webeditor/renderForm.js
 import { fieldSchema } from "./fieldSchema.js";
+import { renderImageDropZone } from "./imageDropZone.js";
 import { getNetlifyAuthHeaders } from "./authHeaders.js";
 
 let sharedImageOptionsCacheGlobal = null;
 
-export async function renderForm(node, frontMatter, accessOptionsCache) {
+export async function renderForm(frontMatterFields, parentFrontMatterFields, accessOptionsCache) {
   const form = document.getElementById("editForm");
   form.innerHTML = "";
 
-  const resolvedFront = { ...frontMatter };
+  const { fields, derive, deriveType, isVisible } = fieldSchema;
+  const resolvedFront = { ...frontMatterFields };
+  // Infer qualification for parentFields
+  const parentFields = { ...parentFrontMatterFields };
+  if (!parentFields.qualification) {
+    const parentType = String(parentFields.type || "").toLowerCase();
+    if (parentType === "collated_page") {
+      parentFields.qualification = "collated:";
+    } else if (parentType === "navigation") {
+      parentFields.qualification = "navigation:";
+    }
+  }
   const editState = {
     accessOptionsCache: accessOptionsCache || null,
     sharedImageOptionsCache: sharedImageOptionsCacheGlobal
   };
-  let sharedImageDropZoneInserted = false;
   let sharedImageTargetSelect = null;
 
   function applyDerivedDefaults(values) {
-    const derive = fieldSchema.derive || {};
-    if (!node?._newEdit && !values.page_type && typeof derive.page_type === "function") {
-      values.page_type = derive.page_type({ node, frontMatter });
+    if (!values.page_type && typeof derive.page_type === "function") {
+      values.page_type = derive.page_type({ frontMatter: values, parentFrontMatter: parentFields });
     }
-    if (node?._newEdit && !values.page_type) {
-      const pageTypeField = fieldSchema.fields.find(f => f.key === "page_type");
+    if (!values.page_type) {
+      const pageTypeField = fields.find(f => f.key === "page_type");
       if (pageTypeField?.options?.length) values.page_type = pageTypeField.options[0];
     }
-    if (!node?._newEdit && !values.content_type && values.page_type === "Content" && typeof derive.content_type === "function") {
-      values.content_type = derive.content_type({ node, frontMatter });
+    if (!values.content_type && values.page_type === "Content" && typeof derive.content_type === "function") {
+      values.content_type = derive.content_type({ frontMatter: values, parentFrontMatter: parentFields });
     }
-    if (node?._newEdit && values.page_type === "Content" && !values.content_type) {
-      const contentField = fieldSchema.fields.find(f => f.key === "content_type");
+    if (values.page_type === "Content" && !values.content_type) {
+      const contentField = fields.find(f => f.key === "content_type");
       let options = contentField?.options || [];
-      const parentOptions = contentField ? getOptionsByParentQualification(contentField) : null;
+      const parentOptions = contentField && contentField.optionsByParentQualification
+        ? contentField.optionsByParentQualification[parentFields.qualification?.toLowerCase?.() || ""]
+        : null;
       if (parentOptions) options = parentOptions;
       if (options.length) values.content_type = options[0];
     }
-    if (!node?._newEdit && !values.give_content_prev_next_buttons && values.page_type === "Navigation" && typeof derive.give_content_prev_next_buttons === "function") {
-      values.give_content_prev_next_buttons = derive.give_content_prev_next_buttons({ node, frontMatter });
+    if (!values.give_content_prev_next_buttons && values.page_type === "Navigation" && typeof derive.give_content_prev_next_buttons === "function") {
+      values.give_content_prev_next_buttons = derive.give_content_prev_next_buttons({ frontMatter: values, parentFrontMatter: parentFields });
     }
   }
 
@@ -114,23 +126,32 @@ export async function renderForm(node, frontMatter, accessOptionsCache) {
     return String(val);
   }
 
-  function updateFrontMatterText(values) {
+  // Helper to update front matter box, preserving comments
+  function updateFrontMatterTextWithComments(rawFrontMatter, values) {
     const frontMatterText = document.getElementById("frontMatterText");
     if (!frontMatterText) return;
-    const derived = { ...(node?.frontMatterOriginal || {}) };
-    for (const field of fieldSchema.fields) {
-      if (field.frontMatter === false) continue;
-      if (!Object.prototype.hasOwnProperty.call(values, field.key)) continue;
-      const v = values[field.key];
-      const keyLower = field.key.toLowerCase();
-      Object.keys(derived).forEach(k => {
-        if (k.toLowerCase() === keyLower) delete derived[k];
-      });
-      if (v === "" || v == null || String(v).toLowerCase() === "false") {
-        delete derived[keyLower];
-      } else {
-        derived[keyLower] = v;
+    // Parse lines, keep comments and blank lines
+    const lines = (rawFrontMatter || "").split(/\r?\n/);
+    const keyLineMap = new Map();
+    const commentLines = [];
+    const keyRegex = /^([a-zA-Z0-9_\-]+):/;
+    lines.forEach((line, idx) => {
+      const m = line.match(keyRegex);
+      if (m) {
+        keyLineMap.set(m[1].trim(), idx);
+      } else if (line.trim().startsWith("#") || line.trim() === "") {
+        commentLines.push({ idx, line });
       }
+    });
+
+    // Only include fields with frontMatter !== false
+    const allowedKeys = fieldSchema.fields.filter(f => f.frontMatter !== false).map(f => f.key);
+    // Build derived object with only allowed keys
+    const derived = {};
+    for (const key of allowedKeys) {
+      const v = values[key];
+      if (v === undefined || v === "" || v == null || String(v).toLowerCase() === "false") continue;
+      derived[key] = v;
     }
 
     const derivedType = typeof fieldSchema.deriveType === "function"
@@ -143,34 +164,31 @@ export async function renderForm(node, frontMatter, accessOptionsCache) {
       }
     }
 
-    const orderedKeys = Array.isArray(node?.frontMatterOriginalOrder)
-      ? node.frontMatterOriginalOrder
-      : [];
-    const remainingKeys = Object.keys(derived).filter(k => !orderedKeys.includes(k));
-    const keyOrder = [...orderedKeys, ...remainingKeys];
+    // Always order keys by fieldSchema.fields
+    const keyOrder = allowedKeys.filter(k => Object.prototype.hasOwnProperty.call(derived, k));
 
-    const lines = [];
+    // Rebuild front matter, preserving comments and blank lines
+    const outLines = [];
+    let usedKeys = new Set();
+    for (let i = 0; i < lines.length; ++i) {
+      const line = lines[i];
+      const m = line.match(keyRegex);
+      if (m && allowedKeys.includes(m[1].trim())) {
+        // Will be replaced below
+        continue;
+      }
+      if (line.trim().startsWith("#") || line.trim() === "") {
+        outLines.push(line);
+      }
+    }
+    // Insert normalized key-value pairs in schema order after comments
     for (const key of keyOrder) {
       const v = derived[key];
       if (v === "" || v == null) continue;
-      lines.push(`${key}: ${formatFrontMatterValue(v)}`);
+      outLines.push(`${key}: ${formatFrontMatterValue(v)}`);
+      usedKeys.add(key);
     }
-    frontMatterText.value = lines.join("\n");
-  }
-
-  function matchDependency(dep) {
-    const value = (resolvedFront[dep.key] ?? "").toString().toLowerCase();
-    return dep.values.map(v => v.toLowerCase()).includes(value);
-  }
-
-  function isVisible(field) {
-    if (field.dependsOnAll) {
-      return field.dependsOnAll.every(matchDependency);
-    }
-    if (field.dependsOn) {
-      return matchDependency(field.dependsOn);
-    }
-    return true;
+    frontMatterText.value = outLines.join("\n");
   }
 
   function renderOptionalHeading() {
@@ -181,19 +199,8 @@ export async function renderForm(node, frontMatter, accessOptionsCache) {
     form.appendChild(heading);
   }
 
-  function getParentQualification() {
-    const parent = node?.newParent || node?.parent;
-    return String(parent?.qualification || "").toLowerCase();
-  }
-
-  function getOptionsByParentQualification(field) {
-    if (!field.optionsByParentQualification) return null;
-    const qual = getParentQualification();
-    return field.optionsByParentQualification[qual] || null;
-  }
-
   async function renderField(field) {
-    if (!isVisible(field)) return;
+    if (!isVisible(field, resolvedFront)) return;
 
     let input = null;
     const rawValue = resolvedFront[field.key] ?? field.default ?? "";
@@ -201,16 +208,16 @@ export async function renderForm(node, frontMatter, accessOptionsCache) {
     if (field.type === "hidden") {
       input = document.createElement("input");
       input.type = "hidden";
-      input.value = value || "";
+      input.value = rawValue || "";
     } else if (field.type === "select") {
       input = document.createElement("select");
       let options = field.options || [];
-      if (field.optionsProvider === "get_role_options") {
-        options = await getAccessOptions();
-      } else if (field.optionsProvider === "get_shared_images") {
-        options = await getSharedImageOptions();
+      if (typeof field.optionsProvider === "function") {
+        options = await field.optionsProvider({ frontMatter: resolvedFront, parentFrontMatter: parentFields, getAccessOptions, getSharedImageOptions });
       }
-      const parentOptions = getOptionsByParentQualification(field);
+      const parentOptions = field.optionsByParentQualification
+        ? field.optionsByParentQualification[parentFields.qualification?.toLowerCase?.() || ""]
+        : null;
       if (parentOptions) {
         options = parentOptions;
       }
@@ -218,7 +225,7 @@ export async function renderForm(node, frontMatter, accessOptionsCache) {
       if (!options.length && !allowBlank) options = [""];
 
       const normalized = typeof field.normalizeValue === "function"
-        ? field.normalizeValue(rawValue, { node, frontMatter })
+        ? field.normalizeValue(rawValue, { frontMatter: resolvedFront, parentFrontMatter: parentFields })
         : rawValue;
       const hasValue = !(normalized === "" || normalized == null);
 
@@ -298,8 +305,11 @@ export async function renderForm(node, frontMatter, accessOptionsCache) {
     input.addEventListener("change", () => {
       if (input.dataset) delete input.dataset.illegal;
       Object.assign(resolvedFront, getCurrentFormValues());
-      updateFrontMatterText(resolvedFront);
-      renderForm(node, resolvedFront, editState.accessOptionsCache);
+      // Update front matter box, preserving comments
+      const frontMatterText = document.getElementById("frontMatterText");
+      const rawFrontMatter = frontMatterText ? frontMatterText.value : "";
+      updateFrontMatterTextWithComments(rawFrontMatter, resolvedFront);
+      renderForm(frontMatterFields, parentFrontMatterFields, editState.accessOptionsCache);
     });
 
     if (field.type === "hidden") {
@@ -315,7 +325,7 @@ export async function renderForm(node, frontMatter, accessOptionsCache) {
       const label = document.createElement("label");
       let labelText = field.label || field.key;
       if (field.labelByParentQualification) {
-        const qual = getParentQualification();
+        const qual = parentFields.qualification?.toLowerCase?.() || "";
         if (field.labelByParentQualification[qual]) {
           labelText = field.labelByParentQualification[qual];
         }
@@ -324,7 +334,7 @@ export async function renderForm(node, frontMatter, accessOptionsCache) {
       label.style.display = "block";
       label.style.marginTop = "10px";
 
-      if (field.type === "select" && field.optionsProvider === "get_shared_images") {
+      if (field.type === "select" && field.optionsProvider && field.optionsProvider.name === "getSharedImageOptions") {
         input.addEventListener("focus", () => {
           sharedImageTargetSelect = input;
         });
@@ -332,49 +342,9 @@ export async function renderForm(node, frontMatter, accessOptionsCache) {
           sharedImageTargetSelect = input;
         });
         if (!sharedImageTargetSelect) sharedImageTargetSelect = input;
-
-        if (!sharedImageDropZoneInserted) {
-          sharedImageDropZoneInserted = true;
-          const uploadRow = document.createElement("div");
-          uploadRow.className = "webeditor-upload-row";
-
-          const dropZone = document.createElement("div");
-          dropZone.className = "webeditor-dropzone";
-          dropZone.textContent = "Drop image here or click to browse";
-
-          const fileInput = document.createElement("input");
-          fileInput.type = "file";
-          fileInput.accept = "image/*";
-          fileInput.className = "webeditor-file-input";
-
-          dropZone.addEventListener("click", () => fileInput.click());
-          dropZone.addEventListener("dragover", e => {
-            e.preventDefault();
-            dropZone.classList.add("webeditor-dropzone--active");
-          });
-          dropZone.addEventListener("dragleave", () => {
-            dropZone.classList.remove("webeditor-dropzone--active");
-          });
-          dropZone.addEventListener("drop", e => {
-            e.preventDefault();
-            dropZone.classList.remove("webeditor-dropzone--active");
-            const file = e.dataTransfer?.files?.[0];
-            if (file) handleImageUpload(file, dropZone, fileInput);
-          });
-
-          fileInput.addEventListener("change", () => {
-            const file = fileInput.files && fileInput.files[0];
-            if (file) handleImageUpload(file, dropZone, fileInput);
-          });
-
-          uploadRow.appendChild(dropZone);
-          uploadRow.appendChild(fileInput);
-          form.appendChild(uploadRow);
-        }
-
+        renderImageDropZone(form, handleImageUpload);
         form.appendChild(label);
         form.appendChild(input);
-
         const preview = document.createElement("img");
         preview.className = "webeditor-image-preview";
         const initialValue = input.value || "";
@@ -398,7 +368,6 @@ export async function renderForm(node, frontMatter, accessOptionsCache) {
             preview.removeAttribute("src");
             preview.style.display = "none";
           }
-          // Always scroll preview into view
           if (preview.style.display === "block") {
             preview.scrollIntoView({ behavior: "smooth", block: "nearest" });
           }
@@ -471,32 +440,22 @@ export async function renderForm(node, frontMatter, accessOptionsCache) {
     });
   }
 
-  let optionalHeadingInserted = false;
-  const debugLog = (msg, ...args) => {
-    if (typeof window !== 'undefined' && typeof window.log === 'function') {
-      window.log(msg, ...args);
-    } else {
-      console.log(msg, ...args);
-    }
-  };
-  debugLog('[renderForm] Rendering fields:', fieldSchema.fields.map(f => f.key));
-  for (const field of fieldSchema.fields) {
-    //debugLog('[renderForm] Rendering field:', field.key, 'type:', field.type);
-    if (!field.required && !optionalHeadingInserted) {
-      renderOptionalHeading();
-      optionalHeadingInserted = true;
-    }
+
+  // Render required fields, then optional fields with heading
+  const requiredFields = fields.filter(f => f.required);
+  const optionalFields = fields.filter(f => !f.required);
+  for (const field of requiredFields) {
     await renderField(field);
   }
-
-  updateFrontMatterText(getCurrentFormValues());
-  setTimeout(() => {
-    try {
-      updateFrontMatterText(getCurrentFormValues());
-    } catch (e) {
-      // no-op
+  if (optionalFields.length) {
+    renderOptionalHeading();
+    for (const field of optionalFields) {
+      await renderField(field);
     }
-    // Scroll form to top after render
+  }
+
+  // Scroll form to top after render
+  setTimeout(() => {
     if (form && form.scrollTo) {
       form.scrollTo({ top: 0, behavior: "smooth" });
     }

@@ -59,9 +59,8 @@ async function init(){
     log('fetchFile got data.parent:', data.parent);    
     selectedNodePath = filePath;
     selectedNodePathRef.value = filePath;
-    const node = { path: filePath };
-    await showFrontmatter(data.rawFrontMatter); // step 5
-    renderFormFn(node, data.frontMatterFields);
+    renderFormFn(data.frontMatterFields, data.parent?.frontMatterFields || {});
+    showFrontmatter(data.rawFrontMatter); // step 5
     setBodyContent(data.content);
     wireEditDirtyTracking();
     autoSizeFrontMatter();
@@ -111,7 +110,7 @@ async function fetchFile(filePath) {
   }
 }
 
-async function showFrontmatter(rawFrontMatter){
+function showFrontmatter(rawFrontMatter){
   log("Step 5: showFrontmatter");
   const frontMatterText = document.getElementById("frontMatterText");
   frontMatterText.value = rawFrontMatter;
@@ -198,7 +197,7 @@ function showBlankEditorForSelectedNode() {
       bodyText.value = node.rawBody || "";
     }
     setBodyEditorVisible(showBodyEditor);
-    if (renderFormFn && node && node.frontMatterOriginal) renderFormFn(node.frontMatterOriginal, node);
+    if (renderFormFn && node && node.frontMatterOriginal) renderFormFn(node.frontMatterOriginal, node.parent?.frontMatterOriginal || {});
     autoSizeBody();
     scrollToBodyEditor();
     wireEditDirtyTracking();
