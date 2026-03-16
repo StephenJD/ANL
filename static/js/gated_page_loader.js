@@ -22,7 +22,6 @@ export async function loadGatedPage(container, pagePath, msgBox) {
   }
 
   async function injectHtml(html) {
-    console.log("[injectHtml] Injecting HTML:", html);
     container.innerHTML = html;
     const scripts = Array.from(container.querySelectorAll("script"));
     for (const oldScript of scripts) {
@@ -89,7 +88,7 @@ export async function loadGatedPage(container, pagePath, msgBox) {
 
     if (res.status === 200) {
       const html = await res.text();
-      console.log("[loadGatedPage] HTML response:", html);
+      //console.log("[loadGatedPage] HTML response:", html);
       await injectHtml(html);
     } else {
       showMessage(`Unexpected status: ${res.status}`);

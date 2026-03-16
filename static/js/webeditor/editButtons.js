@@ -1,5 +1,5 @@
 // /js/webeditor/editButtons.js
-window.log("editButtons FILE LOADED 2026-03-11");
+window.log("editButtons FILE LOADED");
 
 let buttonsWrapper = null;
 let buttons = {};

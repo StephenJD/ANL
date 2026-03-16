@@ -1,8 +1,8 @@
-// static/js/webeditor/editActions.js
+// \static\js\webeditor\contentEditorActions.js
 import { fieldSchema } from "./fieldSchema.js";
 import { getNetlifyAuthHeaders } from "./authHeaders.js";
 
-window.log("editActions FILE LOADED");
+window.log("contentEditorActions FILE LOADED");
 
 const caseSensitiveFields = new Set(
   (fieldSchema.fields || [])
@@ -10,7 +10,7 @@ const caseSensitiveFields = new Set(
     .map(field => String(field.key || "").toLowerCase())
 );
 
-export function setupEditActions(treeDataRef = [], selectedNodePathRef = { value: null }) {
+export function setupEditActions(selectedNodePathRef = { value: null }) {
 
   function buildContentFromForm(form, node, overrides = null) {
     const illegal = Array.from(form.querySelectorAll("select")).filter(sel => sel.dataset?.illegal === "true");
@@ -180,5 +180,24 @@ export function setupEditActions(treeDataRef = [], selectedNodePathRef = { value
     if (!e.moved && !e.edited && !e.staged) delete node.edit;
   }
 
-  return { saveEditFrontmatter, dropNode, cancelEdit, buildContentFromForm };
+  // Add stubs for editPage, publishLocal, publishWeb for button bar compatibility
+  function editPage() {
+    window.log("[editActions] editPage called (stub)");
+  }
+  function publishLocal() {
+    window.log("[editActions] publishLocal called (stub)");
+  }
+  function publishWeb() {
+    window.log("[editActions] publishWeb called (stub)");
+  }
+
+  return {
+    saveEditFrontmatter,
+    dropNode,
+    cancelEdit,
+    buildContentFromForm,
+    editPage,
+    publishLocal,
+    publishWeb
+  };
                                                      }
