@@ -33,7 +33,6 @@ export function setupEditButtons(containerId, treeData, moveFn, showEditorFn, pu
     { id: "to", label: "↴" },
     { id: "copyUrl", label: "🔗" },
     { id: "edit", label: "✎" },
-    { id: "editPage", label: "📄" },
     { id: "new", label: "📝" },
     { id: "save", label: "✔" },
     { id: "drop", label: "✘" },
@@ -48,7 +47,6 @@ export function setupEditButtons(containerId, treeData, moveFn, showEditorFn, pu
     btn.textContent = label;
     btn.disabled = true;
     if (id === "edit") btn.title = "Edit front matter";
-    if (id === "editPage") btn.title = "Edit page body";
     buttonsWrapper.appendChild(btn);
     buttons[id] = btn;
   });

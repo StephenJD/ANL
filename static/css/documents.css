@@ -1,3 +1,24 @@
+/* Fixed bottom button bar for content editor */
+/* Fixed bottom button bar for content editor */
+#editButtonsContainer {
+  position: fixed;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  width: min(1000px, calc(100% - 2rem));
+  box-sizing: border-box;
+  z-index: 10;
+  background: #fff;
+  border-top: 1px solid #ccc;
+  padding: 10px 1rem;
+  display: flex;
+  gap: 10px;
+  box-shadow: 0 -2px 5px rgba(0,0,0,0.08);
+}
+
+#editButtonsContainer button {
+  margin: 0 0.5em;
+}
 .sibling-links {
   list-style: none;
   padding: 0;

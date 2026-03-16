@@ -35,7 +35,8 @@ export function setupEditButtons(containerId, editActions) {
     const btn = document.createElement("button");
     btn.id = id;
     btn.textContent = label;
-    btn.disabled = true;
+    // Enable all buttons by default except Save (which is only enabled when dirty)
+    btn.disabled = (id === "save");
     if (id === "editPage") btn.title = "Edit page body";
     buttonsWrapper.appendChild(btn);
     buttons[id] = btn;

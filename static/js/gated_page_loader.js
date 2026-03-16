@@ -10,8 +10,7 @@ function forceLogout(redirectUrl) {
 
 export async function loadGatedPage(container, pagePath, msgBox) {
   // pagePath can be raw .File.Path
-	console.log("[loadGatedPage] pagePath:", pagePath, "container:", container, "msgBox:", msgBox);
-
+	
   if (!container) return console.error("Missing container");
   if (!pagePath) return console.error("Missing pagePath");
 

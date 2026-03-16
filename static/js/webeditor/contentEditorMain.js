@@ -1,8 +1,10 @@
 
+
+
 // static\js\webeditor\contentEditorMain.js
 // Main entry for the Content Editor UI (migrated from original generator)
-import { getNetlifyAuthHeaders } from "/js/netlifyAuthFetch.js";
 
+// Always define window.log before any imports or code that might use it
 window.log = function(msg){
   const logDiv = document.getElementById("logDiv");
   if(logDiv){
@@ -12,10 +14,22 @@ window.log = function(msg){
   console.log(msg);
 };
 
+import { getNetlifyAuthHeaders } from "/js/netlifyAuthFetch.js";
+import { setupEditActions } from "/js/webeditor/contentEditorActions.js";
+
 const showLog = (location.hostname === "localhost" || location.hostname === "127.0.0.1" || location.search.includes("debug=1"));
 const logDiv = document.getElementById("logDiv");
 if (logDiv && !showLog) {
   logDiv.style.display = "none";
+}
+
+if (!window.findNodeByPath) {
+  try {
+    const actions = setupEditActions();
+    window.findNodeByPath = actions && actions.findNodeByPath ? actions.findNodeByPath : undefined;
+  } catch (e) {
+    window.log && window.log("Failed to patch findNodeByPath: " + e);
+  }
 }
 
 log("Step 0: Content editor script started");
@@ -26,6 +40,8 @@ log("Step 0: Content editor script started");
 
 let selectedNodePathRef = { value: null };
 
+let selectedNodePath = null;
+
 let renderFormFn = null;
 let saveEdit = ()=>log("saveEdit not loaded yet");
 let publishEdits = ()=>log("publishEdits not loaded yet");
@@ -34,8 +50,10 @@ let publishWeb = ()=>log("publishWeb not loaded yet");
 let cancelEdit = ()=>log("cancelEdit not loaded yet");
 let dropEdits = ()=>log("dropEdits not loaded yet");
 let buildContentFromForm = null;
-
+let editDirty = false;
 let editButtons = null;
+let showBodyEditor = false;
+let newMode = false;
 // =====================
 // Initialize
 // =====================
@@ -47,6 +65,8 @@ async function init(){
   const result = await fetchFile(requestedRaw); // step 4
   if (result && result.data) {
     const { data, filePath } = result;
+    selectedNodePath = filePath;
+    selectedNodePathRef.value = filePath;
     const node = { path: filePath };
     await loadEditorFromContent(node, data.content, data.rawFrontMatter); // step 5
     document.getElementById("editorContainer").style.display = "block";
@@ -85,41 +105,33 @@ async function fetchFile(filePath) {
   }
 }
 
-function showBlankEditorForSelectedNode(){
+function showBlankEditorForSelectedNode() {
   showBodyEditor = false;
   newMode = true;
-  if(!selectedNodePath) return;
-  const node = findNodeByPath(treeData, selectedNodePath);
-  if(!node) return;
-  node._newEdit = true;
-
+  if (!selectedNodePath) return;
   const editorContainer = document.getElementById("editorContainer");
   const editForm = document.getElementById("editForm");
   const editorHeader = document.getElementById("editorHeader");
   const frontMatterText = document.getElementById("frontMatterText");
-  if(editorContainer && editForm && frontMatterText){
+  if (editorContainer && editForm && frontMatterText) {
     document.getElementById("tree").style.display = "none";
     editorContainer.style.display = "block";
     if (editButtons?.setEditing) editButtons.setEditing(true);
-    const qual = String(node.qualification || "").toLowerCase();
-    const isParentQual = qual === "collated:" || qual === "navigation:";
-    const newParent = isParentQual || node.children?.length ? node : (node.parent || node);
-    node.newParent = newParent;
+    // Derive parent folder from file path
+    let parentLabel = "(root)";
+    if (selectedNodePath.includes("/")) {
+      parentLabel = selectedNodePath.substring(0, selectedNodePath.lastIndexOf("/"));
+    }
     if (editorHeader) {
-      const parent = newParent;
-      const parentLabel = parent
-        ? (parent.qualification ? parent.qualification + " " : "") + (parent.title || parent.rawName || parent.path)
-        : "(root)";
       editorHeader.textContent = "Parent: " + parentLabel;
     }
     editDirty = false;
     if (editButtons?.setDirty) editButtons.setDirty(false);
     frontMatterText.value = "";
-    if (node) node.rawBody = "";
     setBodyEditorVisible(showBodyEditor);
     const bodyText = document.getElementById("bodyText");
     if (bodyText) bodyText.value = "";
-    if(renderFormFn) renderFormFn(node, {});
+    if (renderFormFn) renderFormFn({}, {});
     wireEditDirtyTracking();
   }
 }
@@ -291,7 +303,7 @@ async function loadHelpers(){
     const editActions = {
       save: () => handleMove("save"),
       drop: () => handleMove("drop"),
-      editPage: () => handleMove("new"),
+      editPage: () => showBlankEditorForSelectedNode({ openBody: true }),
       publishLocal: () => publishLocal && publishLocal(),
       publishWeb: () => publishWeb && publishWeb()
     };
@@ -304,7 +316,7 @@ async function loadHelpers(){
 }
 
 // =====================
-// Move / Save / Drop handler
+// Save / Drop handler
 // =====================
 async function handleMove(action) {
     if (!selectedNodePath) return;
