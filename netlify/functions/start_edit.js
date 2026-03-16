@@ -11,8 +11,9 @@ export async function handler(event) {
 
   try {
 
-    const { file } = JSON.parse(event.body);
-    console.log('[start_edit] Incoming file param:', file);
+  const { file } = JSON.parse(event.body);
+  console.log('[start_edit] Incoming file param:', file);
+  let debugInfo = {};
 
 
     // Base content directory
@@ -53,14 +54,23 @@ export async function handler(event) {
 
     // Extract front matter (simple split for now)
     const frontMatterMatch = rawContent.match(/^---\r?\n([\s\S]*?)\r?\n---/);
-    const rawFrontMatter = frontMatterMatch ? frontMatterMatch[0] : "";
+    const rawFrontMatterBlock = frontMatterMatch ? frontMatterMatch[0] : "";
+    const rawFrontMatter = frontMatterMatch ? frontMatterMatch[1] : "";
+    let frontMatterFields = {};
+    try {
+      frontMatterFields = normalizeFrontMatter(rawContent);
+    } catch (e) {
+      frontMatterFields = {};
+    }
+    // Remove front matter from content
+    const contentWithoutFrontMatter = rawFrontMatterBlock ? rawContent.slice(rawFrontMatterBlock.length).replace(/^\s*\n/, "") : rawContent;
 
     // Find parent _index.md
     let parentPath = null;
     let parentRawContent = null;
     let parentRawFrontMatter = null;
-    let parentTitle = null;
     let parentFileName = null;
+    let parent_frontMatterFields = {};
 
     const isIndex = fullPath.endsWith("_index.md");
     let parentDir = isIndex ? path.dirname(path.dirname(fullPath)) : path.dirname(fullPath);
@@ -69,30 +79,29 @@ export async function handler(event) {
       parentPath = parentIndexPath;
       parentRawContent = fs.readFileSync(parentIndexPath, "utf-8");
       const parentFMMatch = parentRawContent.match(/^---\r?\n([\s\S]*?)\r?\n---/);
-      parentRawFrontMatter = parentFMMatch ? parentFMMatch[0] : "";
-      // Use normalizeFrontMatter to extract clean title
-      let parentFMObj = {};
+      parentRawFrontMatter = parentFMMatch ? parentFMMatch[1] : "";
       try {
-        parentFMObj = normalizeFrontMatter(parentRawContent);
+        parent_frontMatterFields = normalizeFrontMatter(parentRawContent);
       } catch (e) {
-        parentFMObj = {};
+        parent_frontMatterFields = {};
       }
-      parentTitle = typeof parentFMObj.title === "string" ? parentFMObj.title : null;
       parentFileName = path.basename(parentIndexPath);
     }
 
     return {
       statusCode: 200,
       body: JSON.stringify({
+        frontMatterFields,
         rawFrontMatter,
-        content: rawContent,
+        content: contentWithoutFrontMatter,
         parent: parentPath ? {
-          ...parentFMObj,
+          frontMatterFields: parent_frontMatterFields,
           fileName: parentFileName
         } : null
       }),
     };
   } catch (err) {
+    console.log('[start_edit] Caught error:', err);
     return { statusCode: 500, body: String(err) };
   }
 }

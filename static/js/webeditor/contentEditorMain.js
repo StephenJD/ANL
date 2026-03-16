@@ -1,6 +1,3 @@
-
-
-
 // static\js\webeditor\contentEditorMain.js
 // Main entry for the Content Editor UI (migrated from original generator)
 
@@ -59,40 +56,29 @@ async function init(){
   const result = await fetchFile(requestedRaw); // step 4
   if (result && result.data) {
     const { data, filePath } = result;
+    log('fetchFile got data.parent:', data.parent);    
     selectedNodePath = filePath;
     selectedNodePathRef.value = filePath;
     const node = { path: filePath };
-    await loadEditorFromContent(node, data.content, data.rawFrontMatter); // step 5
+    await showFrontmatter(data.rawFrontMatter); // step 5
+    renderFormFn(node, data.frontMatterFields);
+    setBodyContent(data.content);
+    wireEditDirtyTracking();
+    autoSizeFrontMatter();
+    setParentHeading(data.parent);
+
     const editorContainer = document.getElementById("editorContainer");
     editorContainer.style.display = "block";
     // Scroll editor container to top and fit content
+    log('[scroll] Before scrollTop=0, editorContainer.scrollTop:', editorContainer.scrollTop);
     editorContainer.scrollTop = 0;
+    log('[scroll] After scrollTop=0, editorContainer.scrollTop:', editorContainer.scrollTop);
+    log('[scroll] Before scrollIntoView editorContainer');
     editorContainer.scrollIntoView({ behavior: "smooth", block: "start" });
+    log('[scroll] After scrollIntoView editorContainer');
     if (editButtons?.setEditing) editButtons.setEditing(true);
-    // Set parent label on load
-    const editorHeader = document.getElementById("editorHeader");
-    let parentLabel = "(root)";
-    let debugInfo = "";
-    if (data.parent) {
-      // Prefer title, fallback to fileName, fallback to first available field
-      if (typeof data.parent.title === "string" && data.parent.title.trim()) {
-        parentLabel = data.parent.title;
-      } else if (typeof data.parent.fileName === "string" && data.parent.fileName.trim()) {
-        parentLabel = data.parent.fileName;
-      } else {
-        // Try to use any available field
-        const keys = Object.keys(data.parent).filter(k => typeof data.parent[k] === "string" && data.parent[k].trim());
-        if (keys.length) parentLabel = data.parent[keys[0]];
-      }
-      debugInfo = " [" + Object.entries(data.parent).map(([k,v]) => `${k}='${v}'`).join(", ") + "]";
-    }
-    if (editorHeader) {
-      editorHeader.textContent = `Parent: ${parentLabel}${debugInfo}`;
-    }
+
     await loadBodyFolderImages(filePath);
-    autoSizeBody();
-    scrollToBodyEditor();
-    log("Step 5: fetchFile: loaded and UI shown");
   }
   log("Step 6: Initialization complete");
 }
@@ -123,6 +109,43 @@ async function fetchFile(filePath) {
     log("[fetchFile] exception: " + err);
     return null;
   }
+}
+
+async function showFrontmatter(rawFrontMatter){
+  log("Step 5: showFrontmatter");
+  const frontMatterText = document.getElementById("frontMatterText");
+  frontMatterText.value = rawFrontMatter;
+}
+
+function setBodyContent(content) {
+  const bodyText = document.getElementById("bodyText");
+  if (bodyText) bodyText.value = content;
+}
+
+function setParentHeading(parentData) {
+    const editorHeader = document.getElementById("editorHeader");
+    let parentLabel = "(root)";
+    if (parentData) {
+      log('[setParentHeading] parentData:', parentData);
+      // Prefer title, fallback to fileName
+      if (typeof parentData.frontMatterFields.title === "string") {
+        parentLabel = parentData.frontMatterFields.title;
+      } else if (typeof parentData.fileName === "string" && parentData.fileName.trim()) {
+        parentLabel = parentData.fileName;
+      }
+    }
+    if (editorHeader) {
+      editorHeader.textContent = `Parent: ${parentLabel}`;
+    }
+}
+
+function initialiseBody(){
+    log('[scroll] Before autoSizeBody');
+    autoSizeBody();
+    log('[scroll] After autoSizeBody');
+    log('[scroll] Before scrollToBodyEditor');
+    scrollToBodyEditor();
+    log('[scroll] After scrollToBodyEditor');
 }
 
 function showBlankEditorForSelectedNode() {
@@ -349,7 +372,8 @@ async function loadHelpers(){
     const editActions = {
       save: () => handleMove("save"),
       drop: () => handleMove("drop"),
-      editPage: () => showBlankEditorForSelectedNode({ openBody: true }),
+      editPage: () => initialiseBody(),
+
       publishLocal: () => publishLocal && publishLocal(),
       publishWeb: () => publishWeb && publishWeb()
     };
@@ -527,17 +551,26 @@ function autoSizeFrontMatter(){
 function autoSizeBody(){
   const bodyText = document.getElementById("bodyText");
   if (!bodyText) return;
+  const bodyWrap = document.getElementById("bodyTextWrap");
+  // Ensure bodyWrap is visible before resizing
+  if (bodyWrap && bodyWrap.style.display === "none") {
+    bodyWrap.style.display = "block";
+  }
+  log('[autoSizeBody] Before resize, scrollHeight:', bodyText.scrollHeight, 'offsetHeight:', bodyText.offsetHeight);
   bodyText.style.height = "auto";
   bodyText.style.height = Math.max(bodyText.scrollHeight, 200) + "px";
+  log('[autoSizeBody] After resize, scrollHeight:', bodyText.scrollHeight, 'offsetHeight:', bodyText.offsetHeight);
   // Resize body editor container to fit textarea
-  const bodyWrap = document.getElementById("bodyTextWrap");
   if (bodyWrap) {
+    log('[autoSizeBody] Before bodyWrap resize, scrollHeight:', bodyText.scrollHeight);
     bodyWrap.style.height = Math.max(bodyText.scrollHeight + 20, 220) + "px";
     bodyWrap.style.minHeight = "220px";
     bodyWrap.style.maxHeight = "80vh";
     bodyWrap.style.overflowY = "auto";
     // Scroll bodyWrap to top if content changes
+    log('[autoSizeBody] Before bodyWrap.scrollTop=0, scrollTop:', bodyWrap.scrollTop);
     bodyWrap.scrollTop = 0;
+    log('[autoSizeBody] After bodyWrap.scrollTop=0, scrollTop:', bodyWrap.scrollTop);
   }
 }
 
@@ -553,9 +586,14 @@ function setBodyEditorVisible(visible){
 
 function scrollToBodyEditor(){
   const bodyWrap = document.getElementById("bodyTextWrap");
-  if (!bodyWrap || bodyWrap.style.display === "none") return;
+  if (!bodyWrap || bodyWrap.style.display === "none") {
+    log('[scrollToBodyEditor] bodyWrap missing or hidden');
+    return;
+  }
+  log('[scrollToBodyEditor] Before scrollIntoView bodyWrap');
   requestAnimationFrame(() => {
     bodyWrap.scrollIntoView({ behavior: "smooth", block: "start" });
+    log('[scrollToBodyEditor] After scrollIntoView bodyWrap');
   });
 }
 
@@ -636,7 +674,7 @@ function setupBodyImageTools(){
     if (file) uploadImageToCurrentFolder(file);
   });
 
-  bodyImageToolsBound = true;
+  //bodyImageToolsBound = true;
 }
 
 async function loadBodyFolderImages(filePath){
@@ -742,48 +780,6 @@ function readFileAsDataUrl(file) {
     reader.onerror = () => reject(reader.error || new Error("File read failed"));
     reader.readAsDataURL(file);
   });
-}
-
-async function loadEditorFromContent(node, content, rawFrontMatterOverride = null){
-  log("Step 5: loadEditorFromContent");
-  const frontMatterText = document.getElementById("frontMatterText");
-  const bodyText = document.getElementById("bodyText");
-  let rawBody;
-  let rawFrontMatter = rawFrontMatterOverride;
-  if (rawFrontMatter == null) {
-    const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
-    rawFrontMatter = match ? match[0] : "";
-  }
-
-  let innerFrontMatter = "";
-  const matchInner = rawFrontMatter.match(/^---\r?\n([\s\S]*?)\r?\n---/);
-  if (matchInner) innerFrontMatter = matchInner[1];
-
-  const contentBody = rawFrontMatter ? content.slice(rawFrontMatter.length).replace(/^\s*\n/, "") : content;
-  rawBody = contentBody;
-  node.rawBody = contentBody;
-  if (frontMatterText) frontMatterText.value = innerFrontMatter;
-  if (bodyText) bodyText.value = contentBody;
-
-  let frontMatterObj = {};
-  try {
-    const { normalizeFrontMatter } = await import("/js/webeditor/normalizeFrontMatter.js");
-    frontMatterObj = normalizeFrontMatter("---\n" + innerFrontMatter + "\n---");
-  } catch (err) {
-    frontMatterObj = {};
-  }
-
-  if(renderFormFn) renderFormFn(node, frontMatterObj);
-  node.frontMatterOriginal = { ...frontMatterObj };
-  node.frontMatterOriginalText = innerFrontMatter;
-  node.frontMatterOriginalOrder = innerFrontMatter
-    .split(/\r?\n/)
-    .map(line => line.split("#")[0].trim())
-    .filter(line => line.includes(":"))
-    .map(line => line.split(":")[0].trim().toLowerCase());
-  wireEditDirtyTracking();
-  autoSizeFrontMatter();
-  if (showBodyEditor) autoSizeBody();
 }
 
 async function ensureParentFrontMatter(node) {

@@ -59,6 +59,7 @@ export function setupEditButtons(containerId, editActions) {
     if (editActions && typeof editActions.editPage === "function") editActions.editPage();
   });
 
+
   if (buttons.publishLocal) {
     buttons.publishLocal.addEventListener("click", () => {
       if (editActions && typeof editActions.publishLocal === "function") editActions.publishLocal();
