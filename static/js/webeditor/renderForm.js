@@ -204,7 +204,6 @@ export async function renderForm(frontMatterFields, parentFrontMatterFields, acc
 
     let input = null;
     const rawValue = resolvedFront[field.key] ?? field.default ?? "";
-
     if (field.type === "hidden") {
       input = document.createElement("input");
       input.type = "hidden";
@@ -220,7 +219,7 @@ export async function renderForm(frontMatterFields, parentFrontMatterFields, acc
         : null;
       if (parentOptions) {
         options = parentOptions;
-        }
+      }
       const allowBlank = field.allowBlank === true;
       if (!options.length && !allowBlank) options = [""];
 
@@ -258,35 +257,30 @@ export async function renderForm(frontMatterFields, parentFrontMatterFields, acc
       if (isIllegal) {
         const illegalOpt = document.createElement("option");
         illegalOpt.value = String(normalized);
-          illegalOpt.textContent = "Illegal";
-          illegalOpt.selected = true;
-          input.appendChild(illegalOpt);
-          input.dataset.illegal = "true";
-        }
-
-        normalizedOptions.forEach((optVal, index) => {
-          const opt = document.createElement("option");
-          opt.value = isCaseSensitive ? optVal.value : toCompare(optVal.value);
-          opt.textContent = optVal.label;
-          // Always set dataset.preview for image fields
-          if (
-            (field.key === "background_image" || field.key === "logo_image") &&
-            optVal.value && typeof optVal.value === "string" &&
-            (optVal.value.match(/\.(png|jpg|jpeg|gif|webp)$/i) || optVal.value.startsWith("/"))
-          ) {
-            opt.dataset.preview = optVal.value;
-          }
-          if (!isIllegal) {
-            if (hasValue && matchIndex === index) opt.selected = true;
-            if (!hasValue && !allowBlank && index === 0) opt.selected = true;
-          }
-          input.appendChild(opt);
-        });
+        illegalOpt.textContent = "Illegal";
+        illegalOpt.selected = true;
+        input.appendChild(illegalOpt);
+        input.dataset.illegal = "true";
       }
-    } else if (field.type === "hidden") {
-      input = document.createElement("input");
-      input.type = "hidden";
-      input.value = rawValue || "";
+
+      normalizedOptions.forEach((optVal, index) => {
+        const opt = document.createElement("option");
+        opt.value = isCaseSensitive ? optVal.value : toCompare(optVal.value);
+        opt.textContent = optVal.label;
+        // Always set dataset.preview for image fields
+        if (
+          (field.key === "background_image" || field.key === "logo_image") &&
+          optVal.value && typeof optVal.value === "string" &&
+          (optVal.value.match(/\.(png|jpg|jpeg|gif|webp)$/i) || optVal.value.startsWith("/"))
+        ) {
+          opt.dataset.preview = optVal.value;
+        }
+        if (!isIllegal) {
+          if (hasValue && matchIndex === index) opt.selected = true;
+          if (!hasValue && !allowBlank && index === 0) opt.selected = true;
+        }
+        input.appendChild(opt);
+      });
     } else if (field.type === "textarea") {
       input = document.createElement("textarea");
       input.rows = field.rows || 3;
