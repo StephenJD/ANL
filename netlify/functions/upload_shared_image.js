@@ -38,7 +38,7 @@ async function githubPutFile(repo, relPath, base64Content, token, message, sha =
 }
 
 export async function handler(event) {
-  const auth = await requireBindingAuth(event, "edit_website");
+  const auth = await requireBindingAuth(event, "content_editor");
   if (auth.unauthorized) return auth.response;
 
   try {

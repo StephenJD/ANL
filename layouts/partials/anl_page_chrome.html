@@ -30,16 +30,16 @@
 </div>
 <div class="page-container" style="{{ if $background_image }}background-image: url('{{ $background_image }}');{{ end }}">
   <div class="no-print">
-    <div class="container">
-      <div id="webeditor-link-wrap" style="display:none; padding: 6px 0; text-align:left;">
-        <a id="webeditor-link" class="edit-page" href="{{ $webeditorHref }}">✏️ Edit This Page</a>
-      </div>
-    </div>
     {{ if $show_breadcrumb }}
       <div class="container">
         {{ partial "breadcrumb.html" $current_page }}
       </div>    
     {{ end }}
+    <div class="container">
+      <div id="webeditor-link-wrap" style="display:none; padding: 6px 0; text-align:left;">
+        <a id="webeditor-link" class="edit-page" href="{{ $webeditorHref }}">✏️ Edit This Page</a>
+      </div>
+    </div>  
   </div>
   
   {{ with $logo_image }}

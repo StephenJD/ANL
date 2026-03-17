@@ -136,7 +136,7 @@ const CORE_FIELDS = [
     required: true,
     frontMatter: false
   },
-  { key: "access", label: "Access", type: "select", optionsProvider: "get_role_options", required: true },
+  { key: "access", label: "Access", type: "select", optionsProvider: "getAccessOptions", required: true },
   { key: "title", label: "Title", type: "text", required: true, width: "wide" },
   { key: "summary", label: "Summary (for navigation pages)", type: "textarea", rows: 3, width: "wide" }
 ];

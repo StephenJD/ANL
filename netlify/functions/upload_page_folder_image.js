@@ -9,7 +9,7 @@ import {
 import { requireBindingAuth } from "./authHelper.js";
 
 export async function handler(event) {
-  const auth = await requireBindingAuth(event, "edit_website");
+  const auth = await requireBindingAuth(event, "content_editor");
   if (auth.unauthorized) return auth.response;
 
   try {

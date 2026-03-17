@@ -1,4 +1,4 @@
-// netlify/functions/dynamic_generators/generate_content_editor.js
+// netlify\functions\dynamic_generators\generate_content_editor_original.js
 export default async function generate_content_editor() {
   return `
 <h1>Content Editor</h1>

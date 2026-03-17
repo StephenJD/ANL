@@ -59,14 +59,25 @@ async function init(){
     log('fetchFile got data.parent:', data.parent);    
     selectedNodePath = filePath;
     selectedNodePathRef.value = filePath;
-    renderFormFn(data.frontMatterFields, data.parent?.frontMatterFields || {});
+    // Patch: Always pass filePath as _filePath to renderForm for uploads
+    const fmWithFilePath = { ...data.frontMatterFields, _filePath: filePath };
+    renderFormFn(fmWithFilePath, data.parent?.frontMatterFields || {});
     showFrontmatter(data.rawFrontMatter); // step 5
     setBodyContent(data.content);
     wireEditDirtyTracking();
     autoSizeFrontMatter();
     setParentHeading(data.parent);
 
+    // Ensure editor HTML is present before calling setBodyEditorVisible
     const editorContainer = document.getElementById("editorContainer");
+    const bodyImageTools = document.getElementById("bodyImageTools");
+    const bodyImageSelect = document.getElementById("bodyImageSelect");
+    const bodyImagePreview = document.getElementById("bodyImagePreview");
+    log('[init] editorContainer:', !!editorContainer, 'bodyImageTools:', !!bodyImageTools, 'bodyImageSelect:', !!bodyImageSelect, 'bodyImagePreview:', !!bodyImagePreview);
+    if (!editorContainer || !bodyImageTools || !bodyImageSelect || !bodyImagePreview) {
+      log('[init] Required editor elements missing, aborting initialization.');
+      return;
+    }
     editorContainer.style.display = "block";
     // Scroll editor container to top and fit content
     log('[scroll] Before scrollTop=0, editorContainer.scrollTop:', editorContainer.scrollTop);
@@ -78,6 +89,8 @@ async function init(){
     if (editButtons?.setEditing) editButtons.setEditing(true);
 
     await loadBodyFolderImages(filePath);
+    // Now call setBodyEditorVisible to trigger setupBodyImageTools
+    setBodyEditorVisible(true);
   }
   log("Step 6: Initialization complete");
 }
@@ -594,34 +607,94 @@ function scrollToBodyEditor(){
 }
 
 function setupBodyImageTools(){
-  if (bodyImageToolsBound) return;
-  const imageSelect = document.getElementById("bodyImageSelect");
-  const dropZone = document.getElementById("bodyImageDrop");
-  const fileInput = document.getElementById("bodyImageFile");
-  if (!imageSelect || !dropZone || !fileInput) return;
-
-  const imagePreview = document.getElementById("bodyImagePreview");
+  console.log('[setupBodyImageTools] called');
   const copyFeedback = document.getElementById("bodyImageCopyFeedback");
   let feedbackTimer = null;
 
+
+  // Restore original static drop-zone event binding for body image
+  const bodyImageDrop = document.getElementById('bodyImageDrop');
+  const bodyImageFile = document.getElementById('bodyImageFile');
+  if (bodyImageDrop && bodyImageFile) {
+    bodyImageDrop.addEventListener('click', () => bodyImageFile.click());
+    bodyImageDrop.addEventListener('dragover', e => {
+      e.preventDefault();
+      bodyImageDrop.style.borderColor = '#444';
+      bodyImageDrop.style.background = '#f5f5f5';
+    });
+    bodyImageDrop.addEventListener('dragleave', () => {
+      bodyImageDrop.style.borderColor = '#888';
+      bodyImageDrop.style.background = '';
+    });
+    bodyImageDrop.addEventListener('drop', e => {
+      e.preventDefault();
+      bodyImageDrop.style.borderColor = '#888';
+      bodyImageDrop.style.background = '';
+      const file = e.dataTransfer?.files?.[0];
+      if (file) uploadImageToCurrentFolder(file);
+    });
+    bodyImageFile.addEventListener('change', () => {
+      const file = bodyImageFile.files?.[0];
+      if (file) uploadImageToCurrentFolder(file);
+    });
+  }
+
+  // Restore original static drop-zone event binding for background/logo image
+  const backgroundImageDropZone = document.getElementById('backgroundImageDropZone');
+  const backgroundImageFile = document.getElementById('backgroundImageFile');
+  if (backgroundImageDropZone && backgroundImageFile) {
+    backgroundImageDropZone.addEventListener('click', () => backgroundImageFile.click());
+    backgroundImageDropZone.addEventListener('dragover', e => {
+      e.preventDefault();
+      backgroundImageDropZone.style.borderColor = '#444';
+      backgroundImageDropZone.style.background = '#f5f5f5';
+    });
+    backgroundImageDropZone.addEventListener('dragleave', () => {
+      backgroundImageDropZone.style.borderColor = '#888';
+      backgroundImageDropZone.style.background = '';
+    });
+    backgroundImageDropZone.addEventListener('drop', e => {
+      e.preventDefault();
+      backgroundImageDropZone.style.borderColor = '#888';
+      backgroundImageDropZone.style.background = '';
+      const file = e.dataTransfer?.files?.[0];
+      if (file) uploadBackgroundImage(file);
+    });
+    backgroundImageFile.addEventListener('change', () => {
+      const file = backgroundImageFile.files?.[0];
+      if (file) uploadBackgroundImage(file);
+    });
+  }
+
+  // Preview image logic remains unchanged
+  let imagePreview = document.getElementById("bodyImagePreview");
+  if (!imagePreview) return;
+
+  const imageSelect = document.getElementById("bodyImageSelect");
+  if (!imageSelect) {
+    console.log('[setupBodyImageTools] bodyImageSelect element not found');
+    return;
+  }
   imageSelect.addEventListener("change", () => {
     const imageName = String(imageSelect.value || "").trim();
+    const folderUrl = imageSelect.dataset.folderUrl || "";
+    console.log('[setupBodyImageTools] imageSelect change, imageName:', imageName, 'folderUrl:', folderUrl);
     if (!imageName) {
-      if (imagePreview) { imagePreview.src = ""; imagePreview.style.display = "none"; }
+      imagePreview.src = "";
+      imagePreview.style.display = "none";
       if (copyFeedback) copyFeedback.style.display = "none";
       return;
     }
     // Show preview using the correct public URL
-    if (imagePreview) {
-      const folderUrl = imageSelect.dataset.folderUrl || "";
-      imagePreview.src = folderUrl + imageName;
-      imagePreview.style.display = "block";
-      requestAnimationFrame(() => { imagePreview.scrollIntoView({ behavior: "smooth", block: "nearest" }); });
-    }
+    const previewSrc = folderUrl + imageName;
+    imagePreview.src = previewSrc;
+    imagePreview.style.display = "block";
+    requestAnimationFrame(() => { imagePreview.scrollIntoView({ behavior: "smooth", block: "nearest" }); });
     // Build markdown link, paste or copy depending on radio selection
     const mdLink = "![](" + imageName + ")";
     const actionRadio = document.querySelector('input[name="imageAction"]:checked');
     const action = actionRadio ? actionRadio.value : "paste";
+    console.log('[setupBodyImageTools] action:', action, 'mdLink:', mdLink);
     if (action === "paste") {
       const bodyText = document.getElementById("bodyText");
       if (bodyText) {
@@ -633,6 +706,7 @@ function setupBodyImageTools(){
         bodyText.selectionStart = bodyText.selectionEnd = start + mdLink.length;
         bodyText.focus();
         bodyText.dispatchEvent(new Event("input"));
+        console.log('[setupBodyImageTools] pasted mdLink at cursor');
       }
     } else {
       if (navigator.clipboard) {
@@ -642,34 +716,11 @@ function setupBodyImageTools(){
             clearTimeout(feedbackTimer);
             feedbackTimer = setTimeout(() => { copyFeedback.style.display = "none"; }, 2500);
           }
+          console.log('[setupBodyImageTools] copied mdLink to clipboard');
         }).catch(() => {});
       }
     }
   });
-
-  dropZone.addEventListener("click", () => fileInput.click());
-  dropZone.addEventListener("dragover", e => {
-    e.preventDefault();
-    dropZone.style.borderColor = "#444";
-    dropZone.style.background = "#f5f5f5";
-  });
-  dropZone.addEventListener("dragleave", () => {
-    dropZone.style.borderColor = "#888";
-    dropZone.style.background = "";
-  });
-  dropZone.addEventListener("drop", e => {
-    e.preventDefault();
-    dropZone.style.borderColor = "#888";
-    dropZone.style.background = "";
-    const file = e.dataTransfer?.files?.[0];
-    if (file) uploadImageToCurrentFolder(file);
-  });
-
-  fileInput.addEventListener("change", () => {
-    const file = fileInput.files?.[0];
-    if (file) uploadImageToCurrentFolder(file);
-  });
-
   //bodyImageToolsBound = true;
 }
 
@@ -748,7 +799,10 @@ async function uploadImageToCurrentFolder(file){
     const dataUrl = await readFileAsDataUrl(file);
     const res = await fetch("/.netlify/functions/upload_page_folder_image", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        ...getNetlifyAuthHeaders({ json: true }),
+        "Content-Type": "application/json"
+      },
       body: JSON.stringify({ file: nodePath, name: file.name, dataUrl, forceLocal: true })
     });
     const text = await res.text();
@@ -760,7 +814,15 @@ async function uploadImageToCurrentFolder(file){
     try { payload = JSON.parse(text); } catch (e) {}
     const imageName = String(payload?.name || payload?.filename || file.name || "").trim();
     await loadBodyFolderImages(nodePath);
+    // Refresh background and logo options after upload
+    if (typeof loadBackgroundOptions === 'function') await loadBackgroundOptions(nodePath);
+    if (typeof loadLogoOptions === 'function') await loadLogoOptions(nodePath);
     if (imageName) insertImageIntoBody(imageName);
+    // Keep preview window visible after upload
+    const imagePreview = document.getElementById("bodyImagePreview");
+    if (imagePreview && imagePreview.src) {
+      imagePreview.style.display = "block";
+    }
   } catch (err) {
     log("[folder-images] upload exception: " + err);
   } finally {

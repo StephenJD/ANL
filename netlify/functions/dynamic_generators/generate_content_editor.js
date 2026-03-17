@@ -12,8 +12,17 @@ export default async function generate_content_editor() {
     <form id="editForm"></form>
     <label for="frontMatterText">Front Matter:</label>
     <textarea id="frontMatterText" style="width:100%;min-height:80px;height:auto;overflow:hidden;margin-bottom:10px;"></textarea>
+    <div id="backgroundImageDropZone" style="border:1px dashed #888;padding:10px;border-radius:6px;cursor:pointer;user-select:none;margin-bottom:8px;">
+      Drop background/logo image here or click to upload
+    </div>
+    <input id="backgroundImageFile" type="file" accept="image/*" style="display:none;" />
+
     <div id="bodyImageTools" style="margin-bottom:8px;">
       <label for="bodyImageSelect">Images in this folder:</label>
+      <div id="bodyImageDrop" style="border:1px dashed #888;padding:10px;border-radius:6px;cursor:pointer;user-select:none;margin:6px 0 6px 0;">
+        Drop image here or click to upload to this folder
+      </div>
+      <input id="bodyImageFile" type="file" accept="image/*" style="display:none;" />
       <select id="bodyImageSelect" style="display:block;width:100%;margin:4px 0 4px 0;">
         <option value="">Select an image...</option>
       </select>
@@ -23,10 +32,6 @@ export default async function generate_content_editor() {
       </div>
       <span id="bodyImageCopyFeedback" style="font-size:0.85em;color:green;display:none;margin-bottom:4px;">Link copied!</span>
       <img id="bodyImagePreview" src="" alt="" style="display:none;max-width:100%;max-height:180px;border:1px solid #ccc;border-radius:4px;margin-bottom:8px;" />
-      <div id="bodyImageDrop" style="border:1px dashed #888;padding:10px;border-radius:6px;cursor:pointer;user-select:none;">
-        Drop image here or click to upload to this folder
-      </div>
-      <input id="bodyImageFile" type="file" accept="image/*" style="display:none;" />
     </div>
     <div id="bodyTextWrap" style="display:none;">
       <label for="bodyText">Page Body:</label>
