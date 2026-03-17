@@ -24,9 +24,9 @@ export async function getFormFrontMatter({ formPath }) {
     throw new Error(`Invalid JSON in form metadata for path: ${formPath}`);
   }
 
-  // Ensure validation is always an array of strings
+  // Normalize validation to array
   if (Array.isArray(metadata.validation)) {
-    metadata.validation = metadata.validation.map(String).filter(Boolean);
+    metadata.validation = metadata.validation.map(s => String(s).trim()).filter(Boolean);
   } else if (typeof metadata.validation === "string") {
     metadata.validation = metadata.validation
       .split(/[\s,;|]+/)
@@ -35,17 +35,36 @@ export async function getFormFrontMatter({ formPath }) {
   } else {
     metadata.validation = ["none"];
   }
-  
-  // Ensure access is always an array
+
+  // Normalize access to array
   if (Array.isArray(metadata.access)) {
-    metadata.access = metadata.access.map(String).filter(Boolean);
+    metadata.access = metadata.access.map(s => String(s).trim()).filter(Boolean);
   } else if (typeof metadata.access === "string") {
     metadata.access = [metadata.access.trim()];
   } else {
     metadata.access = [];
   }
-  
-  return metadata; // return everything, with validation and access normalized
+
+  // Build new object with lower-case field names and values, except title and summary values
+  const result = {};
+  for (const [key, value] of Object.entries(metadata)) {
+    const lowerKey = key.toLowerCase();
+    if (lowerKey === "title" || lowerKey === "summary") {
+      result[lowerKey] = value;
+    } else if (lowerKey === "validation" && Array.isArray(metadata.validation)) {
+      result[lowerKey] = metadata.validation.map(v => v.toLowerCase());
+    } else if (lowerKey === "access" && Array.isArray(metadata.access)) {
+      result[lowerKey] = metadata.access.map(v => v.toLowerCase());
+    } else if (typeof value === "string") {
+      result[lowerKey] = value.toLowerCase();
+    } else if (Array.isArray(value)) {
+      result[lowerKey] = value.map(v => typeof v === "string" ? v.toLowerCase() : v);
+    } else {
+      result[lowerKey] = value;
+    }
+  }
+
+  return result; // all field names and values lower-case except title and summary values
 }
 
 export async function handler(event) {
