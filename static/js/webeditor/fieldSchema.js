@@ -1,5 +1,6 @@
 // static/js/webeditor/fieldSchema.js
 
+import { getAccessOptions, getSharedImageOptions } from "./renderForm.js";
 // ============================================================================
 // Constants
 // ============================================================================
@@ -136,7 +137,7 @@ const CORE_FIELDS = [
     required: true,
     frontMatter: false
   },
-  { key: "access", label: "Access", type: "select", optionsProvider: "getAccessOptions", required: true },
+  { key: "access", label: "Access", type: "select", optionsProvider: getAccessOptions, required: true },
   { key: "title", label: "Title", type: "text", required: true, width: "wide" },
   { key: "summary", label: "Summary (for navigation pages)", type: "textarea", rows: 3, width: "wide" }
 ];
@@ -163,7 +164,7 @@ const MEDIA_FIELDS = [
     key: "background_image",
     label: "Background image",
     type: "select",
-    optionsProvider: "get_shared_images",
+    optionsProvider: getSharedImageOptions,
     allowBlank: true,
     blankLabel: "None",
     caseSensitive: true,
@@ -174,7 +175,7 @@ const MEDIA_FIELDS = [
     key: "logo_image",
     label: "Logo image",
     type: "select",
-    optionsProvider: "get_shared_images",
+    optionsProvider: getSharedImageOptions,
     allowBlank: true,
     blankLabel: "None",
     caseSensitive: true,

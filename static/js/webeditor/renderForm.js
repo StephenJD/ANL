@@ -3,9 +3,69 @@ import { fieldSchema } from "./fieldSchema.js";
 import { renderImageDropZone } from "./imageDropZone.js";
 import { getNetlifyAuthHeaders } from "./authHeaders.js";
 
+
 let sharedImageOptionsCacheGlobal = null;
+let accessOptionsCacheGlobal = null;
+
+export async function getAccessOptions() {
+  if (accessOptionsCacheGlobal) {
+    log('[getAccessOptions] returning global cache:', accessOptionsCacheGlobal);
+    return accessOptionsCacheGlobal;
+  }
+  try {
+    log('[getAccessOptions] fetching from /get_role_options');
+    const res = await fetch("/.netlify/functions/get_role_options", {
+      headers: getNetlifyAuthHeaders()
+    });
+    log('[getAccessOptions] fetch response status:', res.status);
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    let options = await res.json();
+    log('[getAccessOptions] raw options from server:', options);
+    options = options.map(o => o.Role || o.role || o);
+    options.unshift("Public");
+    log('[getAccessOptions] normalized options:', options);
+    accessOptionsCacheGlobal = options;
+    return options;
+  } catch (err) {
+    log('[getAccessOptions] ERROR:', err);
+    accessOptionsCacheGlobal = ["Public"];
+    return ["Public"];
+  }
+}
+
+export async function getSharedImageOptions() {
+  if (sharedImageOptionsCacheGlobal) {
+    log('[getSharedImageOptions] returning global cache:', sharedImageOptionsCacheGlobal);
+    return sharedImageOptionsCacheGlobal;
+  }
+  try {
+    const res = await fetch("/.netlify/functions/list_shared_images", {
+      headers: getNetlifyAuthHeaders()
+    });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const data = await res.json();
+    const options = Array.isArray(data) ? data : [];
+    const normalized = options.map(opt => {
+      if (opt && typeof opt === "object") {
+        const value = String(opt.value ?? "");
+        const label = String(opt.label ?? opt.value ?? "");
+        return { value, label };
+      }
+      const value = String(opt);
+      const label = value.split("/").pop() || value;
+      return { value, label };
+    });
+    sharedImageOptionsCacheGlobal = normalized;
+    return normalized;
+  } catch (err) {
+    log("[getSharedImageOptions] ERROR: " + err);
+    sharedImageOptionsCacheGlobal = [];
+    return [];
+  }
+}
 
 export async function renderForm(frontMatterFields, parentFrontMatterFields, accessOptionsCache) {
+  log('[renderForm] called with frontMatterFields:', frontMatterFields, 'parentFrontMatterFields:', parentFrontMatterFields, 'accessOptionsCache:', accessOptionsCache);
   const form = document.getElementById("editForm");
   form.innerHTML = "";
 
@@ -54,54 +114,6 @@ export async function renderForm(frontMatterFields, parentFrontMatterFields, acc
 
   applyDerivedDefaults(resolvedFront);
 
-  async function getAccessOptions() {
-    if (editState.accessOptionsCache) return editState.accessOptionsCache;
-    try {
-      const res = await fetch("/.netlify/functions/get_role_options", {
-        headers: getNetlifyAuthHeaders()
-      });
-      if (!res.ok) throw new Error("HTTP " + res.status);
-      let options = await res.json();
-      options = options.map(o => o.Role || o.role || o);
-      options.unshift("Public");
-      editState.accessOptionsCache = options;
-      return options;
-    } catch (err) {
-      log("Access fetch error: " + err);
-      editState.accessOptionsCache = ["Public"];
-      return ["Public"];
-    }
-  }
-
-  async function getSharedImageOptions() {
-    if (editState.sharedImageOptionsCache) return editState.sharedImageOptionsCache;
-    try {
-      const res = await fetch("/.netlify/functions/list_shared_images", {
-        headers: getNetlifyAuthHeaders()
-      });
-      if (!res.ok) throw new Error("HTTP " + res.status);
-      const data = await res.json();
-      const options = Array.isArray(data) ? data : [];
-      const normalized = options.map(opt => {
-        if (opt && typeof opt === "object") {
-          const value = String(opt.value ?? "");
-          const label = String(opt.label ?? opt.value ?? "");
-          return { value, label };
-        }
-        const value = String(opt);
-        const label = value.split("/").pop() || value;
-        return { value, label };
-      });
-      editState.sharedImageOptionsCache = normalized;
-      sharedImageOptionsCacheGlobal = normalized;
-      return normalized;
-    } catch (err) {
-      log("Shared images fetch error: " + err);
-      editState.sharedImageOptionsCache = [];
-      sharedImageOptionsCacheGlobal = [];
-      return [];
-    }
-  }
 
   function getCurrentFormValues() {
     const obj = {};
@@ -199,6 +211,7 @@ export async function renderForm(frontMatterFields, parentFrontMatterFields, acc
     form.appendChild(heading);
   }
 
+
   async function renderField(field) {
     if (!isVisible(field, resolvedFront)) return;
 
@@ -212,12 +225,15 @@ export async function renderForm(frontMatterFields, parentFrontMatterFields, acc
       input = document.createElement("select");
       let options = field.options || [];
       if (typeof field.optionsProvider === "function") {
+        log(`[renderField] field '${field.key}' using optionsProvider. Calling...`);
         options = await field.optionsProvider({ frontMatter: resolvedFront, parentFrontMatter: parentFields, getAccessOptions, getSharedImageOptions });
+        log(`[renderField] field '${field.key}' optionsProvider returned:`, options);
       }
       const parentOptions = field.optionsByParentQualification
         ? field.optionsByParentQualification[parentFields.qualification?.toLowerCase?.() || ""]
         : null;
       if (parentOptions) {
+        log(`[renderField] field '${field.key}' using parentOptions:`, parentOptions);
         options = parentOptions;
       }
       const allowBlank = field.allowBlank === true;
@@ -241,6 +257,8 @@ export async function renderForm(frontMatterFields, parentFrontMatterFields, acc
         return { value, label: value };
       });
 
+      log(`[renderField] field '${field.key}' normalizedOptions:`, normalizedOptions, 'rawValue:', rawValue, 'normalized:', normalized);
+
       const compareOptions = normalizedOptions.map(o => toCompare(o.value));
       const compareValue = hasValue ? toCompare(normalized) : "";
       const matchIndex = hasValue ? compareOptions.indexOf(compareValue) : -1;
@@ -255,6 +273,7 @@ export async function renderForm(frontMatterFields, parentFrontMatterFields, acc
       }
 
       if (isIllegal) {
+        log(`[renderField] field '${field.key}' value is illegal:`, normalized);
         const illegalOpt = document.createElement("option");
         illegalOpt.value = String(normalized);
         illegalOpt.textContent = "Illegal";
@@ -452,17 +471,20 @@ export async function renderForm(frontMatterFields, parentFrontMatterFields, acc
 
 
   // Render required fields, then optional fields with heading
+  log('[renderForm] rendering required fields:', fields.filter(f => f.required).map(f => f.key));
   const requiredFields = fields.filter(f => f.required);
   const optionalFields = fields.filter(f => !f.required);
   for (const field of requiredFields) {
     await renderField(field);
   }
   if (optionalFields.length) {
+    log('[renderForm] rendering optional fields:', optionalFields.map(f => f.key));
     renderOptionalHeading();
     for (const field of optionalFields) {
       await renderField(field);
     }
   }
+  log('[renderForm] finished rendering all fields.');
 
   // Scroll form to top after render
   setTimeout(() => {
