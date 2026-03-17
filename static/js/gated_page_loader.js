@@ -55,6 +55,17 @@ export async function loadGatedPage(container, pagePath, msgBox) {
         if (newScript.type === "module" && newScript.src) await new Promise(r => newScript.onload = r);
       }
     }
+    // Dynamically load editor JS if editor UI is present
+    if (container.querySelector('#editForm')) {
+      if (!document.querySelector('script[src="/js/webeditor/contentEditorMain.js"]')) {
+        const script = document.createElement('script');
+        script.type = 'module';
+        script.src = '/js/webeditor/contentEditorMain.js';
+        script.defer = true;
+        document.body.appendChild(script);
+        console.log('[gated_page_loader] Dynamically loaded contentEditorMain.js');
+      }
+    }
     document.dispatchEvent(new Event("gated-page-loaded"));
   }
 

@@ -3,6 +3,7 @@ title: "Content Editor"
 summary: "Edit page content."
 type: document
 function_key: content_editor
+validation: [noSend]
 access: [Content-Editor]
 ---
 
