@@ -37,10 +37,10 @@
   import { loadGatedPage } from "{{ "js/gated_page_loader.js" | relURL }}";
 
   document.addEventListener("DOMContentLoaded", () => {
-    const placeholder = document.querySelector(".gated_page_placeholder");
-    console.log("[DEBUG] placeholder path:", placeholder.dataset.path);
 
+    const placeholder = document.querySelector(".gated_page_placeholder");
     if (!placeholder) return; // safeguard
+    console.log("[DEBUG] placeholder path:", placeholder.dataset.path);
 
     let msgBox = placeholder.querySelector(".page_access_message");
     if (!msgBox) {

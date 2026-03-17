@@ -115,6 +115,10 @@ async function init(){
     const bodyImagePreview = document.getElementById("bodyImagePreview");
     log('[init] editorContainer:', !!editorContainer, 'bodyImageTools:', !!bodyImageTools, 'bodyImageSelect:', !!bodyImageSelect, 'bodyImagePreview:', !!bodyImagePreview);
     if (!editorContainer || !bodyImageTools || !bodyImageSelect || !bodyImagePreview) {
+      if (!editorContainer) log('[init] MISSING: #editorContainer');
+      if (!bodyImageTools) log('[init] MISSING: #bodyImageTools');
+      if (!bodyImageSelect) log('[init] MISSING: #bodyImageSelect');
+      if (!bodyImagePreview) log('[init] MISSING: #bodyImagePreview');
       log('[init] Required editor elements missing, aborting initialization.');
       return;
     }
