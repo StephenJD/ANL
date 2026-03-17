@@ -1,3 +1,4 @@
+// netlify\functions\upload_page_folder_image.js
 import fs from "fs";
 import path from "path";
 import {

@@ -1,3 +1,4 @@
+// netlify\functions\upload_shared_image.js
 import fs from "fs";
 import path from "path";
 import { execSync } from "child_process";

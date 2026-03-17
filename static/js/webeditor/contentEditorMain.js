@@ -45,6 +45,46 @@ let editDirty = false;
 let editButtons = null;
 let showBodyEditor = false;
 let newMode = false;
+
+// =====================
+// Upload background/logo image to shared endpoint
+// =====================
+async function uploadBackgroundImage(file) {
+  const dropZone = document.getElementById("backgroundImageDropZone");
+  const fileInput = document.getElementById("backgroundImageFile");
+  if (!file) return;
+  if (!dropZone) return;
+  try {
+    dropZone.textContent = "Uploading...";
+    const dataUrl = await readFileAsDataUrl(file);
+    const res = await fetch("/.netlify/functions/upload_shared_image", {
+      method: "POST",
+      headers: {
+        ...getNetlifyAuthHeaders({ json: true }),
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ name: file.name, dataUrl, forceLocal: true })
+    });
+    const text = await res.text();
+    if (!res.ok) {
+      log("[shared-image] upload failed status=" + res.status + " body=" + text);
+      return;
+    }
+    let payload = {};
+    try { payload = JSON.parse(text); } catch (e) {}
+    // Optionally update UI with new image URL or filename
+    log("[shared-image] uploaded: " + (payload?.filename || file.name));
+    // You may want to refresh background/logo selectors here
+    if (typeof loadBackgroundOptions === 'function') await loadBackgroundOptions();
+    if (typeof loadLogoOptions === 'function') await loadLogoOptions();
+  } catch (err) {
+    log("[shared-image] upload exception: " + err);
+  } finally {
+    dropZone.textContent = "Drop image here or click to upload to this folder";
+    if (fileInput) fileInput.value = "";
+  }
+}
+
 // =====================
 // Initialize
 // =====================
