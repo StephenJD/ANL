@@ -101,6 +101,7 @@ async function init(){
     selectedNodePathRef.value = filePath;
     // Patch: Always pass filePath as _filePath to renderForm for uploads
     const fmWithFilePath = { ...data.frontMatterFields, _filePath: filePath };
+    log('[contentEditorMain] frontMatterFields.access:', data.frontMatterFields.access);
     renderFormFn(fmWithFilePath, data.parent?.frontMatterFields || {}, data.rawFrontMatter);
     showFrontmatter(data.rawFrontMatter); // step 5
     setBodyContent(data.content);

@@ -1,3 +1,14 @@
+// Helper: normalize a front-matter value for select fields (e.g. access)
+function normalizeFrontMatterValue(key, value) {
+    // For access and similar fields, always use first element if array
+    if (Array.isArray(value)) value = value[0] || '';
+    // For access, match case to 'Public' if value is 'public'
+    if (key === 'access' && typeof value === 'string') {
+        if (value.toLowerCase() === 'public') return 'Public';
+    }
+    return value;
+}
+// \static\js\webeditor\normalizeFrontMatter.js
 // Serializes a normalized front-matter object to YAML, preserving comments and order from the original raw front-matter.
 // - rawFrontMatter: the original front-matter string (including --- and comments)
 // - normalized: the normalized object (key-value pairs)
@@ -56,17 +67,12 @@ export function normalizeFrontMatter(mdContent) {
         key = key.trim().toLowerCase();
         let value = rest.join(':').trim();
         if(value.startsWith('[') && value.endsWith(']')) {
-
-    value = value
-        .slice(1,-1)
-        .split(',')
-        .map(v => v.trim());
-
-} else {
-
-    value = value;
-
-}
+            value = value
+                .slice(1,-1)
+                .split(',')
+                .map(v => v.trim());
+        }
+        value = normalizeFrontMatterValue(key, value);
         front[key] = value;
     });
     return front;

@@ -74,11 +74,11 @@ function deriveContentType({ node, frontMatter }) {
   const parentQualification = String(node?.parent?.qualification || "").toLowerCase();
 
   if (typeValue === "collated_page") return "Page from section files";
-  if (typeValue.startsWith("document")) {
+  if (typeValue === "document") {
     if (parentQualification === "collated:") return "Document";
     if (parentQualification === "navigation:") return "Page from single file";
   }
-  if (typeValue.startsWith("form")) return "Form";
+  if (typeValue === "form") return "Form";
   if (typeValue.startsWith("dynamic")) return "Dynamic";
   return "";
 }
@@ -104,9 +104,7 @@ function deriveFrontMatterType(values) {
   if (pageType === "content" || pageType === "") {
     if (contentType === "page from section files") return "collated_page";
     if (contentType === "page from single file") return "document";
-    if (contentType === "document") return "document";
-    if (contentType === "form") return "form";
-    if (contentType === "dynamic") return "dynamic";
+    else return contentType; // document, form, dynamic, or blank
   }
   return "";
 }
@@ -139,7 +137,7 @@ const CORE_FIELDS = [
   },
   { key: "access", label: "Access", type: "select", optionsProvider: getAccessOptions, required: true },
   { key: "title", label: "Title", type: "text", required: true, width: "wide" },
-  { key: "summary", label: "Summary (for navigation pages)", type: "textarea", rows: 3, width: "wide" }
+  { key: "summary", label: "Summary", type: "textarea", rows: 3, width: "wide" }
 ];
 
 const REVIEW_FIELDS = [

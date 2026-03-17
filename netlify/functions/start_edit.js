@@ -59,6 +59,7 @@ export async function handler(event) {
     let frontMatterFields = {};
     try {
       frontMatterFields = normalizeFrontMatter(rawContent);
+      console.log('[start_edit] parsed frontMatterFields:', frontMatterFields);
     } catch (e) {
       frontMatterFields = {};
     }

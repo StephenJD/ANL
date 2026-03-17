@@ -116,7 +116,14 @@ export async function renderForm(frontMatterFields, parentFrontMatterFields, acc
       continue;
     }
     // Set value
-    const rawValue = resolvedFront[field.key] ?? field.default ?? '';
+    let rawValue = resolvedFront[field.key] ?? field.default ?? '';
+    if (Array.isArray(rawValue)) {
+      log('[renderForm] field', field.key, 'rawValue is array:', rawValue);
+      rawValue = rawValue[0] || '';
+    }
+    if (field.key === 'access') {
+      log('[renderForm] access field rawValue:', rawValue, 'typeof:', typeof rawValue);
+    }
     if (field.type === 'boolean') {
       el.checked = String(rawValue).toLowerCase() === 'true' || rawValue === true;
     } else if (field.type === 'select') {
@@ -124,6 +131,7 @@ export async function renderForm(frontMatterFields, parentFrontMatterFields, acc
       if (typeof field.optionsProvider === 'function') {
         // Async populate
         field.optionsProvider().then(options => {
+          log('[renderForm] options for', field.key, ':', options);
           el.innerHTML = '';
           if (field.allowBlank) {
             const blankOpt = document.createElement('option');
@@ -141,8 +149,16 @@ export async function renderForm(frontMatterFields, parentFrontMatterFields, acc
             }
             el.appendChild(o);
           });
-          // Always set value after options are populated
-          el.value = rawValue;
+          // After options are populated, select the value if present, else blank
+          let setValue = rawValue;
+          // If the value is not in the options, select blank
+          const optionValues = Array.from(el.options).map(opt => opt.value);
+          if (!optionValues.includes(setValue)) {
+            log('[renderForm] value', setValue, 'not found in options for', field.key, '; selecting blank');
+            setValue = '';
+          }
+          log('[renderForm] setting el.value for', field.key, 'to', setValue);
+          el.value = setValue;
         });
       } else if (Array.isArray(field.options)) {
         el.innerHTML = '';
@@ -157,9 +173,15 @@ export async function renderForm(frontMatterFields, parentFrontMatterFields, acc
           o.value = o.textContent = String(opt);
           el.appendChild(o);
         });
-        el.value = rawValue;
+        let setValue = rawValue;
+        if (Array.isArray(rawValue)) setValue = rawValue[0] || '';
+        log('[renderForm] setting el.value for', field.key, 'to', setValue);
+        el.value = setValue;
       } else {
-        el.value = rawValue;
+        let setValue = rawValue;
+        if (Array.isArray(rawValue)) setValue = rawValue[0] || '';
+        log('[renderForm] setting el.value for', field.key, 'to', setValue);
+        el.value = setValue;
       }
     } else if (field.type === 'textarea') {
       el.value = rawValue;
@@ -174,6 +196,7 @@ export async function renderForm(frontMatterFields, parentFrontMatterFields, acc
 
   // On load, set front-matter box to rawFrontMatter if provided
   const frontMatterText = document.getElementById('frontMatterText');
+  log('[renderForm] rawFrontMatter at load:', rawFrontMatter);
   if (frontMatterText && rawFrontMatter) {
     frontMatterText.value = rawFrontMatter;
   }
@@ -182,6 +205,7 @@ export async function renderForm(frontMatterFields, parentFrontMatterFields, acc
   const form = document.getElementById('editForm');
   if (form) {
     form.onchange = form.oninput = () => {
+      log('[renderForm] form change/input event fired');
       const obj = {};
       for (const field of fields) {
         const el = document.getElementById(field.key);
@@ -192,10 +216,13 @@ export async function renderForm(frontMatterFields, parentFrontMatterFields, acc
           obj[field.key] = el.value;
         }
       }
+      log('[renderForm] new form values:', obj);
       // Update front matter box using schema order and preserving comments
       const frontMatterText = document.getElementById('frontMatterText');
+      log('[renderForm] rawFrontMatter at change:', rawFrontMatter);
       if (frontMatterText && rawFrontMatter) {
         frontMatterText.value = serializeFrontMatter(rawFrontMatter, obj, fields.map(f => f.key));
+        log('[renderForm] updated frontMatterText.value:', frontMatterText.value);
       }
     };
   }
