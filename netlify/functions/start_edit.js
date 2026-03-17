@@ -64,6 +64,7 @@ export async function handler(event) {
       parentRawFrontMatter = parentFMMatch ? parentFMMatch[1] : "";
       try {
         parent_frontMatterFields = normalizeFrontMatter(parentRawContent);
+        console.log('[start_edit] parsed parent_frontMatterFields:', parent_frontMatterFields);
       } catch (e) {
         parent_frontMatterFields = {};
       }

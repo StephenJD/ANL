@@ -8,18 +8,27 @@ import "./log.js";
 import { getNetlifyAuthHeaders } from "/js/netlifyAuthFetch.js";
 import { setupEditActions } from "/js/webeditor/contentEditorActions.js";
 
+
 const showLog = (location.hostname === "localhost" || location.hostname === "127.0.0.1" || location.search.includes("debug=1"));
 const logDiv = document.getElementById("logDiv");
 if (logDiv && !showLog) {
   logDiv.style.display = "none";
 }
+if (logDiv && showLog) {
+  logDiv.style.display = "block";
+}
+log('[debug] showLog:', showLog, 'logDiv:', !!logDiv);
+
 
 if (!window.findNodeByPath) {
   try {
+    log('[debug] Patching window.findNodeByPath');
     const actions = setupEditActions();
     window.findNodeByPath = actions && actions.findNodeByPath ? actions.findNodeByPath : undefined;
+    log('[debug] Patched window.findNodeByPath:', typeof window.findNodeByPath);
   } catch (e) {
     window.log && window.log("Failed to patch findNodeByPath: " + e);
+    log('[debug] Exception in patching findNodeByPath:', e);
   }
 }
 
@@ -93,20 +102,28 @@ async function init(){
   await loadHelpers();
   log("Step 2: Helper loading complete");
   const requestedRaw = getFileNameFromQuery(); // step 3
+  log('[debug] requestedRaw:', requestedRaw);
   const result = await fetchFile(requestedRaw); // step 4
+  log('[debug] fetchFile result:', result);
   if (result && result.data) {
     const { data, filePath } = result;
-    log('fetchFile got data.parent:', data.parent);    
+    log('[debug] data:', data);
     selectedNodePath = filePath;
     selectedNodePathRef.value = filePath;
+    log('[debug] selectedNodePath:', selectedNodePath, 'selectedNodePathRef.value:', selectedNodePathRef.value);
     // Patch: Always pass filePath as _filePath to renderForm for uploads
     const fmWithFilePath = { ...data.frontMatterFields, _filePath: filePath };
-    log('[contentEditorMain] frontMatterFields.access:', data.frontMatterFields.access);
+    log('[contentEditorMain] frontMatterFields:', data.frontMatterFields);
+    log('[debug] Calling renderFormFn with:', fmWithFilePath, data.parent?.frontMatterFields || {}, data.rawFrontMatter);
     renderFormFn(fmWithFilePath, data.parent?.frontMatterFields || {}, data.rawFrontMatter);
+    log('[debug] Calling showFrontmatter with:', data.rawFrontMatter);
     showFrontmatter(data.rawFrontMatter); // step 5
     setBodyContent(data.content);
+    log('[debug] Calling wireEditDirtyTracking');
     wireEditDirtyTracking();
+    log('[debug] Calling autoSizeFrontMatter');
     autoSizeFrontMatter();
+    log('[debug] Calling setParentHeading with:', data.parent);
     setParentHeading(data.parent);
 
     // Ensure editor HTML is present before calling setBodyEditorVisible
@@ -123,6 +140,7 @@ async function init(){
       log('[init] Required editor elements missing, aborting initialization.');
       return;
     }
+    log('[debug] Setting editorContainer.style.display = "block"');
     editorContainer.style.display = "block";
     // Scroll editor container to top and fit content
     log('[scroll] Before scrollTop=0, editorContainer.scrollTop:', editorContainer.scrollTop);
@@ -131,11 +149,18 @@ async function init(){
     log('[scroll] Before scrollIntoView editorContainer');
     editorContainer.scrollIntoView({ behavior: "smooth", block: "start" });
     log('[scroll] After scrollIntoView editorContainer');
-    if (editButtons?.setEditing) editButtons.setEditing(true);
+    if (editButtons?.setEditing) {
+      log('[debug] Calling editButtons.setEditing(true)');
+      editButtons.setEditing(true);
+    }
 
+    log('[debug] Calling loadBodyFolderImages with:', filePath);
     await loadBodyFolderImages(filePath);
     // Now call setBodyEditorVisible to trigger setupBodyImageTools
+    log('[debug] Calling setBodyEditorVisible(true)');
     setBodyEditorVisible(true);
+  } else {
+    log('[debug] No result.data in fetchFile');
   }
   log("Step 6: Initialization complete");
 }
@@ -170,33 +195,45 @@ async function fetchFile(filePath) {
 
 function showFrontmatter(rawFrontMatter){
   log("Step 5: showFrontmatter");
+  log('[debug] showFrontmatter rawFrontMatter:', rawFrontMatter);
   const frontMatterText = document.getElementById("frontMatterText");
   if (!frontMatterText) {
     log("[showFrontmatter] ERROR: #frontMatterText not found in DOM");
     return;
   }
+  log('[debug] Setting frontMatterText.value');
   frontMatterText.value = rawFrontMatter;
 }
 
 function setBodyContent(content) {
+  log('[debug] setBodyContent called with:', content);
   const bodyText = document.getElementById("bodyText");
-  if (bodyText) bodyText.value = content;
+  if (bodyText) {
+    log('[debug] Setting bodyText.value');
+    bodyText.value = content;
+  } else {
+    log('[debug] #bodyText not found in DOM');
+  }
 }
 
 function setParentHeading(parentData) {
+    log('[debug] setParentHeading called with:', parentData);
     const parentHeader = document.getElementById("parentHeader");
     let parentLabel = "(root)";
     if (parentData) {
       log('[setParentHeading] parentData:', parentData);
       // Prefer title, fallback to fileName
-      if (typeof parentData.frontMatterFields.title === "string") {
+      if (typeof parentData.frontMatterFields?.title === "string") {
         parentLabel = parentData.frontMatterFields.title;
       } else if (typeof parentData.fileName === "string" && parentData.fileName.trim()) {
         parentLabel = parentData.fileName;
       }
     }
     if (parentHeader) {
+      log('[debug] Setting parentHeader.textContent');
       parentHeader.textContent = `Parent: ${parentLabel}`;
+    } else {
+      log('[debug] #parentHeader not found in DOM');
     }
 }
 

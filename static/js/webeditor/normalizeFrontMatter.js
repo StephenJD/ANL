@@ -1,10 +1,17 @@
+// \static\js\webeditor\normalizeFrontMatter.js
 // Helper: normalize a front-matter value for select fields (e.g. access)
 function normalizeFrontMatterValue(key, value) {
     // For access and similar fields, always use first element if array
     if (Array.isArray(value)) value = value[0] || '';
-    // For access, match case to 'Public' if value is 'public'
-    if (key === 'access' && typeof value === 'string') {
-        if (value.toLowerCase() === 'public') return 'Public';
+    // Lower-case all values except title and summary
+    if (key === 'title' || key === 'summary') {
+        return value;
+    }
+    if (typeof value === 'string') {
+        return value.toLowerCase();
+    }
+    if (Array.isArray(value)) {
+        return value.map(v => typeof v === 'string' ? v.toLowerCase() : v);
     }
     return value;
 }
@@ -14,9 +21,14 @@ function normalizeFrontMatterValue(key, value) {
 // - normalized: the normalized object (key-value pairs)
 // - fieldOrder: array of keys in desired order (from fieldSchema.fields)
 export function serializeFrontMatter(rawFrontMatter, normalized, fieldOrder) {
+    log('[serializeFrontMatter] called with normalized:', normalized);
+    log('[serializeFrontMatter] fieldOrder:', fieldOrder);
     // Extract lines between --- markers
     const parts = rawFrontMatter.split('---');
-    if (parts.length < 2) return rawFrontMatter;
+    if (parts.length < 2) {
+        log('[serializeFrontMatter] invalid rawFrontMatter, returning as-is');
+        return rawFrontMatter;
+    }
     const lines = parts[1].split('\n');
     // Map of key -> comment lines (above the key)
     const comments = {};
@@ -47,6 +59,7 @@ export function serializeFrontMatter(rawFrontMatter, normalized, fieldOrder) {
                 value = `[${value.join(', ')}]`;
             }
             out.push(`${key}: ${value}`);
+            log('[serializeFrontMatter] writing key:', key, 'value:', value);
         }
     }
     // Add any remaining comments not attached to a key
@@ -54,6 +67,7 @@ export function serializeFrontMatter(rawFrontMatter, normalized, fieldOrder) {
         if (!fieldOrder.includes(k)) out.push(...comments[k]);
     }
     out.push('---');
+    log('[serializeFrontMatter] final output:', out.join('\n'));
     return out.join('\n');
 }
 // \static\js\webeditor\normalizeFrontMatter.js
