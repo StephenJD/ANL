@@ -220,7 +220,7 @@ export async function renderForm(frontMatterFields, parentFrontMatterFields, acc
         : null;
       if (parentOptions) {
         options = parentOptions;
-      }
+        }
       const allowBlank = field.allowBlank === true;
       if (!options.length && !allowBlank) options = [""];
 
@@ -258,22 +258,35 @@ export async function renderForm(frontMatterFields, parentFrontMatterFields, acc
       if (isIllegal) {
         const illegalOpt = document.createElement("option");
         illegalOpt.value = String(normalized);
-        illegalOpt.textContent = "Illegal";
-        illegalOpt.selected = true;
-        input.appendChild(illegalOpt);
-        input.dataset.illegal = "true";
-      }
-
-      normalizedOptions.forEach((optVal, index) => {
-        const opt = document.createElement("option");
-        opt.value = isCaseSensitive ? optVal.value : toCompare(optVal.value);
-        opt.textContent = optVal.label;
-        if (!isIllegal) {
-          if (hasValue && matchIndex === index) opt.selected = true;
-          if (!hasValue && !allowBlank && index === 0) opt.selected = true;
+          illegalOpt.textContent = "Illegal";
+          illegalOpt.selected = true;
+          input.appendChild(illegalOpt);
+          input.dataset.illegal = "true";
         }
-        input.appendChild(opt);
-      });
+
+        normalizedOptions.forEach((optVal, index) => {
+          const opt = document.createElement("option");
+          opt.value = isCaseSensitive ? optVal.value : toCompare(optVal.value);
+          opt.textContent = optVal.label;
+          // Always set dataset.preview for image fields
+          if (
+            (field.key === "background_image" || field.key === "logo_image") &&
+            optVal.value && typeof optVal.value === "string" &&
+            (optVal.value.match(/\.(png|jpg|jpeg|gif|webp)$/i) || optVal.value.startsWith("/"))
+          ) {
+            opt.dataset.preview = optVal.value;
+          }
+          if (!isIllegal) {
+            if (hasValue && matchIndex === index) opt.selected = true;
+            if (!hasValue && !allowBlank && index === 0) opt.selected = true;
+          }
+          input.appendChild(opt);
+        });
+      }
+    } else if (field.type === "hidden") {
+      input = document.createElement("input");
+      input.type = "hidden";
+      input.value = rawValue || "";
     } else if (field.type === "textarea") {
       input = document.createElement("textarea");
       input.rows = field.rows || 3;
@@ -302,15 +315,15 @@ export async function renderForm(frontMatterFields, parentFrontMatterFields, acc
     }
     if (field.disabled) input.disabled = true;
 
-    input.addEventListener("change", () => {
-      if (input.dataset) delete input.dataset.illegal;
-      Object.assign(resolvedFront, getCurrentFormValues());
-      // Update front matter box, preserving comments
-      const frontMatterText = document.getElementById("frontMatterText");
-      const rawFrontMatter = frontMatterText ? frontMatterText.value : "";
-      updateFrontMatterTextWithComments(rawFrontMatter, resolvedFront);
+      input.addEventListener("change", () => {
+        if (input.dataset) delete input.dataset.illegal;
+        Object.assign(resolvedFront, getCurrentFormValues());
+        // Update front matter box, preserving comments
+        const frontMatterText = document.getElementById("frontMatterText");
+        const rawFrontMatter = frontMatterText ? frontMatterText.value : "";
+        updateFrontMatterTextWithComments(rawFrontMatter, resolvedFront);
       renderForm(frontMatterFields, parentFrontMatterFields, editState.accessOptionsCache);
-    });
+      });
 
     if (field.type === "hidden") {
       form.appendChild(input);
@@ -352,8 +365,10 @@ export async function renderForm(frontMatterFields, parentFrontMatterFields, acc
           preview.src = initialValue;
           preview.style.display = "block";
         } else {
+          preview.removeAttribute("src");
           preview.style.display = "none";
         }
+        // Only update preview on select change, not the whole form
         input.addEventListener("change", () => {
           const val = input.value || "";
           const selectedOption = input.options[input.selectedIndex];
@@ -364,6 +379,7 @@ export async function renderForm(frontMatterFields, parentFrontMatterFields, acc
           } else if (val) {
             preview.src = val;
             preview.style.display = "block";
+            preview.style.visibility = "visible";
           } else {
             preview.removeAttribute("src");
             preview.style.display = "none";
