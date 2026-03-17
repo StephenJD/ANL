@@ -170,6 +170,10 @@ async function fetchFile(filePath) {
 function showFrontmatter(rawFrontMatter){
   log("Step 5: showFrontmatter");
   const frontMatterText = document.getElementById("frontMatterText");
+  if (!frontMatterText) {
+    log("[showFrontmatter] ERROR: #frontMatterText not found in DOM");
+    return;
+  }
   frontMatterText.value = rawFrontMatter;
 }
 

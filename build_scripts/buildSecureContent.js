@@ -1,3 +1,4 @@
+// build_scripts\buildSecureContent.js
 // --- Auto-generate generator_imports.js for dynamic page generators ---
 function updateGeneratorImports() {
   const genDir = path.join(process.cwd(), "netlify", "functions", "dynamic_generators");
@@ -200,8 +201,50 @@ function buildPrivateHtml(entry, allEntries) {
     return buildListFolderHtml(entry, allEntries);
   }
 
+  // KISS: Treat all HTML (even indented) as raw HTML
+  // 1. Extract all HTML blocks (lines starting with optional spaces then <tag ...> ... </tag>), unindent, and join
+  // 2. Remove those lines from the Markdown, then pass the rest through marked
+  // 3. Concatenate raw HTML and marked output
+
   const cleanContent = stripShortcodes(entry.rawContent);
-  return marked.parse(cleanContent);
+  const lines = cleanContent.split(/\r?\n/);
+  let htmlBlocks = [];
+  let nonHtmlLines = [];
+  let inHtmlBlock = false;
+  let htmlBuffer = [];
+  const htmlOpenTag = /^\s*<([a-zA-Z][\w-]*)(\s|>|$)/;
+  const htmlCloseTag = /^\s*<\/[a-zA-Z][\w-]*\s*>/;
+
+  for (let i = 0; i < lines.length; ++i) {
+    const line = lines[i];
+    if (!inHtmlBlock && htmlOpenTag.test(line)) {
+      inHtmlBlock = true;
+      htmlBuffer.push(line);
+    } else if (inHtmlBlock) {
+      htmlBuffer.push(line);
+      if (htmlCloseTag.test(line)) {
+        // End of HTML block
+        // Unindent all lines in htmlBuffer
+        const unindented = htmlBuffer.map(l => l.replace(/^\s+/, ""));
+        htmlBlocks.push(unindented.join("\n"));
+        htmlBuffer = [];
+        inHtmlBlock = false;
+      }
+    } else {
+      nonHtmlLines.push(line);
+    }
+  }
+  // If file ends while in HTML block, flush buffer
+  if (htmlBuffer.length) {
+    const unindented = htmlBuffer.map(l => l.replace(/^\s+/, ""));
+    htmlBlocks.push(unindented.join("\n"));
+  }
+
+  // Join non-HTML lines and pass through marked
+  const nonHtmlContent = nonHtmlLines.join("\n");
+  const markedOutput = marked.parse(nonHtmlContent);
+  // Concatenate all raw HTML blocks and marked output
+  return htmlBlocks.join("\n") + "\n" + markedOutput;
 }
 
 process.on("uncaughtException", (err) => {
