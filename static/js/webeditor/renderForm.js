@@ -1,5 +1,6 @@
 // static/js/webeditor/renderForm.js
 import { fieldSchema } from "./fieldSchema.js";
+import { serializeFrontMatter } from "./normalizeFrontMatter.js";
 import { renderImageDropZone } from "./imageDropZone.js";
 import { getNetlifyAuthHeaders } from "./authHeaders.js";
 
@@ -64,7 +65,8 @@ export async function getSharedImageOptions() {
   }
 }
 
-export async function renderForm(frontMatterFields, parentFrontMatterFields, accessOptionsCache) {
+// Accepts an extra rawFrontMatter param for initial display
+export async function renderForm(frontMatterFields, parentFrontMatterFields, accessOptionsCache, rawFrontMatter) {
   log('[renderForm] (static) called with frontMatterFields:', frontMatterFields, 'parentFrontMatterFields:', parentFrontMatterFields, 'accessOptionsCache:', accessOptionsCache);
   const { fields, derive, deriveType, isVisible } = fieldSchema;
   const resolvedFront = { ...frontMatterFields };
@@ -139,6 +141,7 @@ export async function renderForm(frontMatterFields, parentFrontMatterFields, acc
             }
             el.appendChild(o);
           });
+          // Always set value after options are populated
           el.value = rawValue;
         });
       } else if (Array.isArray(field.options)) {
@@ -169,6 +172,12 @@ export async function renderForm(frontMatterFields, parentFrontMatterFields, acc
     el.disabled = !!field.disabled;
   }
 
+  // On load, set front-matter box to rawFrontMatter if provided
+  const frontMatterText = document.getElementById('frontMatterText');
+  if (frontMatterText && rawFrontMatter) {
+    frontMatterText.value = rawFrontMatter;
+  }
+
   // Bind change/input events for all fields
   const form = document.getElementById('editForm');
   if (form) {
@@ -178,15 +187,15 @@ export async function renderForm(frontMatterFields, parentFrontMatterFields, acc
         const el = document.getElementById(field.key);
         if (!el) continue;
         if (field.type === 'boolean') {
-          obj[field.key] = el.checked ? 'true' : 'false';
+          obj[field.key] = el.checked ? true : false;
         } else {
           obj[field.key] = el.value;
         }
       }
-      // Update front matter box
+      // Update front matter box using schema order and preserving comments
       const frontMatterText = document.getElementById('frontMatterText');
-      if (frontMatterText) {
-        frontMatterText.value = JSON.stringify(obj, null, 2);
+      if (frontMatterText && rawFrontMatter) {
+        frontMatterText.value = serializeFrontMatter(rawFrontMatter, obj, fields.map(f => f.key));
       }
     };
   }

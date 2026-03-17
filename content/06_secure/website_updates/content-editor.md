@@ -12,7 +12,7 @@ access: [Content-Editor]
 
 <div>
     <div id="editorContainer" style="display:block;">
-    <div id="editorHeader" style="font-weight:bold;margin-bottom:8px;"></div>
+    <div id="parentHeader" style="font-weight:bold;margin-bottom:8px;"></div>
     <form id="editForm">
       <!-- Core fields -->
 

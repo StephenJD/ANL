@@ -101,7 +101,7 @@ async function init(){
     selectedNodePathRef.value = filePath;
     // Patch: Always pass filePath as _filePath to renderForm for uploads
     const fmWithFilePath = { ...data.frontMatterFields, _filePath: filePath };
-    renderFormFn(fmWithFilePath, data.parent?.frontMatterFields || {});
+    renderFormFn(fmWithFilePath, data.parent?.frontMatterFields || {}, data.rawFrontMatter);
     showFrontmatter(data.rawFrontMatter); // step 5
     setBodyContent(data.content);
     wireEditDirtyTracking();
@@ -183,7 +183,7 @@ function setBodyContent(content) {
 }
 
 function setParentHeading(parentData) {
-    const editorHeader = document.getElementById("editorHeader");
+    const parentHeader = document.getElementById("parentHeader");
     let parentLabel = "(root)";
     if (parentData) {
       log('[setParentHeading] parentData:', parentData);
@@ -194,8 +194,8 @@ function setParentHeading(parentData) {
         parentLabel = parentData.fileName;
       }
     }
-    if (editorHeader) {
-      editorHeader.textContent = `Parent: ${parentLabel}`;
+    if (parentHeader) {
+      parentHeader.textContent = `Parent: ${parentLabel}`;
     }
 }
 
@@ -214,7 +214,7 @@ function showBlankEditorForSelectedNode() {
   if (!selectedNodePath) return;
   const editorContainer = document.getElementById("editorContainer");
   const editForm = document.getElementById("editForm");
-  const editorHeader = document.getElementById("editorHeader");
+  const parentHeader = document.getElementById("parentHeader");
   const frontMatterText = document.getElementById("frontMatterText");
   const bodyText = document.getElementById("bodyText");
   // Find node and load its content
@@ -240,8 +240,8 @@ function showBlankEditorForSelectedNode() {
       }
       debugInfo = " [" + Object.entries(node.parent).map(([k,v]) => `${k}='${v}'`).join(", ") + "]";
     }
-    if (editorHeader) {
-      editorHeader.textContent = `Parent: ${parentLabel}${debugInfo}`;
+    if (parentHeader) {
+      parentHeader.textContent = `Parent: ${parentLabel}${debugInfo}`;
     }
     // Load current front matter and body
     if (node && node.frontMatterOriginal) {
@@ -258,7 +258,7 @@ function showBlankEditorForSelectedNode() {
       bodyText.value = node.rawBody || "";
     }
     setBodyEditorVisible(showBodyEditor);
-    if (renderFormFn && node && node.frontMatterOriginal) renderFormFn(node.frontMatterOriginal, node.parent?.frontMatterOriginal || {});
+    if (renderFormFn && node && node.frontMatterOriginal) renderFormFn(node.frontMatterOriginal, node.parent?.frontMatterOriginal || {}, node.rawFrontMatter || '');
     autoSizeBody();
     scrollToBodyEditor();
     wireEditDirtyTracking();
