@@ -1,4 +1,4 @@
-// static/js/webeditor/renderForm.js
+// static/js/webeditor/service_frontmatter_controls.js
 import { fieldSchema } from "./fieldSchema.js";
 import { serializeFrontMatter } from "./normalizeFrontMatter.js";
 import { renderImageDropZone } from "./imageDropZone.js";
@@ -66,8 +66,8 @@ export async function getSharedImageOptions() {
 }
 
 // Accepts an extra rawFrontMatter param for initial display
-export async function renderForm(frontMatterFields, parentFrontMatterFields, accessOptionsCache, rawFrontMatter) {
-  log('[renderForm] (static) called with frontMatterFields:', frontMatterFields, 'parentFrontMatterFields:', parentFrontMatterFields, 'accessOptionsCache:', accessOptionsCache);
+export async function service_frontmatter_controls(frontMatterFields, parentFrontMatterFields, accessOptionsCache, rawFrontMatter) {
+  log('[service_frontmatter_controls] (static) called with frontMatterFields:', frontMatterFields, 'parentFrontMatterFields:', parentFrontMatterFields, 'accessOptionsCache:', accessOptionsCache);
   const { fields, derive, deriveType, isVisible } = fieldSchema;
   const resolvedFront = { ...frontMatterFields };
   const parentFields = { ...parentFrontMatterFields };
@@ -118,21 +118,21 @@ export async function renderForm(frontMatterFields, parentFrontMatterFields, acc
     // Set value
     let rawValue = resolvedFront[field.key] ?? field.default ?? '';
     if (Array.isArray(rawValue)) {
-      log('[renderForm] field', field.key, 'rawValue is array:', rawValue);
+      log('[service_frontmatter_controls] field', field.key, 'rawValue is array:', rawValue);
       rawValue = rawValue[0] || '';
     }
     if (field.key === 'access') {
-      log('[renderForm] access field rawValue:', rawValue, 'typeof:', typeof rawValue);
+      log('[service_frontmatter_controls] access field rawValue:', rawValue, 'typeof:', typeof rawValue);
     }
     if (field.type === 'boolean') {
       el.checked = String(rawValue).toLowerCase() === 'true' || rawValue === true;
-      log(`[renderForm] boolean field '${field.key}' set checked:`, el.checked, 'rawValue:', rawValue);
+      log(`[service_frontmatter_controls] boolean field '${field.key}' set checked:`, el.checked, 'rawValue:', rawValue);
     } else if (field.type === 'select') {
       // Populate options if needed
       if (typeof field.optionsProvider === 'function') {
         // Async populate
         field.optionsProvider().then(options => {
-          log('[renderForm] options for', field.key, ':', options);
+          log('[service_frontmatter_controls] options for', field.key, ':', options);
           el.innerHTML = '';
           if (field.allowBlank) {
             const blankOpt = document.createElement('option');
@@ -155,12 +155,12 @@ export async function renderForm(frontMatterFields, parentFrontMatterFields, acc
           // If the value is not in the options, select blank
           const optionValues = Array.from(el.options).map(opt => opt.value);
           if (!optionValues.includes(setValue)) {
-            log('[renderForm] value', setValue, 'not found in options for', field.key, '; selecting blank');
+            log('[service_frontmatter_controls] value', setValue, 'not found in options for', field.key, '; selecting blank');
             setValue = '';
           }
-          log('[renderForm] setting el.value for', field.key, 'to', setValue);
+          log('[service_frontmatter_controls] setting el.value for', field.key, 'to', setValue);
           el.value = setValue;
-          log(`[renderForm] select field '${field.key}' el.value after set:`, el.value);
+          log(`[service_frontmatter_controls] select field '${field.key}' el.value after set:`, el.value);
         });
       } else if (Array.isArray(field.options)) {
         el.innerHTML = '';
@@ -177,15 +177,15 @@ export async function renderForm(frontMatterFields, parentFrontMatterFields, acc
         });
         let setValue = rawValue;
         if (Array.isArray(rawValue)) setValue = rawValue[0] || '';
-        log('[renderForm] setting el.value for', field.key, 'to', setValue);
+        log('[service_frontmatter_controls] setting el.value for', field.key, 'to', setValue);
         el.value = setValue;
-        log(`[renderForm] select field '${field.key}' el.value after set:`, el.value);
+        log(`[service_frontmatter_controls] select field '${field.key}' el.value after set:`, el.value);
       } else {
         let setValue = rawValue;
         if (Array.isArray(rawValue)) setValue = rawValue[0] || '';
-        log('[renderForm] setting el.value for', field.key, 'to', setValue);
+        log('[service_frontmatter_controls] setting el.value for', field.key, 'to', setValue);
         el.value = setValue;
-        log(`[renderForm] select field '${field.key}' el.value after set:`, el.value);
+        log(`[service_frontmatter_controls] select field '${field.key}' el.value after set:`, el.value);
       }
     } else if (field.type === 'textarea') {
       el.value = rawValue;
@@ -198,35 +198,35 @@ export async function renderForm(frontMatterFields, parentFrontMatterFields, acc
     el.disabled = !!field.disabled;
     // Special log for QR Code field
     if (field.key === 'qrCode') {
-      log(`[renderForm] QR Code field: el.checked=`, el.checked, 'rawValue:', rawValue);
+      log(`[service_frontmatter_controls] QR Code field: el.checked=`, el.checked, 'rawValue:', rawValue);
     }
   }
 
   // On load, set front-matter box to rawFrontMatter if provided
   const frontMatterText = document.getElementById('frontMatterText');
-  log('[renderForm] rawFrontMatter at load:', rawFrontMatter);
+  log('[service_frontmatter_controls] rawFrontMatter at load:', rawFrontMatter);
   if (frontMatterText) {
     if (rawFrontMatter && !frontMatterText.value) {
       frontMatterText.value = rawFrontMatter;
-      log('[renderForm] frontMatterText.value initialized to rawFrontMatter');
+      log('[service_frontmatter_controls] frontMatterText.value initialized to rawFrontMatter');
     } else {
-      log('[renderForm] frontMatterText.value already set or rawFrontMatter missing:', frontMatterText.value);
+      log('[service_frontmatter_controls] frontMatterText.value already set or rawFrontMatter missing:', frontMatterText.value);
     }
   } else {
-    log('[renderForm] frontMatterText element not found at load');
+    log('[service_frontmatter_controls] frontMatterText element not found at load');
   }
 
   // Bind change/input events for all fields
   const form = document.getElementById('editForm');
   if (form) {
     form.onchange = form.oninput = () => {
-      log('[renderForm] form change/input event fired');
+      log('[service_frontmatter_controls] form change/input event fired');
       const obj = {};
       for (const field of fields) {
         const el = document.getElementById(field.key);
         // Only log missing fields for troubleshooting
         if (!el) {
-          log(`[renderForm] MISSING field: ${field.key}`);
+          log(`[service_frontmatter_controls] MISSING field: ${field.key}`);
           continue;
         }
         if (field.type === 'boolean') {
@@ -235,11 +235,11 @@ export async function renderForm(frontMatterFields, parentFrontMatterFields, acc
           obj[field.key] = el.value;
         }
       }
-      log('[renderForm] new form values:', obj);
+      log('[service_frontmatter_controls] new form values:', obj);
       // Update front matter box using schema order and preserving comments
       const frontMatterText = document.getElementById('frontMatterText');
       if (!frontMatterText) {
-        log('[renderForm] ERROR: frontMatterText element not found in DOM');
+        log('[service_frontmatter_controls] ERROR: frontMatterText element not found in DOM');
         return;
       }
       // Always serialize from current form state, never rely on rawFrontMatter
@@ -247,9 +247,9 @@ export async function renderForm(frontMatterFields, parentFrontMatterFields, acc
       try {
         const updated = serializeFrontMatter(baseFrontMatter, obj, fields.map(f => f.key));
         frontMatterText.value = updated;
-        log('[renderForm] updated frontMatterText.value:', frontMatterText.value);
+        log('[service_frontmatter_controls] updated frontMatterText.value:', frontMatterText.value);
       } catch (e) {
-        log('[renderForm] ERROR in serializeFrontMatter:', e);
+        log('[service_frontmatter_controls] ERROR in serializeFrontMatter:', e);
       }
     };
   }

@@ -15,9 +15,9 @@ function normalizeFrontMatterValue(key, value) {
     }
     return value;
 }
-// \static\js\webeditor\normalizeFrontMatter.js
+
 // Serializes a normalized front-matter object to YAML, preserving comments and order from the original raw front-matter.
-// - rawFrontMatter: the original front-matter string (including --- and comments)
+// - rawFrontMatter: the original front-matter string (excluding ---, including comments)
 // - normalized: the normalized object (key-value pairs)
 // - fieldOrder: array of keys in desired order (from fieldSchema.fields)
 export function serializeFrontMatter(rawFrontMatter, normalized, fieldOrder) {

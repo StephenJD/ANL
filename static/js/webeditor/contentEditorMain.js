@@ -111,7 +111,7 @@ async function init(){
     selectedNodePath = filePath;
     selectedNodePathRef.value = filePath;
     log('[debug] selectedNodePath:', selectedNodePath, 'selectedNodePathRef.value:', selectedNodePathRef.value);
-    // Patch: Always pass filePath as _filePath to renderForm for uploads
+    // Patch: Always pass filePath as _filePath to service_frontmatter_controls for uploads
     const fmWithFilePath = { ...data.frontMatterFields, _filePath: filePath };
     log('[contentEditorMain] frontMatterFields:', data.frontMatterFields);
     log('[debug] Calling renderFormFn with:', fmWithFilePath, data.parent?.frontMatterFields || {}, data.rawFrontMatter);
@@ -447,11 +447,11 @@ function showBlankEditorForSelectedNode() {
 async function loadHelpers(){
   log("Step 2: Loading helpers...");
   try {
-    const mod = await import('/js/webeditor/renderForm.js');
-    renderFormFn = mod.renderForm;
-    log("renderForm loaded");
+    const mod = await import('/js/webeditor/service_frontmatter_controls.js');
+    renderFormFn = mod.service_frontmatter_controls;
+    log("service_frontmatter_controls loaded");
   } catch (e) {
-    log("renderForm load failed: " + e);
+    log("service_frontmatter_controls load failed: " + e);
   }
   try {
     const mod = await import('/js/webeditor/contentEditorActions.js');

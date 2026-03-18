@@ -1,6 +1,6 @@
 // static/js/webeditor/fieldSchema.js
 
-import { getAccessOptions, getSharedImageOptions } from "./renderForm.js";
+import { getAccessOptions, getSharedImageOptions } from "./service_frontmatter_controls.js";
 // ============================================================================
 // Constants
 // ============================================================================
