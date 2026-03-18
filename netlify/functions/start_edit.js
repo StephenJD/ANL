@@ -38,7 +38,14 @@ export async function handler(event) {
     const frontMatterMatch = rawContent.match(/^---\r?\n([\s\S]*?)\r?\n---/);
     const rawFrontMatterBlock = frontMatterMatch ? frontMatterMatch[0] : "";
     const rawFrontMatterInner = frontMatterMatch ? frontMatterMatch[1] : "";
-    const rawFrontMatter = rawFrontMatterBlock || "";
+    // Strip leading and trailing --- from rawFrontMatter
+    let rawFrontMatter = rawFrontMatterBlock || "";
+    if (rawFrontMatter.startsWith("---")) {
+      rawFrontMatter = rawFrontMatter.replace(/^---\r?\n?/, "");
+    }
+    if (rawFrontMatter.endsWith("---")) {
+      rawFrontMatter = rawFrontMatter.replace(/\r?\n?---$/, "");
+    }
     let frontMatterFields = {};
     try {
       frontMatterFields = normalizeFrontMatter(rawContent);

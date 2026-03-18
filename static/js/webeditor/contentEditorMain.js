@@ -42,7 +42,7 @@ let selectedNodePathRef = { value: null };
 
 let selectedNodePath = null;
 
-let renderFormFn = null;
+let service_frontmatter_controls_Fn = null;
 let saveEdit = ()=>log("saveEdit not loaded yet");
 let publishEdits = ()=>log("publishEdits not loaded yet");
 let publishLocal = ()=>log("publishLocal not loaded yet");
@@ -114,8 +114,8 @@ async function init(){
     // Patch: Always pass filePath as _filePath to service_frontmatter_controls for uploads
     const fmWithFilePath = { ...data.frontMatterFields, _filePath: filePath };
     log('[contentEditorMain] frontMatterFields:', data.frontMatterFields);
-    log('[debug] Calling renderFormFn with:', fmWithFilePath, data.parent?.frontMatterFields || {}, data.rawFrontMatter);
-    renderFormFn(fmWithFilePath, data.parent?.frontMatterFields || {}, data.rawFrontMatter);
+    log('[debug] Calling service_frontmatter_controls_Fn with:', fmWithFilePath, data.parent?.frontMatterFields || {}, data.rawFrontMatter);
+    service_frontmatter_controls_Fn(fmWithFilePath, data.parent?.frontMatterFields || {}, data.rawFrontMatter);
     log('[debug] Calling showFrontmatter with:', data.rawFrontMatter);
     showFrontmatter(data.rawFrontMatter); // step 5
     setBodyContent(data.content);
@@ -296,7 +296,7 @@ function showBlankEditorForSelectedNode() {
       bodyText.value = node.rawBody || "";
     }
     setBodyEditorVisible(showBodyEditor);
-    if (renderFormFn && node && node.frontMatterOriginal) renderFormFn(node.frontMatterOriginal, node.parent?.frontMatterOriginal || {}, node.rawFrontMatter || '');
+    if (service_frontmatter_controls_Fn && node && node.frontMatterOriginal) service_frontmatter_controls_Fn(node.frontMatterOriginal, node.parent?.frontMatterOriginal || {}, node.rawFrontMatter || '');
     autoSizeBody();
     scrollToBodyEditor();
     wireEditDirtyTracking();
@@ -448,7 +448,7 @@ async function loadHelpers(){
   log("Step 2: Loading helpers...");
   try {
     const mod = await import('/js/webeditor/service_frontmatter_controls.js');
-    renderFormFn = mod.service_frontmatter_controls;
+    service_frontmatter_controls_Fn = mod.service_frontmatter_controls;
     log("service_frontmatter_controls loaded");
   } catch (e) {
     log("service_frontmatter_controls load failed: " + e);

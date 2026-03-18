@@ -67,8 +67,8 @@ export async function getSharedImageOptions() {
 }
 
 // Accepts an extra rawFrontMatter param for initial display
-export async function service_frontmatter_controls(frontMatterFields, parentFrontMatterFields, accessOptionsCache, rawFrontMatter) {
-  log('[service_frontmatter_controls] (static) called with frontMatterFields:', frontMatterFields, 'parentFrontMatterFields:', parentFrontMatterFields, 'accessOptionsCache:', accessOptionsCache);
+export async function service_frontmatter_controls(frontMatterFields, parentFrontMatterFields, rawFrontMatter) {
+  log('[service_frontmatter_controls] called with frontMatterFields:' + JSON.stringify(frontMatterFields) + ', parentFrontMatterFields:' + JSON.stringify(parentFrontMatterFields) + ', rawFrontMatter:' + JSON.stringify(rawFrontMatter));
   const { fields, derive, deriveType, isVisible } = fieldSchema;
   const resolvedFront = { ...frontMatterFields };
   const parentFields = { ...parentFrontMatterFields };
