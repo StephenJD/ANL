@@ -21,6 +21,7 @@ export async function getAccessOptions() {
     log('[getAccessOptions] fetch response status:', res.status);
     if (!res.ok) throw new Error("HTTP " + res.status);
     let options = await res.json();
+    log('[getAccessOptions] RAW JSON from /get_role_options:', JSON.stringify(options));
     log('[getAccessOptions] raw options from server:', options);
     options = options.map(o => o.Role || o.role || o);
     options.unshift("Public");
@@ -105,6 +106,8 @@ export async function service_frontmatter_controls(frontMatterFields, parentFron
   applyDerivedDefaults(resolvedFront);
 
   // Show/hide and set values for all static fields
+  // List of field keys that should use this staged loading: access and image controls
+  const stagedSelectFields = ['access', 'image', 'image1', 'image2', 'image3'];
   for (const field of fields) {
     const el = document.getElementById(field.key);
     if (!el) continue;
@@ -128,9 +131,76 @@ export async function service_frontmatter_controls(frontMatterFields, parentFron
       el.checked = String(rawValue).toLowerCase() === 'true' || rawValue === true;
       log(`[service_frontmatter_controls] boolean field '${field.key}' set checked:`, el.checked, 'rawValue:', rawValue);
     } else if (field.type === 'select') {
-      // Populate options if needed
-      if (typeof field.optionsProvider === 'function') {
-        // Async populate
+      // Staged loading for access and image controls
+      if (stagedSelectFields.includes(field.key)) {
+        // On first load, set only the current value as the single option
+        el.innerHTML = '';
+        const o = document.createElement('option');
+        o.value = rawValue;
+        // Capitalize for access, use as-is for images
+        o.textContent = (field.key === 'access' && rawValue) ? rawValue.charAt(0).toUpperCase() + rawValue.slice(1) : rawValue;
+        el.appendChild(o);
+        el.value = rawValue;
+        // Now, asynchronously load the full options and replace
+        if (typeof field.optionsProvider === 'function') {
+          field.optionsProvider().then(options => {
+            log('[service_frontmatter_controls] (staged) options for', field.key, ':', options);
+            el.innerHTML = '';
+            if (field.allowBlank) {
+              const blankOpt = document.createElement('option');
+              blankOpt.value = '';
+              blankOpt.textContent = field.blankLabel || 'None';
+              el.appendChild(blankOpt);
+            }
+            (options || []).forEach(opt => {
+              const o2 = document.createElement('option');
+              let value, label;
+              // If opt is an object, try to extract string value/label, else fallback to string
+              if (typeof opt === 'object' && opt !== null) {
+                // If opt is a plain string object (e.g. String object), convert to string
+                if (Object.keys(opt).length === 0 && opt.constructor === String) {
+                  value = String(opt);
+                  label = value;
+                } else if ('value' in opt || 'label' in opt) {
+                  value = typeof opt.value === 'string' ? opt.value : String(opt.value ?? '');
+                  label = typeof opt.label === 'string' ? opt.label : String(opt.label ?? value);
+                } else {
+                  // fallback: stringify the object
+                  value = label = JSON.stringify(opt);
+                  log('[service_frontmatter_controls] WARNING: access option is object without value/label:', opt);
+                }
+              } else {
+                value = String(opt);
+                label = value;
+              }
+              if (field.key === 'access') {
+                label = label.charAt(0).toUpperCase() + label.slice(1);
+              }
+              o2.value = value;
+              o2.textContent = label;
+              el.appendChild(o2);
+            });
+            // After options are populated, select the value if present, else blank
+            let setValue = rawValue;
+            if (field.key === 'access') {
+              const optionValues = Array.from(el.options).map(opt => opt.value.toLowerCase());
+              const idx = optionValues.indexOf(String(setValue).toLowerCase());
+              if (idx !== -1) {
+                el.selectedIndex = idx;
+              } else {
+                el.selectedIndex = 0;
+              }
+            } else {
+              const optionValues = Array.from(el.options).map(opt => opt.value);
+              if (!optionValues.includes(setValue)) {
+                setValue = '';
+              }
+              el.value = setValue;
+            }
+          });
+        }
+      } else if (typeof field.optionsProvider === 'function') {
+        // Async populate (unchanged for other selects)
         field.optionsProvider().then(options => {
           log('[service_frontmatter_controls] options for', field.key, ':', options);
           el.innerHTML = '';
@@ -142,25 +212,24 @@ export async function service_frontmatter_controls(frontMatterFields, parentFron
           }
           (options || []).forEach(opt => {
             const o = document.createElement('option');
+            let value, label;
             if (typeof opt === 'object') {
-              o.value = opt.value;
-              o.textContent = opt.label;
+              value = opt.value;
+              label = opt.label;
             } else {
-              o.value = o.textContent = String(opt);
+              value = String(opt);
+              label = value;
             }
+            o.value = value;
+            o.textContent = label;
             el.appendChild(o);
           });
-          // After options are populated, select the value if present, else blank
           let setValue = rawValue;
-          // If the value is not in the options, select blank
           const optionValues = Array.from(el.options).map(opt => opt.value);
           if (!optionValues.includes(setValue)) {
-            log('[service_frontmatter_controls] value', setValue, 'not found in options for', field.key, '; selecting blank');
             setValue = '';
           }
-          log('[service_frontmatter_controls] setting el.value for', field.key, 'to', setValue);
           el.value = setValue;
-          log(`[service_frontmatter_controls] select field '${field.key}' el.value after set:`, el.value);
         });
       } else if (Array.isArray(field.options)) {
         el.innerHTML = '';
@@ -172,20 +241,19 @@ export async function service_frontmatter_controls(frontMatterFields, parentFron
         }
         (field.options || []).forEach(opt => {
           const o = document.createElement('option');
-          o.value = o.textContent = String(opt);
+          let value = String(opt);
+          let label = value;
+          o.value = value;
+          o.textContent = label;
           el.appendChild(o);
         });
         let setValue = rawValue;
         if (Array.isArray(rawValue)) setValue = rawValue[0] || '';
-        log('[service_frontmatter_controls] setting el.value for', field.key, 'to', setValue);
         el.value = setValue;
-        log(`[service_frontmatter_controls] select field '${field.key}' el.value after set:`, el.value);
       } else {
         let setValue = rawValue;
         if (Array.isArray(rawValue)) setValue = rawValue[0] || '';
-        log('[service_frontmatter_controls] setting el.value for', field.key, 'to', setValue);
         el.value = setValue;
-        log(`[service_frontmatter_controls] select field '${field.key}' el.value after set:`, el.value);
       }
     } else if (field.type === 'textarea') {
       el.value = rawValue;

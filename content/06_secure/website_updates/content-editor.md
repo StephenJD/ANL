@@ -37,7 +37,9 @@ access: [Content-Editor]
 
 
       <label for="access">Access</label><br>
-      <select id="access" name="access"></select><br>
+      <select id="access" name="access">
+        <option value="">loading...</option>
+      </select><br>
 
 
       <label for="title">Title</label><br>
