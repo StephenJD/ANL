@@ -24,10 +24,18 @@ export async function handler(event) {
 
         const roles = await getSecureItem(BIN_ID, token);
 
+
+        function normalizeRole(value) {
+            return String(value || "").trim().toLowerCase().replace(/\s+/g, "-");
+        }
+
         if (!roles || !Array.isArray(roles)) {
             cachedRoles = [];
         } else {
-            cachedRoles = roles.map(r => r.name || r.role || r);
+            cachedRoles = roles
+                .map(r => r.name || r.role || r)
+                .map(normalizeRole)
+                .filter(Boolean);
         }
 
         cacheTimestamp = now;

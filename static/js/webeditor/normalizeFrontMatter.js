@@ -23,6 +23,12 @@ function normalizeFrontMatterValue(key, value) {
 export function serializeFrontMatter(rawFrontMatter, normalized, fieldOrder) {
     log('[serializeFrontMatter] called with normalized:', normalized);
     log('[serializeFrontMatter] fieldOrder:', fieldOrder);
+    // Debug: log empty fields and values
+    for (const key of fieldOrder) {
+        if (normalized[key] === undefined || normalized[key] === "" || normalized[key] === null) {
+            log(`[serializeFrontMatter] EMPTY field: ${key} value:`, normalized[key]);
+        }
+    }
     // Extract lines between --- markers
     const parts = rawFrontMatter.split('---');
     if (parts.length < 2) {
@@ -59,7 +65,10 @@ export function serializeFrontMatter(rawFrontMatter, normalized, fieldOrder) {
                 value = `[${value.join(', ')}]`;
             }
             out.push(`${key}: ${value}`);
-            log('[serializeFrontMatter] writing key:', key, 'value:', value);
+            // Only log keys with empty values
+            if (value === undefined || value === "" || value === null) {
+                log(`[serializeFrontMatter] writing EMPTY key: ${key} value:`, value);
+            }
         }
     }
     // Add any remaining comments not attached to a key

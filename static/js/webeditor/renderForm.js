@@ -126,6 +126,7 @@ export async function renderForm(frontMatterFields, parentFrontMatterFields, acc
     }
     if (field.type === 'boolean') {
       el.checked = String(rawValue).toLowerCase() === 'true' || rawValue === true;
+      log(`[renderForm] boolean field '${field.key}' set checked:`, el.checked, 'rawValue:', rawValue);
     } else if (field.type === 'select') {
       // Populate options if needed
       if (typeof field.optionsProvider === 'function') {
@@ -159,6 +160,7 @@ export async function renderForm(frontMatterFields, parentFrontMatterFields, acc
           }
           log('[renderForm] setting el.value for', field.key, 'to', setValue);
           el.value = setValue;
+          log(`[renderForm] select field '${field.key}' el.value after set:`, el.value);
         });
       } else if (Array.isArray(field.options)) {
         el.innerHTML = '';
@@ -177,11 +179,13 @@ export async function renderForm(frontMatterFields, parentFrontMatterFields, acc
         if (Array.isArray(rawValue)) setValue = rawValue[0] || '';
         log('[renderForm] setting el.value for', field.key, 'to', setValue);
         el.value = setValue;
+        log(`[renderForm] select field '${field.key}' el.value after set:`, el.value);
       } else {
         let setValue = rawValue;
         if (Array.isArray(rawValue)) setValue = rawValue[0] || '';
         log('[renderForm] setting el.value for', field.key, 'to', setValue);
         el.value = setValue;
+        log(`[renderForm] select field '${field.key}' el.value after set:`, el.value);
       }
     } else if (field.type === 'textarea') {
       el.value = rawValue;
@@ -192,13 +196,24 @@ export async function renderForm(frontMatterFields, parentFrontMatterFields, acc
     }
     // Enable/disable
     el.disabled = !!field.disabled;
+    // Special log for QR Code field
+    if (field.key === 'qrCode') {
+      log(`[renderForm] QR Code field: el.checked=`, el.checked, 'rawValue:', rawValue);
+    }
   }
 
   // On load, set front-matter box to rawFrontMatter if provided
   const frontMatterText = document.getElementById('frontMatterText');
   log('[renderForm] rawFrontMatter at load:', rawFrontMatter);
-  if (frontMatterText && rawFrontMatter) {
-    frontMatterText.value = rawFrontMatter;
+  if (frontMatterText) {
+    if (rawFrontMatter && !frontMatterText.value) {
+      frontMatterText.value = rawFrontMatter;
+      log('[renderForm] frontMatterText.value initialized to rawFrontMatter');
+    } else {
+      log('[renderForm] frontMatterText.value already set or rawFrontMatter missing:', frontMatterText.value);
+    }
+  } else {
+    log('[renderForm] frontMatterText element not found at load');
   }
 
   // Bind change/input events for all fields
@@ -209,7 +224,11 @@ export async function renderForm(frontMatterFields, parentFrontMatterFields, acc
       const obj = {};
       for (const field of fields) {
         const el = document.getElementById(field.key);
-        if (!el) continue;
+        // Only log missing fields for troubleshooting
+        if (!el) {
+          log(`[renderForm] MISSING field: ${field.key}`);
+          continue;
+        }
         if (field.type === 'boolean') {
           obj[field.key] = el.checked ? true : false;
         } else {
@@ -219,10 +238,18 @@ export async function renderForm(frontMatterFields, parentFrontMatterFields, acc
       log('[renderForm] new form values:', obj);
       // Update front matter box using schema order and preserving comments
       const frontMatterText = document.getElementById('frontMatterText');
-      log('[renderForm] rawFrontMatter at change:', rawFrontMatter);
-      if (frontMatterText && rawFrontMatter) {
-        frontMatterText.value = serializeFrontMatter(rawFrontMatter, obj, fields.map(f => f.key));
+      if (!frontMatterText) {
+        log('[renderForm] ERROR: frontMatterText element not found in DOM');
+        return;
+      }
+      // Always serialize from current form state, never rely on rawFrontMatter
+      const baseFrontMatter = frontMatterText.value || '';
+      try {
+        const updated = serializeFrontMatter(baseFrontMatter, obj, fields.map(f => f.key));
+        frontMatterText.value = updated;
         log('[renderForm] updated frontMatterText.value:', frontMatterText.value);
+      } catch (e) {
+        log('[renderForm] ERROR in serializeFrontMatter:', e);
       }
     };
   }
