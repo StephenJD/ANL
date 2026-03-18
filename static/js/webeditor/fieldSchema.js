@@ -19,21 +19,21 @@ export const TREE_NODE_STATE_COLORS = {
   default: "blue"     // clean / published to web
 };
 
-const PAGE_TYPE_OPTIONS = ["Content", "Navigation"];
-const CONTENT_TYPE_OPTIONS = ["Page from single file", "Page from section files", "Form", "Dynamic"];
-const CONTENT_TYPE_OPTIONS_BY_PARENT_QUALIFICATION = {
+export const PAGE_TYPE_OPTIONS = ["Content", "Navigation"];
+export const CONTENT_TYPE_OPTIONS = ["Page from single file", "Page from section files", "Form", "Dynamic"];
+export const CONTENT_TYPE_OPTIONS_BY_PARENT_QUALIFICATION = {
   "collated:": ["Document", "Form", "Dynamic"],
   "navigation:": ["Page from single file", "Page from section files", "Form", "Dynamic"]
 };
-const CONTENT_TYPE_LABEL_BY_PARENT_QUALIFICATION = {
+export const CONTENT_TYPE_LABEL_BY_PARENT_QUALIFICATION = {
   "collated:": "Section Type"
 };
-const VALIDATION_OPTIONS = ["None", "Request-Link", "Submit"];
+export const VALIDATION_OPTIONS = ["None", "Request-Link", "Submit"];
 
-const DEPENDS_ON_CONTENT_PAGE = { key: "page_type", values: ["Content"] };
-const DEPENDS_ON_NAVIGATION_PAGE = { key: "page_type", values: ["Navigation"] };
-const DEPENDS_ON_FORM_CONTENT = { key: "content_type", values: ["Form"] };
-const DEPENDS_ON_PUBLIC_CONTENT = [
+export const DEPENDS_ON_CONTENT_PAGE = { key: "page_type", values: ["Content"] };
+export const DEPENDS_ON_NAVIGATION_PAGE = { key: "page_type", values: ["Navigation"] };
+export const DEPENDS_ON_FORM_CONTENT = { key: "content_type", values: ["Form"] };
+export const DEPENDS_ON_PUBLIC_CONTENT = [
   { key: "access", values: ["public"] },
   { key: "page_type", values: ["Content"] }
 ];
@@ -42,7 +42,7 @@ const DEPENDS_ON_PUBLIC_CONTENT = [
 // Helpers
 // ============================================================================
 
-function normalizeSharedImagePath(value) {
+export function normalizeSharedImagePath(value) {
   let normalized = String(value ?? "").trim();
   if ((normalized.startsWith("\"") && normalized.endsWith("\"")) || (normalized.startsWith("'") && normalized.endsWith("'"))) {
     normalized = normalized.slice(1, -1);
@@ -54,7 +54,7 @@ function normalizeSharedImagePath(value) {
   return normalized;
 }
 
-function getContentTypeToDisplay(value) {
+export function getContentTypeToDisplay(value) {
   if (value === "collated_page") return "page from section files";
   return value;
 }
@@ -63,13 +63,13 @@ function getContentTypeToDisplay(value) {
 // Derived values
 // ============================================================================
 
-function derivePageType({ node }) {
+export function derivePageType({ node }) {
   const qualification = String(node?.qualification || "").toLowerCase();
   if (qualification === "navigation:") return "Navigation";
   return "Content";
 }
 
-function deriveContentType({ node, frontMatter }) {
+export function deriveContentType({ node, frontMatter }) {
   const typeValue = String(frontMatter.type || "").toLowerCase();
   const parentQualification = String(node?.parent?.qualification || "").toLowerCase();
 
@@ -83,14 +83,14 @@ function deriveContentType({ node, frontMatter }) {
   return "";
 }
 
-function derivePrevNextButtons({ frontMatter }) {
+export function derivePrevNextButtons({ frontMatter }) {
   const typeValue = String(frontMatter.type || "").toLowerCase();
   if (typeValue === "see_also") return "true";
   if (typeValue === "document-folder") return "false";
   return "";
 }
 
-function deriveFrontMatterType(values) {
+export function deriveFrontMatterType(values) {
   const pageType = String(values.page_type || "").toLowerCase();
   const contentType = String(values.content_type || "")
     .toLowerCase()
@@ -113,7 +113,7 @@ function deriveFrontMatterType(values) {
 // Field definitions
 // ============================================================================
 
-const CORE_FIELDS = [
+export const CORE_FIELDS = [
   { key: "page_type", label: "Page Type", type: "select", options: PAGE_TYPE_OPTIONS, required: true, frontMatter: false },
   {
     key: "content_type",
@@ -140,24 +140,24 @@ const CORE_FIELDS = [
   { key: "summary", label: "Summary", type: "textarea", rows: 3, width: "wide" }
 ];
 
-const REVIEW_FIELDS = [
+export const REVIEW_FIELDS = [
   { key: "expires", label: "Expires", type: "date", dependsOn: DEPENDS_ON_CONTENT_PAGE }, 
   { key: "last_reviewed", label: "Last reviewed", type: "date", dependsOn: DEPENDS_ON_CONTENT_PAGE },
   { key: "review_period", label: "Review period", type: "text", dependsOn: DEPENDS_ON_CONTENT_PAGE },
   { key: "reviewed_by", label: "Reviewed by", type: "text", dependsOn: DEPENDS_ON_CONTENT_PAGE }
 ];
 
-const FORM_FIELDS = [
+export const FORM_FIELDS = [
   { key: "include_unselected_options", label: "Include unselected options", type: "boolean", dependsOn: DEPENDS_ON_FORM_CONTENT },
   { key: "validation", label: "Validation", type: "select", options: VALIDATION_OPTIONS, dependsOn: DEPENDS_ON_FORM_CONTENT }
 ];
 
-const PUBLIC_FIELDS = [
+export const PUBLIC_FIELDS = [
   { key: "share", label: "Share", type: "boolean", dependsOnAll: DEPENDS_ON_PUBLIC_CONTENT },
   { key: "qrCode", label: "QR Code", type: "boolean", dependsOnAll: DEPENDS_ON_PUBLIC_CONTENT }
 ];
 
-const MEDIA_FIELDS = [
+export const MEDIA_FIELDS = [
   {
     key: "background_image",
     label: "Background image",
@@ -182,7 +182,7 @@ const MEDIA_FIELDS = [
   }
 ];
 
-const fieldDefinitions = [
+export const fieldDefinitions = [
   ...CORE_FIELDS,
   ...REVIEW_FIELDS,
   ...FORM_FIELDS,
@@ -190,12 +190,12 @@ const fieldDefinitions = [
   ...MEDIA_FIELDS
 ];
 
-function matchDependency(dep, values) {
+export function matchDependency(dep, values) {
   const value = (values[dep.key] ?? "").toString().toLowerCase();
   return dep.values.map(v => v.toLowerCase()).includes(value);
 }
 
-function isVisible(field, values) {
+export function isVisible(field, values) {
   if (field.dependsOnAll) {
     return field.dependsOnAll.every(dep => matchDependency(dep, values));
   }
@@ -205,12 +205,12 @@ function isVisible(field, values) {
   return true;
 }
 
-function getParentQualification(node) {
+export function getParentQualification(node) {
   const parent = node?.newParent || node?.parent;
   return String(parent?.qualification || "").toLowerCase();
 }
 
-function getOptionsByParentQualification(field, node) {
+export function getOptionsByParentQualification(field, node) {
   if (!field.optionsByParentQualification) return null;
   const qual = getParentQualification(node);
   return field.optionsByParentQualification[qual] || null;
