@@ -144,41 +144,30 @@ document.addEventListener("DOMContentLoaded", () => {
 {{ end }}
 
 <script type="module">
-import { getDeviceId, getNetlifyAuthHeaders } from "/js/netlifyAuthFetch.js";
+// Show edit-section links if user has 'content-editor' role in localStorage.user_role
 document.addEventListener('DOMContentLoaded', function() {
-  // Show edit-section links if user has web-editor role
-  const token = localStorage.getItem("userLogin_token");
-  if (!token) return;
   function normalizeRole(value) {
     return String(value || "").trim().toLowerCase().replace(/\s+/g, "-");
   }
-  fetch("/.netlify/functions/verifyUser", {
-    method: "POST",
-    headers: getNetlifyAuthHeaders({ json: true, includeAuth: false }),
-    body: JSON.stringify({ action: "check_userLoginToken", userLogin_token: token, deviceId: getDeviceId() })
-  })
-    .then(r => r.ok ? r.json() : null)
-    .then(data => {
-      if (data && (data.status === "role_mismatch" || data.status === "device_mismatch")) {
-        localStorage.removeItem("userLogin_token");
-        return;
-      }
-      if (!data || data.status !== "success") return;
-      const rawRoles = [].concat(data?.entry?.roles || data?.entry?.role || []);
-      const roles = rawRoles
+  let roles = ["public"];
+  const userRoleRaw = localStorage.getItem("user_role");
+  if (userRoleRaw) {
+    try {
+      const rawRoles = [].concat(JSON.parse(userRoleRaw));
+      roles = rawRoles
         .flatMap(r => String(r).split(","))
         .map(normalizeRole)
         .filter(Boolean);
-      if (roles.includes("content-editor")) {
-        document.querySelectorAll('.edit-section-link-wrap').forEach(function(wrap) {
-          wrap.style.display = "inline";
-        });
-      }
-    })
-    .catch(() => {
-      // keep links hidden on validation failures
+      if (!roles.length) roles = ["public"];
+    } catch (e) {
+      roles = ["public"];
+    }
+  }
+  if (roles.includes("content-editor")) {
+    document.querySelectorAll('.edit-section-link-wrap').forEach(function(wrap) {
+      wrap.style.display = "inline";
     });
-
+  }
   // Debug: log all edit-section links rendered
   document.querySelectorAll('.edit-section-link').forEach(function(link) {
     console.log('[DEBUG] Edit link rendered:', link.href);

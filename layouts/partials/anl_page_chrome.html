@@ -19,7 +19,7 @@
   {{ $filePath = .Path }}
 {{ end }}
 {{ $filePath = replace $filePath "\\" "/" }}
-{{ $webeditorHref := printf "/06_secure/website_updates/content-editor/?path=%s" ($filePath | urlquery) }}
+{{ $contentEditorHref := printf "/06_secure/website_updates/content-editor/?path=%s" ($filePath | urlquery) }}
 
 <link rel="stylesheet" href="{{ "css/anl_chrome.css" | absURL  }}">
 <div class="debug-message">
@@ -36,8 +36,8 @@
       </div>    
     {{ end }}
     <div class="container">
-      <div id="webeditor-link-wrap" style="display:none; padding: 6px 0; text-align:left;">
-        <a id="webeditor-link" class="edit-page" href="{{ $webeditorHref }}">✏️ Edit This Page</a>
+      <div id="contentEditor-link-wrap" style="display:none; padding: 6px 0; text-align:left;">
+        <a id="contentEditor-link" class="edit-page" href="{{ $contentEditorHref }}">✏️ Edit This Page</a>
       </div>
     </div>  
   </div>
@@ -51,40 +51,32 @@
   {{ partial "qr_code.html" $current_page }}
 
   <script type="module">
-  import { getDeviceId, getNetlifyAuthHeaders } from "/js/netlifyAuthFetch.js";
+  // Show edit link if user has 'content-editor' role in localStorage.user_role
   (function () {
-    const wrap = document.getElementById("webeditor-link-wrap");
-    const token = localStorage.getItem("userLogin_token");
-    if (!wrap || !token) return;
+    const wrap = document.getElementById("contentEditor-link-wrap");
+    if (!wrap) return;
 
     function normalizeRole(value) {
       return String(value || "").trim().toLowerCase().replace(/\s+/g, "-");
     }
 
-    fetch("/.netlify/functions/verifyUser", {
-      method: "POST",
-      headers: getNetlifyAuthHeaders({ json: true, includeAuth: false }),
-      body: JSON.stringify({ action: "check_userLoginToken", userLogin_token: token, deviceId: getDeviceId() })
-    })
-      .then(r => r.ok ? r.json() : null)
-      .then(data => {
-        if (data && (data.status === "role_mismatch" || data.status === "device_mismatch")) {
-          localStorage.removeItem("userLogin_token");
-          return;
-        }
-        if (!data || data.status !== "success") return;
-        const rawRoles = [].concat(data?.entry?.roles || data?.entry?.role || []);
-        const roles = rawRoles
+    let roles = ["public"];
+    const userRoleRaw = localStorage.getItem("user_role");
+    if (userRoleRaw) {
+      try {
+        const rawRoles = [].concat(JSON.parse(userRoleRaw));
+        roles = rawRoles
           .flatMap(r => String(r).split(","))
           .map(normalizeRole)
           .filter(Boolean);
-        if (roles.includes("web-editor")) {
-          wrap.style.display = "block";
-        }
-      })
-      .catch(() => {
-        // keep link hidden on validation failures
-      });
+        if (!roles.length) roles = ["public"];
+      } catch (e) {
+        roles = ["public"];
+      }
+    }
+    if (roles.includes("content-editor")) {
+      wrap.style.display = "block";
+    }
   })();
   </script>
 
