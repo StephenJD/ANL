@@ -105,8 +105,8 @@ export async function service_frontmatter_controls(frontMatterFields, parentFron
 
   applyDerivedDefaults(resolvedFront);
   // Always set type using schema logic before UI update
-  if (typeof deriveType === 'function') {
-    const derivedType = deriveType(resolvedFront);
+  if (fieldSchema && typeof fieldSchema.deriveType === 'function') {
+    const derivedType = fieldSchema.deriveType(resolvedFront);
     if (derivedType) resolvedFront.type = derivedType;
   }
 

@@ -646,6 +646,9 @@ function autoSizeFrontMatter(){
   frontMatterText.style.height = frontMatterText.scrollHeight + "px";
 }
 
+// Make autoSizeFrontMatter globally available
+window.autoSizeFrontMatter = autoSizeFrontMatter;
+
 function autoSizeBody(){
   const bodyText = document.getElementById("bodyText");
   if (!bodyText) return;
