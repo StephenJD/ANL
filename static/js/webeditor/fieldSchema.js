@@ -32,7 +32,7 @@ export const VALIDATION_OPTIONS = ["None", "Request-Link", "Submit"];
 
 export const DEPENDS_ON_CONTENT_PAGE = { key: "page_type", values: ["Content"] };
 export const DEPENDS_ON_NAVIGATION_PAGE = { key: "page_type", values: ["Navigation"] };
-export const DEPENDS_ON_FORM_CONTENT = { key: "content_type", values: ["Form"] };
+export const DEPENDS_ON_FORM_TYPE = { key: "type", values: ["form"] };
 export const DEPENDS_ON_PUBLIC_CONTENT = [
   { key: "access", values: ["public"] },
   { key: "page_type", values: ["Content"] }
@@ -148,8 +148,8 @@ export const REVIEW_FIELDS = [
 ];
 
 export const FORM_FIELDS = [
-  { key: "include_unselected_options", label: "Include unselected options", type: "boolean", dependsOn: DEPENDS_ON_FORM_CONTENT },
-  { key: "validation", label: "Validation", type: "select", options: VALIDATION_OPTIONS, dependsOn: DEPENDS_ON_FORM_CONTENT }
+  { key: "include_unselected_options", label: "Include unselected options", type: "boolean", dependsOn: DEPENDS_ON_FORM_TYPE },
+  { key: "validation", label: "Validation", type: "select", required: true, options: VALIDATION_OPTIONS, dependsOn: DEPENDS_ON_FORM_TYPE }
 ];
 
 export const PUBLIC_FIELDS = [

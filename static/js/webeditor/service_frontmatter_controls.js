@@ -104,6 +104,11 @@ export async function service_frontmatter_controls(frontMatterFields, parentFron
   }
 
   applyDerivedDefaults(resolvedFront);
+  // Always set type using schema logic before UI update
+  if (typeof deriveType === 'function') {
+    const derivedType = deriveType(resolvedFront);
+    if (derivedType) resolvedFront.type = derivedType;
+  }
 
   // Show/hide and set values for all static fields
   // List of field keys that should use this staged loading: access and image controls
@@ -316,6 +321,12 @@ export async function service_frontmatter_controls(frontMatterFields, parentFron
         const updated = serializeFrontMatter(baseFrontMatter, obj, fields.map(f => f.key));
         frontMatterText.value = updated;
         log('[service_frontmatter_controls] updated frontMatterText.value:', frontMatterText.value);
+        if (typeof autoSizeFrontMatter === 'function') {
+          log('[service_frontmatter_controls] calling autoSizeFrontMatter');
+          autoSizeFrontMatter();
+        } else {
+          log('[service_frontmatter_controls] autoSizeFrontMatter is not defined');
+        }
       } catch (e) {
         log('[service_frontmatter_controls] ERROR in serializeFrontMatter:', e);
       }
