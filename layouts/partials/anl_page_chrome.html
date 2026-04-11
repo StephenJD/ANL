@@ -22,11 +22,43 @@
 {{ $contentEditorHref := printf "/06_secure/website_updates/content-editor/?path=%s" ($filePath | urlquery) }}
 
 <link rel="stylesheet" href="{{ "css/anl_chrome.css" | absURL  }}">
+{{/* Attempt to include section-specific CSS if it exists: /css/[section]/[section].css */}}
+{{ $filePath := .File.Path | default "" | replace "\\" "/" }}
+{{ $isHome := or .IsHome (eq .Type "home") }}
+{{ if $isHome }}
+  <script>console.log('[chrome] HOME PAGE: Forcing asset load for /css/home/_index.css and /js/home/_index.js');</script>
+  <link rel="stylesheet" href="/css/home/_index.css">
+  <script>console.log('[chrome] Included HOME CSS: /css/home/_index.css');</script>
+  <script type="module" src="/js/home/_index.js" defer></script>
+  <script>console.log('[chrome] Included HOME JS: /js/home/_index.js');</script>
+{{ else if and (ne $filePath "") (ne $filePath "/") (ne $filePath "\\") }}
+  {{ $isIndex := eq (path.Base $filePath) "_index.md" }}
+  {{ $sectionDir := path.Dir $filePath }}
+  <script>console.log('[chrome] filePath:', {{ $filePath | jsonify }}, 'isIndex:', {{ $isIndex }}, 'sectionDir:', {{ $sectionDir | jsonify }});</script>
+  {{ if $isIndex }}
+    {{ $cssPath := printf "/css/%s/_index.css" $sectionDir }}
+    {{ $jsPath := printf "/js/%s/_index.js" $sectionDir }}
+    <link rel="stylesheet" href="{{ $cssPath }}">
+    <script>console.log('[chrome] Included section CSS: {{ $cssPath }}');</script>
+    <script type="module" src="{{ $jsPath }}" defer></script>
+    <script>console.log('[chrome] Included section JS: {{ $jsPath }}');</script>
+  {{ else }}
+    {{ $filePathNoExt := replaceRE "\\.md$" "" $filePath }}
+    {{ $cssPath := printf "/css/%s.css" $filePathNoExt }}
+    {{ $jsPath := printf "/js/%s.js" $filePathNoExt }}
+    <link rel="stylesheet" href="{{ $cssPath }}">
+    <script>console.log('[chrome] Included page CSS: {{ $cssPath }}');</script>
+    <script type="module" src="{{ $jsPath }}" defer></script>
+    <script>console.log('[chrome] Included page JS: {{ $jsPath }}');</script>
+  {{ end }}
+{{ else }}
+  <script>console.log('[chrome] Skipping asset load: filePath is empty or root:', {{ $filePath | jsonify }});</script>
+{{ end }}
 <div class="debug-message">
   DEBUG: partials\anl_page_chrome.html is running<br>
-  DEBUG: $current_page.IsHome={{ $current_page.IsHome }}
-  | Frontmatter show_breadcrumb={{ index $current_page.Params "show_breadcrumb" | default "not set" }}
-  | show_breadcrumb={{ $show_breadcrumb }}
+  DEBUG: $current_page.IsHome={{ $current_page.IsHome }}<br>
+  | Frontmatter show_breadcrumb={{ index $current_page.Params "show_breadcrumb" | default "not set" }}<br>
+  | show_breadcrumb={{ $show_breadcrumb }}<br>
 </div>
 <div class="page-container" style="{{ if $background_image }}background-image: url('{{ $background_image }}');{{ end }}">
   <div class="no-print">
