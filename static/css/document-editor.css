@@ -1,0 +1,138 @@
+// Style for document editor pages static\css\document-editor.css
+
+#editButtonsContainer {
+  position: fixed;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  width: min(1000px, calc(100% - 2rem));
+  box-sizing: border-box;
+  z-index: 10;
+  background: #fff;
+  border-top: 1px solid #ccc;
+  padding: 10px 1rem;
+  display: flex;
+  gap: 10px;
+  box-shadow: 0 -2px 5px rgba(0,0,0,0.08);
+}
+
+#editButtonsContainer button {
+  margin: 0 0.5em;
+}
+
+#treeEditButtons {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(1000px, calc(100% - 2rem));
+  box-sizing: border-box;
+  z-index: 5;
+  background: #fff;
+  border-top: 1px solid #ccc;
+  padding: 10px 1rem;
+  display: flex;
+  gap: 10px;
+  box-shadow: 0 -2px 5px rgba(0,0,0,0.08);
+}
+
+#tree {
+  width: 100%;
+  border-right: 1px solid #ccc;
+  padding-right: 20px;
+}
+
+#tree ul {
+  list-style: none;
+  padding-left: 15px;
+}
+
+#tree .tree-node {
+  cursor: pointer;
+  padding: 2px 4px;
+  color: blue;
+}
+
+#tree .tree-node--selected {
+  font-weight: bold;
+  background-color: #def;
+}
+
+.webeditor-input {
+  width: 320px;
+}
+
+.webeditor-input--wide {
+  width: 100%;
+}
+
+.webeditor-upload-row {
+  margin-top: 8px;
+}
+
+.webeditor-dropzone {
+  border: 1px dashed #888;
+  background: #f7f7f7;
+  padding: 10px 12px;
+  cursor: pointer;
+  color: #333;
+  max-width: 420px;
+}
+
+.webeditor-dropzone--active {
+  background: #e9f3ff;
+  border-color: #3a7bd5;
+}
+
+.webeditor-dropzone--busy {
+  opacity: 0.7;
+  cursor: progress;
+}
+
+.webeditor-file-input {
+  display: none;
+}
+
+.webeditor-image-preview {
+  display: block;
+  margin-top: 8px;
+  max-width: 320px;
+  max-height: 180px;
+  width: auto;
+  height: auto;
+  border: 1px solid #ddd;
+  background: #fff;
+}
+
+#editorContainer {
+  width: 100%;
+}
+
+#logDiv {
+  border-top: 1px solid #ccc;
+  margin-top: 20px;
+  padding: 10px;
+  max-height: 300px;
+  overflow-y: auto;
+  background: #f9f9f9;
+  font-size: 12px;
+  white-space: pre-wrap;
+}
+
+.webeditor-dropzone.dragover {
+  border-color: #444;
+  background: #f5f5f5;
+}
+
+.webeditor-dropzone {
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.edit-buttons-wrapper {
+  display: flex;
+  gap: 6px;
+}
+
+.edit-buttons-container {
+  display: flex;
+}

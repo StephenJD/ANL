@@ -1,24 +1,5 @@
-/* Fixed bottom button bar for content editor */
-/* Fixed bottom button bar for content editor */
-#editButtonsContainer {
-  position: fixed;
-  left: 50%;
-  bottom: 0;
-  transform: translateX(-50%);
-  width: min(1000px, calc(100% - 2rem));
-  box-sizing: border-box;
-  z-index: 10;
-  background: #fff;
-  border-top: 1px solid #ccc;
-  padding: 10px 1rem;
-  display: flex;
-  gap: 10px;
-  box-shadow: 0 -2px 5px rgba(0,0,0,0.08);
-}
+// Style for document pages static\css\documents.css
 
-#editButtonsContainer button {
-  margin: 0 0.5em;
-}
 .sibling-links {
   list-style: none;
   padding: 0;
@@ -26,7 +7,7 @@
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  align-items: flex-start; /* optional: align left */
+  align-items: flex-start;
 }
 
 .sibling-links li {
@@ -39,9 +20,28 @@
   font-size: var(--h2-font-size, 2rem);
 }
 
+.home-sibling-links {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.home-sibling-links li {
+  margin: 0;
+}
+
+.home-sibling-links a {
+  color: #1565c0;
+  text-decoration: underline;
+  font-size: var(--h2-font-size, 2rem);
+}
+
 /* Generic document content styling */
 .document-content {
-  max-width: 1000px;
   margin: 0 auto;
   padding: 2rem 1rem;
   line-height: 1.6;
@@ -62,17 +62,9 @@
   font-weight: 600;
 }
 
-.document-content h1 {
-  font-size: 2.5rem;
-}
-
-.document-content h2 {
-  font-size: 2rem;
-}
-
-.document-content h3 {
-  font-size: 1.5rem;
-}
+.document-content h1 { font-size: 2.5rem; }
+.document-content h2 { font-size: 2rem; }
+.document-content h3 { font-size: 1.5rem; }
 
 /* Paragraphs */
 .document-content p {
@@ -151,7 +143,7 @@ center {
   padding: 1rem;
 }
 
-/* Wider layout for generated dashboard-like pages */
+/* Wider layout */
 .document-content .wide-content {
   width: min(1400px, 96vw);
   margin-left: 50%;
@@ -162,114 +154,12 @@ center {
   font-size: 0.95rem;
 }
 
-/* Keep stats page comfortably wide too */
 .document-content .visit-stats {
   width: min(1200px, 96vw);
   margin-left: 50%;
   transform: translateX(-50%);
 }
 
-/* Content editor layout (KISS: use existing IDs) */
-.document-content > div {
-  width: 100%;
-}
-
-.document-content #tree {
-  width: 100%;
-  border-right: 1px solid #ccc;
-  padding-right: 20px;
-}
-.document-content #tree ul {
-  list-style: none;
-  padding-left: 15px;
-}
-.document-content #tree .tree-node {
-  cursor: pointer;
-  padding: 2px 4px;
-  color: blue;
-}
-.document-content #tree .tree-node--selected {
-  font-weight: bold;
-  background-color: #def;
-}
-
-.document-content .webeditor-input {
-  width: 320px;
-}
-.document-content .webeditor-input--wide {
-  width: 100%;
-}
-
-.document-content .webeditor-upload-row {
-  margin-top: 8px;
-}
-
-.document-content .webeditor-dropzone {
-  border: 1px dashed #888;
-  background: #f7f7f7;
-  padding: 10px 12px;
-  cursor: pointer;
-  color: #333;
-  max-width: 420px;
-}
-
-.document-content .webeditor-dropzone--active {
-  background: #e9f3ff;
-  border-color: #3a7bd5;
-}
-
-.document-content .webeditor-dropzone--busy {
-  opacity: 0.7;
-  cursor: progress;
-}
-
-.document-content .webeditor-file-input {
-  display: none;
-}
-
-.document-content .webeditor-image-preview {
-  display: block;
-  margin-top: 8px;
-  max-width: 320px;
-  max-height: 180px;
-  width: auto;
-  height: auto;
-  border: 1px solid #ddd;
-  background: #fff;
-}
-
-.document-content #editorContainer {
-  width: 100%;
-}
-
-.document-content #logDiv {
-  border-top: 1px solid #ccc;
-  margin-top: 20px;
-  padding: 10px;
-  max-height: 300px;
-  overflow-y: auto;
-  background: #f9f9f9;
-  font-size: 12px;
-  white-space: pre-wrap;
-}
-
-.document-content #treeEditButtons {
-  position: fixed;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: min(1000px, calc(100% - 2rem));
-  box-sizing: border-box;
-  z-index: 5;
-  background: #fff;
-  border-top: 1px solid #ccc;
-  padding: 10px 1rem;
-  display: flex;
-  gap: 10px;
-  box-shadow: 0 -2px 5px rgba(0,0,0,0.08);
-}
-
-/* Match document-content width on desktop */
 @media (min-width: 900px) {
   .document-content #tree,
   .document-content #editorContainer,
@@ -278,12 +168,13 @@ center {
     margin-left: auto;
     margin-right: auto;
   }
+
   .document-content #tree ul {
     padding-left: 28px;
   }
 }
 
-/* Document list: keep folder links same size as document links */
+/* Document list */
 .document-content .directory-style a,
 .document-content .summary-style a {
   font-size: 1rem;

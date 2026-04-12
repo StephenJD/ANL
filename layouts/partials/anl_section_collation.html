@@ -75,24 +75,22 @@
       {{ end }}
     {{ end }}
     {{ if not $expired }}
-    <section id="{{ .File.BaseFileName }}" class="document-content">
-      {{/* Clean access frontmatter into lowercase slice */}}
+    {{ $bg := .Params.background_image }}
+    <section id="sec-{{ replace .File.BaseFileName "_" "-" }}"
+    class="document-content"
+    style="{{ if $bg }}background-image: url('{{ $bg }}');{{ end }}">
+
+	  {{/* Clean access frontmatter into lowercase slice */}}
       {{ $sectionAccess := slice }}
       {{ range (split (printf "%v" (.Params.access | default "public")) ",") }}
         {{ $clean := trim . " " }}
         {{ if $clean }}{{ $sectionAccess = $sectionAccess | append (lower $clean) }}{{ end }}
-      {{ end }}
-        <span class="edit-section-link-wrap" style="display:none; margin-left:12px; font-size:0.95em;">
-          <a class="edit-section-link" href="/06_secure/website_updates/content-editor/?path={{ .File.Path }}">✏️ Edit This Section</a>
-        </span>
+      {{ end }}a
+      <span class="edit-section-link-wrap" style="display:none; margin-left:12px; font-size:0.95em;">
+        <a class="edit-section-link" href="/06_secure/website_updates/content-editor/?path={{ .File.Path }}">✏️ Edit This Section</a>
+      </span>
       <h2>{{ .Title }}</h2>
       {{/* Clean access frontmatter into lowercase slice */}}
-      {{ $sectionAccess := slice }}
-      {{ range (split (printf "%v" (.Params.access | default "public")) ",") }}
-        {{ $clean := trim . " " }}
-        {{ if $clean }}{{ $sectionAccess = $sectionAccess | append (lower $clean) }}{{ end }}
-      {{ end }}
-  
       {{ if and (not (in $sectionAccess "public")) (not (in (slice (lower .File.BaseFileName)) "content-editor")) }}
         <div class="gated_page_placeholder" data-path="{{ .File.Path }}">
           <div class="page_access_message">Loading page…</div>

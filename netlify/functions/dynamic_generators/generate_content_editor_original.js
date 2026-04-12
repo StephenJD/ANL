@@ -807,17 +807,14 @@ function setupBodyImageTools(){
   dropZone.addEventListener("click", () => fileInput.click());
   dropZone.addEventListener("dragover", e => {
     e.preventDefault();
-    dropZone.style.borderColor = "#444";
-    dropZone.style.background = "#f5f5f5";
+    dropZone.classList.add("dragover");
   });
   dropZone.addEventListener("dragleave", () => {
-    dropZone.style.borderColor = "#888";
-    dropZone.style.background = "";
+    dropZone.classList.remove("dragover");
   });
   dropZone.addEventListener("drop", e => {
     e.preventDefault();
-    dropZone.style.borderColor = "#888";
-    dropZone.style.background = "";
+    dropZone.classList.remove("dragover");
     const file = e.dataTransfer?.files?.[0];
     if (file) uploadImageToCurrentFolder(file);
   });

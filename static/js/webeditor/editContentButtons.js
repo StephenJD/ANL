@@ -15,13 +15,10 @@ export function setupEditButtons(containerId, editActions) {
   }
   window.log("[editContentButtons] container lookup = FOUND");
 
-  container.style.display = "flex";
+  container.classList.add("edit-buttons-container");
   if (buttonsWrapper) container.removeChild(buttonsWrapper);
-
   buttonsWrapper = document.createElement("div");
   buttonsWrapper.className = "edit-buttons-wrapper";
-  buttonsWrapper.style.display = "flex";
-  buttonsWrapper.style.gap = "6px";
   container.appendChild(buttonsWrapper);
 
   const btnDefs = [

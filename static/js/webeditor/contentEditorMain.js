@@ -699,17 +699,14 @@ function setupBodyImageTools(){
     bodyImageDrop.addEventListener('click', () => bodyImageFile.click());
     bodyImageDrop.addEventListener('dragover', e => {
       e.preventDefault();
-      bodyImageDrop.style.borderColor = '#444';
-      bodyImageDrop.style.background = '#f5f5f5';
+      bodyImageDrop.classList.add("dragover");
     });
     bodyImageDrop.addEventListener('dragleave', () => {
-      bodyImageDrop.style.borderColor = '#888';
-      bodyImageDrop.style.background = '';
+      bodyImageDrop.classList.remove("dragover");
     });
     bodyImageDrop.addEventListener('drop', e => {
       e.preventDefault();
-      bodyImageDrop.style.borderColor = '#888';
-      bodyImageDrop.style.background = '';
+      bodyImageDrop.classList.remove("dragover");
       const file = e.dataTransfer?.files?.[0];
       if (file) uploadImageToCurrentFolder(file);
     });
@@ -726,17 +723,14 @@ function setupBodyImageTools(){
     backgroundImageDropZone.addEventListener('click', () => backgroundImageFile.click());
     backgroundImageDropZone.addEventListener('dragover', e => {
       e.preventDefault();
-      backgroundImageDropZone.style.borderColor = '#444';
-      backgroundImageDropZone.style.background = '#f5f5f5';
+      backgroundImageDropZone.classList.add("dragover");
     });
     backgroundImageDropZone.addEventListener('dragleave', () => {
-      backgroundImageDropZone.style.borderColor = '#888';
-      backgroundImageDropZone.style.background = '';
+      backgroundImageDropZone.classList.remove("dragover");
     });
     backgroundImageDropZone.addEventListener('drop', e => {
       e.preventDefault();
-      backgroundImageDropZone.style.borderColor = '#888';
-      backgroundImageDropZone.style.background = '';
+      backgroundImageDropZone.classList.remove("dragover");
       const file = e.dataTransfer?.files?.[0];
       if (file) uploadBackgroundImage(file);
     });

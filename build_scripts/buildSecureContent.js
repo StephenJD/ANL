@@ -1,45 +1,28 @@
-// build_scripts\buildSecureContent.js
-// --- Auto-generate generator_imports.js for dynamic page generators ---
-function updateGeneratorImports() {
-  const genDir = path.join(process.cwd(), "netlify", "functions", "dynamic_generators");
-  const files = fs.readdirSync(genDir).filter(f => f.startsWith("generate_") && f.endsWith(".js"));
-  const imports = files.map(f => {
-    const base = f.replace(/\.js$/, "");
-    return `import ${base} from \"./${f}\";`;
-  });
-  const exports = files.map(f => f.replace(/\.js$/, "")).join(",\n  ");
-  const content = `${imports.join("\n")}
-\nexport const dynamicRuntimes = {\n  ${exports}\n};\n`;
-  const outPath = path.join(genDir, "generator_imports.js");
-  fs.writeFileSync(outPath, content);
-  console.log("[buildSecureContent] Updated generator_imports.js with:", files);
-}
+// build_scripts/buildSecureContent.js
 
-updateGeneratorImports();
-// \build_scripts\buildSecureContent.js
 import fs from "fs";
 import path from "path";
 import { marked } from "marked";
 import matter from "gray-matter";
 import { urlize } from "../lib/urlize.js";
 
+// -----------------------------
+// PATHS
+// -----------------------------
 const contentDir = path.join(process.cwd(), "content");
 const outputDir = path.join(process.cwd(), "private_html");
 
+// -----------------------------
+// CLEAN OUTPUT
+// -----------------------------
 if (fs.existsSync(outputDir)) {
   fs.rmSync(outputDir, { recursive: true, force: true });
 }
-
 fs.mkdirSync(outputDir, { recursive: true });
-console.log("[buildSecureContent] Created private_html?", fs.existsSync(outputDir));
 
-// Remove Hugo shortcodes ({{< ... >}} or {{% ... %}})
-function stripShortcodes(content) {
-  return content
-    .replace(/{{<[\s\S]+?>}}/g, "")
-    .replace(/{{%[\s\S]+?%}}/g, "");
-}
-
+// -----------------------------
+// UTIL
+// -----------------------------
 function normalizeAccess(accessValue) {
   if (Array.isArray(accessValue)) {
     return accessValue.map((a) => String(a).trim().toLowerCase()).filter(Boolean);
@@ -55,233 +38,200 @@ function normalizeAccess(accessValue) {
   return ["public"];
 }
 
-function toOutputRelPath(filePath) {
-  const rel = path.relative(contentDir, filePath).replace(/\.md$/i, ".html");
-  return rel
-    .split(path.sep)
-    .map((segment) => urlize(segment))
-    .join(path.sep);
+function stripShortcodes(content) {
+  return content
+    .replace(/{{<[\s\S]+?>}}/g, "")
+    .replace(/{{%[\s\S]+?%}}/g, "");
 }
 
-function toPublicHref(filePath) {
-  const relNoExt = path.relative(contentDir, filePath).replace(/\.md$/i, "");
-  const parts = relNoExt
-    .split(path.sep)
-    .map((segment) => urlize(segment))
-    .filter(Boolean);
-
-  if (parts[parts.length - 1] === "_index") {
-    parts.pop();
-  }
-
-  const joined = parts.join("/");
-  return joined ? `/${joined}/` : "/";
-}
-
-function escapeHtml(text = "") {
-  return String(text)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
-
-function plainText(value = "") {
-  return String(value)
-    .replace(/<[^>]+>/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function sortByTitleThenPath(a, b) {
-  const titleCmp = (a.title || "").localeCompare(b.title || "", undefined, { sensitivity: "base" });
-  if (titleCmp !== 0) return titleCmp;
-  return a.filePath.localeCompare(b.filePath);
-}
-
+// -----------------------------
+// COLLECT (UNCHANGED)
+// -----------------------------
 function collectEntries(dir, out = []) {
   fs.readdirSync(dir, { withFileTypes: true }).forEach((entry) => {
     const fullPath = path.join(dir, entry.name);
+
     if (entry.isDirectory()) {
       collectEntries(fullPath, out);
       return;
     }
 
-    if (!entry.isFile() || !entry.name.endsWith(".md")) {
-      return;
-    }
+    if (!entry.isFile() || !entry.name.endsWith(".md")) return;
 
     const md = fs.readFileSync(fullPath, "utf-8");
     const { data: frontMatter, content: rawContent } = matter(md);
-    const type = String(frontMatter.type || "").toLowerCase();
+
+    const access = normalizeAccess(frontMatter.access ?? "public");
 
     out.push({
       filePath: fullPath,
       dirPath: path.dirname(fullPath),
       fileName: path.basename(fullPath).toLowerCase(),
-      outRelPath: toOutputRelPath(fullPath),
-      href: toPublicHref(fullPath),
+
       title: frontMatter.title || "",
       summary: frontMatter.summary || "",
       abstract: frontMatter.abstract || "",
+
+      type: String(frontMatter.type || "").toLowerCase(),
       rawType: frontMatter.type || "",
-      type,
-      access: normalizeAccess(frontMatter.access || "public"),
-      last_reviewed: frontMatter.last_reviewed || "",
-      review_period: frontMatter.review_period || "",
-      reviewed_by: frontMatter.reviewed_by || "",
+
+      access,
+
       rawContent,
-      frontMatter // keep all original front matter fields for later merging
+      frontMatter,
     });
   });
 
   return out;
 }
 
-function buildListFolderHtml(currentEntry, allEntries) {
-  const html = [];
-  html.push(`<h1>${escapeHtml(currentEntry.title)}</h1>`);
+// // -----------------------------
+// // AST DSL APPLY (NEW CORE)
+// // -----------------------------
+// function applyClassDSLToTokens(tokens) {
+//   const out = [];
+//   let currentClass = null;
 
-  const childSections = allEntries
-    .filter((entry) =>
-      entry.filePath !== currentEntry.filePath &&
-      entry.fileName === "_index.md" &&
-      path.dirname(entry.dirPath) === currentEntry.dirPath
-    )
-    .sort(sortByTitleThenPath);
+//   for (const token of tokens) {
+//     console.log("[AST]", {
+//       type: token.type,
+//       raw: token.raw || token.text || "",
+//       currentClass
+//     });
 
-  const childFolderPages = allEntries
-    .filter((entry) =>
-      entry.dirPath === currentEntry.dirPath &&
-      entry.fileName !== "_index.md" &&
-      entry.type === "document-folder"
-    )
-    .sort(sortByTitleThenPath);
+//     // CLASS ONLY BLOCK
+//     if (
+//       token.type === "paragraph" &&
+//       token.text &&
+//       token.text.trim().match(/^\{\.([a-zA-Z0-9_-]+)\}$/)
+//     ) {
+//       currentClass = token.text.trim().match(/^\{\.([a-zA-Z0-9_-]+)\}$/)[1];
 
-  if (childSections.length || childFolderPages.length) {
-    html.push(`<div class="directory-style">`);
+//       console.log("[DSL]", {
+//         event: "class_set",
+//         class: currentClass
+//       });
 
-    childSections.forEach((entry) => {
-      html.push(`<p><a href="${entry.href}">${escapeHtml(entry.title)}/</a></p>`);
-    });
+//       continue;
+//     }
 
-    childFolderPages.forEach((entry) => {
-      html.push(`<p><a href="${entry.href}">${escapeHtml(entry.title)}/</a></p>`);
-    });
+//     // INLINE CLASS
+//     if (
+//       token.type === "paragraph" &&
+//       token.text &&
+//       token.text.match(/^\{\.([a-zA-Z0-9_-]+)\}\s*(.*)$/)
+//     ) {
+//       const match = token.text.match(/^\{\.([a-zA-Z0-9_-]+)\}\s*(.*)$/);
 
-    html.push(`</div>`);
-  }
+//       token.className = match[1];
+//       token.text = match[2];
 
-  const summaryPages = allEntries
-    .filter((entry) =>
-      entry.dirPath === currentEntry.dirPath &&
-      (["document", "form"].includes(entry.type) || entry.type.startsWith("dynamic"))
-    )
-    .sort(sortByTitleThenPath);
+//       console.log("[DSL]", {
+//         event: "inline",
+//         class: token.className,
+//         text: token.text
+//       });
 
-  summaryPages.forEach((entry) => {
-    html.push(`<div class="summary-style">`);
-    html.push(`<p><a href="${entry.href}">${escapeHtml(entry.title)}</a></p>`);
+//       out.push(token);
+//       continue;
+//     }
 
-    if (entry.summary) {
-      html.push(escapeHtml(plainText(entry.summary)));
-    } else if (entry.abstract) {
-      html.push(escapeHtml(plainText(entry.abstract).slice(0, 250)));
-    }
+//     // APPLY CURRENT CLASS
+//     if (currentClass && (token.type === "paragraph" || token.type === "heading")) {
+//       token.className = currentClass;
 
-    html.push(`</div>`);
-  });
+//       console.log("[DSL]", {
+//         event: "apply",
+//         class: currentClass,
+//         type: token.type
+//       });
 
-  return html.join("\n");
+//       currentClass = null;
+//     }
+
+//     out.push(token);
+//   }
+
+//   return out;
+// }
+
+// // -----------------------------
+// // RENDER (AST SAFE)
+// // -----------------------------
+// function renderTokens(tokens) {
+//   const renderer = new marked.Renderer();
+
+//   renderer.paragraph = (text, token = {}) => {
+//     const cls = token.className ? ` class="${token.className}"` : "";
+//     return `<p${cls}>${text}</p>`;
+//   };
+
+//   renderer.heading = (text, token = {}) => {
+//     const cls = token.className ? ` class="${token.className}"` : "";
+//     return `<h${token.depth || 1}${cls}>${text}</h${token.depth || 1}>`;
+//   };
+
+//   return marked.parser(tokens, { renderer });
+// }
+
+// // -----------------------------
+// // BUILD ENTRY (AST PIPELINE)
+// // -----------------------------
+// -----------------------------
+// BUILD ENTRY (NO DSL)
+// -----------------------------
+function buildEntry(entry) {
+  console.log("[ENTRY] start", entry.filePath);
+
+  // 1. Strip shortcodes
+  const clean = stripShortcodes(entry.rawContent);
+  console.log("[ENTRY] cleaned length", clean.length);
+
+  // 2. Parse markdown (HTML allowed)
+  const html = marked.parse(clean);
+  console.log("[MARKED] output length", html.length);
+
+  console.log("[ENTRY] done", entry.filePath);
+
+  return html;
 }
 
-function buildPrivateHtml(entry, allEntries) {
-  if (entry.type === "document-folder") {
-    return buildListFolderHtml(entry, allEntries);
+// -----------------------------
+// WRITE
+// -----------------------------
+function writeOutput(entry, html) {
+  const rel = path
+    .relative(contentDir, entry.filePath)
+    .replace(/\.md$/i, ".html")
+    .split(path.sep)
+    .map((p) => urlize(p))
+    .join(path.sep);
+
+  const outHtml = path.join(outputDir, rel);
+  const outJson = outHtml.replace(/\.html$/i, ".json");
+
+  fs.mkdirSync(path.dirname(outHtml), { recursive: true });
+
+  fs.writeFileSync(outJson, JSON.stringify(entry.frontMatter, null, 2));
+
+  if (!entry.access.includes("public")) {
+    fs.writeFileSync(outHtml, html);
   }
-
-  // KISS: Treat all HTML (even indented) as raw HTML
-  // 1. Extract all HTML blocks (lines starting with optional spaces then <tag ...> ... </tag>), unindent, and join
-  // 2. Remove those lines from the Markdown, then pass the rest through marked
-  // 3. Concatenate raw HTML and marked output
-
-  const cleanContent = stripShortcodes(entry.rawContent);
-  const lines = cleanContent.split(/\r?\n/);
-  let htmlBlocks = [];
-  let nonHtmlLines = [];
-  let inHtmlBlock = false;
-  let htmlBuffer = [];
-  const htmlOpenTag = /^\s*<([a-zA-Z][\w-]*)(\s|>|$)/;
-  const htmlCloseTag = /^\s*<\/[a-zA-Z][\w-]*\s*>/;
-
-  for (let i = 0; i < lines.length; ++i) {
-    const line = lines[i];
-    if (!inHtmlBlock && htmlOpenTag.test(line)) {
-      inHtmlBlock = true;
-      htmlBuffer.push(line);
-    } else if (inHtmlBlock) {
-      htmlBuffer.push(line);
-      if (htmlCloseTag.test(line)) {
-        // End of HTML block
-        // Unindent all lines in htmlBuffer
-        const unindented = htmlBuffer.map(l => l.replace(/^\s+/, ""));
-        htmlBlocks.push(unindented.join("\n"));
-        htmlBuffer = [];
-        inHtmlBlock = false;
-      }
-    } else {
-      nonHtmlLines.push(line);
-    }
-  }
-  // If file ends while in HTML block, flush buffer
-  if (htmlBuffer.length) {
-    const unindented = htmlBuffer.map(l => l.replace(/^\s+/, ""));
-    htmlBlocks.push(unindented.join("\n"));
-  }
-
-  // Join non-HTML lines and pass through marked
-  const nonHtmlContent = nonHtmlLines.join("\n");
-  const markedOutput = marked.parse(nonHtmlContent);
-  // Concatenate all raw HTML blocks and marked output
-  return htmlBlocks.join("\n") + "\n" + markedOutput;
 }
 
-process.on("uncaughtException", (err) => {
-  console.error("[buildSecureContent] Fatal error:", err);
-  process.exit(1);
-});
-
+// -----------------------------
+// MAIN PIPELINE
+// -----------------------------
 try {
   const entries = collectEntries(contentDir);
 
-  entries.forEach((entry) => {
-    const outHtmlPath = path.join(outputDir, entry.outRelPath);
-    const outJsonPath = outHtmlPath.replace(/\.html$/i, ".json");
-    fs.mkdirSync(path.dirname(outHtmlPath), { recursive: true });
+  for (const entry of entries) {
+    const html = buildEntry(entry);
+    writeOutput(entry, html);
 
-    if (!entry.access.includes("public")) {
-      const html = buildPrivateHtml(entry, entries);
-      fs.writeFileSync(outHtmlPath, html);
-    }
-
-    // Copy all front matter fields, but ensure normalized/required fields are present and correct
-    const json = {
-      ...entry.frontMatter, // all original front matter fields
-      // override/ensure these fields are always present and normalized
-      title: entry.title,
-      summary: entry.summary,
-      type: entry.rawType,
-      access: entry.access,
-      last_reviewed: entry.last_reviewed,
-      review_period: entry.review_period,
-      reviewed_by: entry.reviewed_by
-    };
-
-    fs.writeFileSync(outJsonPath, JSON.stringify(json, null, 2));
-    console.log("[buildSecureContent] Wrote:", entry.outRelPath);
-  });
+    console.log("[buildSecureContent] processed:", entry.filePath);
+  }
 } catch (err) {
-  console.error("[buildSecureContent] Top-level error:", err);
+  console.error("[buildSecureContent] Fatal error:", err);
   process.exit(1);
 }
