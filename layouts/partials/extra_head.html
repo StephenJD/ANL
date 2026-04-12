@@ -1,0 +1,4 @@
+{{/* layouts/partials/extra_head.html: Insert extra <head> content from page frontmatter or .Params */}}
+{{ with .Params.extra_head }}
+  {{ . | safeHTML }}
+{{ end }}

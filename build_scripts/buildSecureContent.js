@@ -190,7 +190,7 @@ function buildEntry(entry) {
   // 2. Parse markdown (HTML allowed)
   const html = marked.parse(clean);
   console.log("[MARKED] output length", html.length);
-
+  console.log(marked.parse("<div>test</div>"));
   console.log("[ENTRY] done", entry.filePath);
 
   return html;

@@ -46,6 +46,8 @@
   <link rel="alternate" hreflang="{{ .Lang }}" href="{{ .Permalink }}">
   {{ end }}
   <link rel="alternate" hreflang="{{ site.LanguageCode | default "en-us" }}" href="{{ .Permalink }}">
+    {{/* Allow pages to inject extra <head> content, e.g. fonts, via frontmatter */}}
+    {{ partial "extra_head" . }}
 
   {{ partial "functions/parse_theme" . }}
 
