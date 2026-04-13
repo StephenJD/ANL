@@ -84,8 +84,8 @@
           {{ if $clean }}{{ $sectionAccess = $sectionAccess | append (lower $clean) }}{{ end }}
         {{ end }}
 
-        {{/* Find the content editor page by Params.function_key */}}
-        {{ $editorPage := where site.Pages "Params.function_key" "content_editor" | first }}
+        {{/* Find the content editor page by Params.function_key, robustly */}}
+        {{ $editorPage := index (first 1 (where site.Pages "Params.function_key" "content_editor")) 0 }}
         {{ $contentEditorHref := "" }}
         {{ if $editorPage }}
           {{ $contentEditorHref = printf "%s?path=%s" $editorPage.RelPermalink (.File.Path | urlquery) }}

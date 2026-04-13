@@ -19,8 +19,9 @@
   {{ $filePath = .Path }}
 {{ end }}
 {{ $filePath = replace $filePath "\\" "/" }}
-{{/* Find the content editor page by Params.function_key */}}
-{{ $editorPage := where site.Pages "Params.function_key" "content_editor" | first }}
+
+{{/* Find the content editor page by Params.function_key, robustly */}}
+{{ $editorPage := index (first 1 (where site.Pages "Params.function_key" "content_editor")) 0 }}
 {{ $contentEditorHref := "" }}
 {{ if $editorPage }}
   {{ $contentEditorHref = printf "%s?path=%s" $editorPage.RelPermalink ($filePath | urlquery) }}
