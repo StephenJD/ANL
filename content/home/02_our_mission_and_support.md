@@ -34,7 +34,7 @@ The foundations of our impact and how you can join us in guiding the next genera
     <p class="mission-support-card-desc">
         We invite young people to grow stronger through encountering adventure, God and joy through outdoor opportunities in the Peak District and creative expression.
     </p>
-    <a class="mission-support-card-link" href="#">What's On <img src="/images/shared/arrow_forward_bold.svg" alt="What's On" width="20" height="20" /></a>
+    <a class="mission-support-card-link" href="01_whats_on">What's On <img src="/images/shared/arrow_forward_bold.svg" alt="What's On" width="20" height="20" /></a>
 </div>
 
 <!-- Equip Card -->

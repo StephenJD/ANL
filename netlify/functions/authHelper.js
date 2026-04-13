@@ -308,7 +308,7 @@ export async function requireBindingAuth(event, bindingKey) {
 
 // ---------------------------------------------------------------------------
 // Gate a handler using access roles read from one or more page metadata files.
-// pagePaths are site-relative paths without extension, e.g. "06_secure/04_visit_stats".
+// pagePaths are site-relative paths without extension, e.g. "07_secure/04_visit_stats".
 // The union of all access arrays across all named pages forms the allowed roles.
 // ---------------------------------------------------------------------------
 export async function requirePageAuth(event, ...pagePaths) {

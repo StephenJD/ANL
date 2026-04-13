@@ -78,7 +78,9 @@ export function setupEditButtons(containerId, treeData, moveFn, showEditorFn, pu
   if (buttons.edit) {
     buttons.edit.addEventListener("click", () => {
       if (window.selectedNodePath) {
-        window.location.href = `/06_secure/website_updates/content-editor/?node=${encodeURIComponent(window.selectedNodePath)}`;
+        // Use a global variable set by the template for the editor base URL
+        const editorBase = window.contentEditorBaseUrl;
+        window.location.href = `${editorBase}?node=${encodeURIComponent(window.selectedNodePath)}`;
       } else {
         window.log("[editButtons] No node selected for editing");
       }

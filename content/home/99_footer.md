@@ -22,8 +22,8 @@ access: Public
 
 <!-- Legal Card -->
 <div class="footer-card footer-card--legal group">
-    <h3 class="footer-card-title">Legal</h3>
-    <a class="footer-card-link" href="#">GDPR</a>
+    <h3 class="footer-card-title">Policies</h3>
+    <a class="footer-card-link" href="06_policies">Policies</a>
 </div>
 
 <!-- Connect Card -->

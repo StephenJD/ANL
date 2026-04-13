@@ -43,7 +43,7 @@ weight = 100
 
 [[main]]
 name = "Secure"
-url = "/06_secure"
+url = "/07_secure"
 weight = 110
 
 
