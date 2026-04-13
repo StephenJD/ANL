@@ -1,27 +1,3 @@
-#sec-02-our-mission-and-support .mission-support-card-title {
-  font-family: 'Plus Jakarta Sans', Arial, sans-serif;
-  font-size: 1.5rem;
-  font-weight: 800;
-  margin-bottom: 1rem;
-  line-height: 1.2;
-}
-#sec-02-our-mission-and-support .mission-support-card-desc {
-  font-family: 'Inter', Arial, sans-serif;
-  font-size: 1.125rem;
-  color: #424752;
-  line-height: 1.6;
-  margin-bottom: 2rem;
-  flex-grow: 1;
-}
-#sec-02-our-mission-and-support .mission-support-card-link {
-  font-family: 'Inter', Arial, sans-serif;
-  font-size: 1rem;
-  font-weight: 700;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  text-decoration: none;
-}
 /* static\css\home\_index.css */
 .material-symbols-outlined {
   font-family: 'Material Symbols Outlined';
@@ -42,10 +18,143 @@
   -webkit-font-feature-settings: 'liga';
   -webkit-font-smoothing: antialiased;
 }
+
+#sec-00-encouraging-young-people .hero-container {
+  max-width: 80rem;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+  width: 100%;
+  position: relative;
+  z-index: 10;
+}
+/* static\css\home\_index.css */
+
+#sec-00-encouraging-young-people {
+  position: relative;
+  overflow: hidden;
+  left: 50%;
+  right: 50%;
+  width: 100vw;
+  margin-left: -50vw;
+  margin-right: -50vw;
+  max-width: 100vw !important;
+  min-width: 100vw;
+  box-sizing: border-box;
+  min-height: 400px;
+  background-size: cover;
+  background-position: center;
+  background-color: transparent !important;
+}
+#sec-00-encouraging-young-people .hero-content {
+  max-width: 48rem;
+  margin-left: 0;
+  margin-right: 0;
+  padding: 2.5rem 0;
+  box-sizing: border-box;
+  text-align: left;
+}
+
+
+
+@media (max-width: 600px) {
+  #sec-00-encouraging-young-people .hero-container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  #sec-00-encouraging-young-people .hero-content {
+    padding: 1.5rem 0;
+  }
+}
+
+#sec-00-encouraging-young-people.document-content {
+  background-color: transparent !important;
+}
+
+/* overlay */
+#sec-00-encouraging-young-people .home-gradient-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(
+    to right,
+    #f7f9ff 0%,
+    rgba(247, 249, 255, 0.6) 60%,
+    rgba(247, 249, 255, 0) 100%
+  );
+  width: 100%;
+  height: 100%;
+}
+
+/* content stacking */
+#sec-00-encouraging-young-people > *:not(.home-gradient-overlay) {
+  position: relative;
+  z-index: 2;
+}
+
+/* HERO HEADING */
+#sec-00-encouraging-young-people .heroheading {
+  font-family: 'Plus Jakarta Sans', 'Inter', Arial, sans-serif;
+  font-size: clamp(2.5rem, 6vw, 4.5rem);
+  font-weight: 800;
+  color: #161c22;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  margin-bottom: 2rem;
+  text-align: left;
+}
+
+#sec-00-encouraging-young-people .heroheading strong,
+#sec-00-encouraging-young-people .heroheading b {
+  color: #004d99;
+  font-style: italic;
+  font-weight: 800;
+}
+
+/* HERO PARAGRAPH */
+#sec-00-encouraging-young-people .heroparagraph {
+  font-family: 'Inter', Arial, sans-serif;
+  font-size: clamp(1.25rem, 2vw, 1.5rem);
+  color: #424752;
+  max-width: 40rem;
+  margin: 0 0 2.5rem 0;
+  line-height: 1.6;
+  text-align: left;
+}
+
+/* HERO BUTTON */
+section#sec-00-encouraging-young-people a.herobutton {
+  display: inline-block;
+  background: linear-gradient(135deg, #004d99 0%, #1565c0 100%);
+  color: #fff !important;
+  padding: 1rem 2rem;
+  border-radius: 0.75rem;
+  font-family: 'Inter', Arial, sans-serif;
+  font-weight: 700;
+  font-size: 1.125rem;
+  box-shadow: 0 4px 24px rgba(0, 77, 153, 0.12);
+  transition: opacity 0.2s, transform 0.2s, box-shadow 0.2s;
+  margin: 0;
+  text-decoration: none !important;
+  border: none;
+  cursor: pointer;
+}
+
+section#sec-00-encouraging-young-people a.herobutton:hover {
+  opacity: 0.9;
+  box-shadow: 0 8px 32px rgba(0, 77, 153, 0.18);
+}
+
+section#sec-00-encouraging-young-people a.herobutton:active {
+  transform: scale(0.98);
+}
+
 #sec-01-our-roots {
   background: #f7f9ff;
 }
-/* Our Roots Section (two-column grid, image left, text right) */
+
 #sec-01-our-roots .hero-container {
   max-width: 80rem;
   margin-left: auto;
@@ -178,137 +287,6 @@
     gap: 1rem;
     padding: 1rem;
   }
-}
-#sec-00-encouraging-young-people .hero-container {
-  max-width: 80rem;
-  margin-left: auto;
-  margin-right: auto;
-  padding-left: 1.5rem;
-  padding-right: 1.5rem;
-  width: 100%;
-  position: relative;
-  z-index: 10;
-}
-/* static\css\home\_index.css */
-
-#sec-00-encouraging-young-people {
-  position: relative;
-  overflow: hidden;
-  left: 50%;
-  right: 50%;
-  width: 100vw;
-  margin-left: -50vw;
-  margin-right: -50vw;
-  max-width: 100vw !important;
-  min-width: 100vw;
-  box-sizing: border-box;
-  min-height: 400px;
-  background-size: cover;
-  background-position: center;
-  background-color: transparent !important;
-}
-#sec-00-encouraging-young-people .hero-content {
-  max-width: 48rem;
-  margin-left: 0;
-  margin-right: 0;
-  padding: 2.5rem 0;
-  box-sizing: border-box;
-  text-align: left;
-}
-
-
-
-@media (max-width: 600px) {
-  #sec-00-encouraging-young-people .hero-container {
-    padding-left: 1rem;
-    padding-right: 1rem;
-  }
-  #sec-00-encouraging-young-people .hero-content {
-    padding: 1.5rem 0;
-  }
-}
-
-#sec-00-encouraging-young-people.document-content {
-  background-color: transparent !important;
-}
-
-/* overlay */
-#sec-00-encouraging-young-people .home-gradient-overlay {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  background: linear-gradient(
-    to right,
-    #f7f9ff 0%,
-    rgba(247, 249, 255, 0.6) 60%,
-    rgba(247, 249, 255, 0) 100%
-  );
-  width: 100%;
-  height: 100%;
-}
-
-/* content stacking */
-#sec-00-encouraging-young-people > *:not(.home-gradient-overlay) {
-  position: relative;
-  z-index: 2;
-}
-
-/* HERO HEADING */
-#sec-00-encouraging-young-people .heroheading {
-  font-family: 'Plus Jakarta Sans', 'Inter', Arial, sans-serif;
-  font-size: clamp(2.5rem, 6vw, 4.5rem);
-  font-weight: 800;
-  color: #161c22;
-  line-height: 1.1;
-  letter-spacing: -0.01em;
-  margin-bottom: 2rem;
-  text-align: left;
-}
-
-#sec-00-encouraging-young-people .heroheading strong,
-#sec-00-encouraging-young-people .heroheading b {
-  color: #004d99;
-  font-style: italic;
-  font-weight: 800;
-}
-
-/* HERO PARAGRAPH */
-#sec-00-encouraging-young-people .heroparagraph {
-  font-family: 'Inter', Arial, sans-serif;
-  font-size: clamp(1.25rem, 2vw, 1.5rem);
-  color: #424752;
-  max-width: 40rem;
-  margin: 0 0 2.5rem 0;
-  line-height: 1.6;
-  text-align: left;
-}
-
-/* HERO BUTTON */
-section#sec-00-encouraging-young-people a.herobutton {
-  display: inline-block;
-  background: linear-gradient(135deg, #004d99 0%, #1565c0 100%);
-  color: #fff !important;
-  padding: 1rem 2rem;
-  border-radius: 0.75rem;
-  font-family: 'Inter', Arial, sans-serif;
-  font-weight: 700;
-  font-size: 1.125rem;
-  box-shadow: 0 4px 24px rgba(0, 77, 153, 0.12);
-  transition: opacity 0.2s, transform 0.2s, box-shadow 0.2s;
-  margin: 0;
-  text-decoration: none !important;
-  border: none;
-  cursor: pointer;
-}
-
-section#sec-00-encouraging-young-people a.herobutton:hover {
-  opacity: 0.9;
-  box-shadow: 0 8px 32px rgba(0, 77, 153, 0.18);
-}
-
-section#sec-00-encouraging-young-people a.herobutton:active {
-  transform: scale(0.98);
 }
 
 /* Our Mission & Support Section (matches sample page) */
@@ -550,4 +528,212 @@ section#sec-00-encouraging-young-people a.herobutton:active {
 }
 #sec-02-our-mission-and-support .mission-support-card--support:hover .mission-support-card-link {
   color: #5c3d00;
+}
+
+#sec-02-our-mission-and-support .mission-support-card-title {
+  font-family: 'Plus Jakarta Sans', Arial, sans-serif;
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin-bottom: 1rem;
+  line-height: 1.2;
+}
+
+#sec-02-our-mission-and-support .mission-support-card-desc {
+  font-family: 'Inter', Arial, sans-serif;
+  font-size: 1.125rem;
+  color: #424752;
+  line-height: 1.6;
+  margin-bottom: 2rem;
+  flex-grow: 1;
+}
+
+#sec-02-our-mission-and-support .mission-support-card-link {
+  font-family: 'Inter', Arial, sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+}
+
+/* =========================
+   sec-99-footer (basic)
+   ========================= */
+
+#sec-99-footer {
+  background: #f7f9ff;
+  padding-top: 6rem;
+  padding-bottom: 6rem;
+}
+
+#sec-99-footer .footer-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  max-width: 90rem;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+/* md:grid-cols-2 */
+@media (min-width: 768px) {
+  #sec-99-footer .footer-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* lg:grid-cols-4 */
+@media (min-width: 1024px) {
+  #sec-99-footer .footer-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+#sec-99-footer .footer-card {
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  min-height: 440px;
+  transition: background 0.2s;
+  border-width: 1px;
+  border-style: solid;
+}
+
+/* shared text */
+#sec-99-footer .footer-card-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+#sec-99-footer .footer-card-desc {
+  line-height: 1.625;
+  margin-bottom: 2rem;
+  flex-grow: 1;
+}
+#sec-99-footer .footer-card-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 700;
+  transition: color 0.2s;
+}
+
+/* ANL */
+#sec-99-footer .footer-card--anl {
+  background: rgba(0,77,153,0.08);
+  border-color: rgba(0,77,153,0.05);
+}
+#sec-99-footer .footer-card--anl:hover {
+  background: rgba(0,77,153,0.16);
+}
+#sec-99-footer .footer-card--anl {
+  background: #004d99;
+  color: #fff;
+  box-shadow: 0 8px 24px rgba(0,77,153,0.2);
+}
+#sec-99-footer .footer-card--anl .footer-card-title {
+  color: #003366;
+}
+#sec-99-footer .footer-card--anl .footer-card-link {
+  color: #004d99;
+}
+#sec-99-footer .footer-card--anl:hover .footer-card-link {
+  color: #003366;
+}
+
+/* Resources */
+#sec-99-footer .footer-card--resources {
+  background: rgba(43,148,154,0.1);
+  border-color: rgba(43,148,154,0.05);
+}
+#sec-99-footer .footer-card--resources:hover {
+  background: rgba(43,148,154,0.2);
+}
+#sec-99-footer .footer-card--resources .footer-card-icon {
+  background: #2B949A;
+  color: #fff;
+  box-shadow: 0 8px 24px rgba(43,148,154,0.2);
+}
+#sec-99-footer .footer-card--resources .footer-card-title {
+  color: #1f6f73;
+}
+#sec-99-footer .footer-card--resources .footer-card-link {
+  color: #2B949A;
+}
+#sec-99-footer .footer-card--resources:hover .footer-card-link {
+  color: #1f6f73;
+}
+
+/* Legal */
+#sec-99-footer .footer-card--legal {
+  background: #1c252e;
+  border-color: rgba(255,255,255,0.05);
+  color: #fff;
+}
+#sec-99-footer .footer-card--legal:hover {
+  background: #25303b;
+}
+#sec-99-footer .footer-card--legal .footer-card-icon {
+  background: rgba(255,255,255,0.1);
+  backdrop-filter: blur(4px);
+}
+#sec-99-footer .footer-card--legal .footer-card-desc {
+  color: rgba(255,255,255,0.8);
+}
+#sec-99-footer .footer-card--legal .footer-card-link {
+  color: rgba(255,255,255,0.9);
+}
+#sec-99-footer .footer-card--legal:hover .footer-card-link {
+  color: #fff;
+}
+
+/* Connect */
+#sec-99-footer .footer-card--connect {
+  background: rgba(130,85,0,0.15);
+  border-color: rgba(130,85,0,0.05);
+}
+#sec-99-footer .footer-card--connect:hover {
+  background: rgba(130,85,0,0.25);
+}
+#sec-99-footer .footer-card--connect .footer-card-icon {
+  background: #825500;
+  color: #fff;
+  box-shadow: 0 8px 24px rgba(130,85,0,0.2);
+}
+#sec-99-footer .footer-card--connect .footer-card-title {
+  color: #5c3d00;
+}
+#sec-99-footer .footer-card--connect .footer-card-link {
+  color: #825500;
+}
+#sec-99-footer .footer-card--connect:hover .footer-card-link {
+  color: #5c3d00;
+}
+
+#sec-99-footer .footer-card-title {
+  font-family: 'Plus Jakarta Sans', Arial, sans-serif;
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin-bottom: 1rem;
+  line-height: 1.2;
+}
+
+#sec-99-footer .footer-card-desc {
+  font-family: 'Inter', Arial, sans-serif;
+  font-size: 1.125rem;
+  color: #424752;
+  line-height: 1.6;
+  margin-bottom: 2rem;
+  flex-grow: 1;
+}
+
+#sec-99-footer .footer-card-link {
+  font-family: 'Inter', Arial, sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
 }
