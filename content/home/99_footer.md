@@ -32,7 +32,10 @@ access: Public
     <p class="footer-card-desc">
         Subscribe to our newsletter for impact stories.
     </p>
-    <a class="footer-card-link" href="#">Email Us <img src="/images/shared/mail_bold.svg" alt="Email Us" width="20" height="20" /></a>
+    <div class="footer-card-form">
+    <input type="email" />
+    <button>Join</button>
+    </div>
 </div>
 </div>
 
