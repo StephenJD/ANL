@@ -2,8 +2,6 @@
 title: ""
 type: document
 access: Public
-extra_head: |
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap">
 ---
 
 <div class="hero-container">
