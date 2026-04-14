@@ -16,7 +16,7 @@ The foundations of our impact and how you can join us in guiding the next genera
 <!-- Encourage Card -->
 <div class="mission-support-card mission-support-card--encourage group">
     <div class="mission-support-card-icon">
-        <img src="/images/shared/heart_bold.svg" alt="Encourage" width="40" height="40" />
+        <img src="/images/shared/heart.png" alt="Encourage" width="40" height="40" />
     </div>
     <h3 class="mission-support-card-title">Encourage</h3>
     <p class="mission-support-card-desc">
@@ -28,7 +28,7 @@ The foundations of our impact and how you can join us in guiding the next genera
 <!-- Encounter Card -->
 <div class="mission-support-card mission-support-card--encounter group">
     <div class="mission-support-card-icon">
-        <img src="/images/shared/compass_bold.svg" alt="Encounter" width="40" height="40" />
+        <img src="/images/shared/compass.png" alt="Encounter" width="40" height="40" />
     </div>
     <h3 class="mission-support-card-title">Encounter</h3>
     <p class="mission-support-card-desc">
@@ -40,7 +40,7 @@ The foundations of our impact and how you can join us in guiding the next genera
 <!-- Equip Card -->
 <div class="mission-support-card mission-support-card--equip group">
     <div class="mission-support-card-icon">
-        <img src="/images/shared/spark_bold.svg" alt="Equip" width="40" height="40" />
+        <img src="/images/shared/wand.png" alt="Equip" width="40" height="40" />
     </div>
     <h3 class="mission-support-card-title">Equip</h3>
     <p class="mission-support-card-desc">
@@ -52,13 +52,13 @@ The foundations of our impact and how you can join us in guiding the next genera
 <!-- Support Card -->
 <div class="mission-support-card mission-support-card--support group">
     <div class="mission-support-card-icon">
-        <img src="/images/shared/support_bold.svg" alt="Support" width="40" height="40" />
+        <img src="/images/shared/hand.png" alt="Support" width="40" height="40" />
     </div>
     <h3 class="mission-support-card-title">Support</h3>
     <p class="mission-support-card-desc">
         Join our journey. Receive prayer updates or give financially to help us empower the next generation. Your partnership makes this possible.
     </p>
-    <a class="mission-support-card-link" href="#">Email Us <img src="/images/shared/mail_bold.svg" alt="Email Us" width="20" height="20" /></a>
+    <a class="mission-support-card-link" href="05_give">Read more</a>
 </div>
 </div>
 

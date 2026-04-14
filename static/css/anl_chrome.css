@@ -4,6 +4,7 @@
   display: none !important;
 }
 
+
 /* .debug-message {
   display: block !important;
   background: #000;
@@ -11,6 +12,40 @@
   padding: 6px;
   font-size: 12px;
 } */
+
+.navbar-site-title {
+  font-family: 'Plus Jakarta Sans', 'Inter', Arial, sans-serif;
+  font-weight: 900;
+  font-size: 1.5rem;
+  color: #161c22;
+  margin-left: 0.75rem;
+  letter-spacing: -0.05em;
+}
+
+.navbar-brand {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.navbar-nav {
+  font-family: 'Plus Jakarta Sans', 'Inter', Arial, sans-serif;
+  font-weight: 700;
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 2rem;
+}
+
+.navbar-nav .nav-link {
+  font-size: 1rem;
+  font-family: 'Plus Jakarta Sans', 'Inter', Arial, sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
 
 .page-logo {
   display: flex;

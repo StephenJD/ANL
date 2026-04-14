@@ -18,14 +18,14 @@
 
     {{/* Logo always on the left */}}
     {{ if $show_logo }}
-<a class="navbar-brand" href="{{ "/" | relLangURL }}">
-  {{ if $logo }}
-    <img src="{{ $logo.RelPermalink }}" alt="{{ site.Title }}">
-  {{ else }}
-    <img src="/images/logo.png" alt="{{ site.Title }}">
-  {{ end }}
-</a>
-
+      <a class="navbar-brand" href="/">
+        {{ if $logo }}
+          <img src="{{ $logo.RelPermalink }}" alt="{{ site.Title }}">
+        {{ else }}
+          <img src="/images/logo.png" alt="{{ site.Title }}">
+        {{ end }}
+        <span class="navbar-site-title">Ascend Next Level</span>
+      </a>
     {{ end }}
 
     {{ if site.Menus.main }}
@@ -44,13 +44,13 @@
         {{ range site.Menus.main }}
           {{ if .HasChildren }}
             <li class="nav-item dropdown">
-              <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true">
+              <a href="/" class="nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true">
                 {{ .Name }}
               </a>
               <div class="dropdown-menu">
                 {{ range .Children }}
                   {{ $link := .URL }}
-                  {{ if and (hasPrefix $link "#") $home }}
+                  {{ if and (hasPrefix $link "/") $home }}
                     {{ $link = printf "%s%s" $home.RelPermalink $link }}
                   {{ end }}
                   <a class="dropdown-item" href="{{ $link | relLangURL }}">{{ .Name }}</a>

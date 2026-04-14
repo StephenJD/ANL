@@ -1,4 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="40" height="40" fill="none">
-  <circle cx="24" cy="24" r="22" fill="#2B949A"/>
-  <path d="M34 14L22 22L14 34L26 26L34 14Z" fill="#fff"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="64" height="64">
+  <!-- background -->
+  <circle cx="12" cy="12" r="11" fill="#2B949A"/>
+
+  <!-- compass / explore icon -->
+  <path
+    d="M12 2a10 10 0 1 0 .001 20.001A10 10 0 0 0 12 2zm2.5 5.5-2 5-5 2 2-5 5-2z"
+    fill="none"
+    stroke="#ffffff"
+    stroke-width="1.5"
+    stroke-linejoin="round"
+    stroke-linecap="round"
+  />
 </svg>

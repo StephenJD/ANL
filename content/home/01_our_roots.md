@@ -8,7 +8,7 @@ access: Public
 	<div class="our-roots-grid">
 		<div class="our-roots-image-col">
 			<div class="our-roots-img-wrapper">
-				<img src="/images/shared/anl_logo_1024.png" alt="Ascend Next Level Logo" class="our-roots-img" />
+				<img src="/images/shared/anl_logo_trans_1024.png" alt="Ascend Next Level Logo" class="our-roots-img" />
 			</div>
 		</div>
 		<div class="hero-content our-roots-text-col">

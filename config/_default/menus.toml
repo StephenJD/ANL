@@ -7,34 +7,19 @@
 # Specific values needing translation must be provided in languages.toml
 
 [[main]]
-name = "ANL-Home"
+name = "Home"
 url = "/"          # Home page top
 weight = 10
 
 [[main]]
-name = "What's On"
-url = "/01_whats_on"
-weight = 20
-
-[[main]]
-name = "About Us"
-url = "/02_about_anl"
-weight = 30
-
-[[main]]
 name = "Safeguarding"
-url = "/03_safeguarding"
+url = "/06_policies/01_safeguardingpolicy"
 weight = 30
 
 [[main]]
-name = "Pray"
+name = "Connect"
 url = "/04_pray" 
 weight = 40
-
-[[main]]
-name = "Give"
-url = "/05_give" 
-weight = 50
 
 [[main]]
 name = "Login"

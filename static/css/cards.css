@@ -1,0 +1,38 @@
+.cards-scope {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* CARD */
+.safeguarding-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 40px;
+  margin: 0;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+  overflow: hidden;
+}
+
+/* TITLE */
+.card-title {
+  margin: 0;
+  padding: 2.75rem 2.75rem 1.25rem 2.75rem;
+  font-size: 1.6rem;
+  font-weight: 800;
+}
+
+/* BODY */
+.card-body {
+  padding: 0 2.75rem 2.75rem 2.75rem;
+  font-size: 1.15rem;
+  line-height: 1.75;
+}
+
+/* spacing inside content */
+.card-body p,
+.card-body ul,
+.card-body ol {
+  margin-top: 0;
+  margin-bottom: 1rem;
+}

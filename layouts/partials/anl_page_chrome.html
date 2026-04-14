@@ -16,9 +16,8 @@
 
 {{ $filePath := "" }}
 {{ with $current_page.File }}
-  {{ $filePath = .Path }}
+  {{ $filePath = replace .Path "\\" "/" }}
 {{ end }}
-{{ $filePath = replace $filePath "\\" "/" }}
 
 {{/* Find the content editor page by Params.function_key, robustly */}}
 {{ $editorPage := index (first 1 (where site.Pages "Params.function_key" "content_editor")) 0 }}
@@ -30,12 +29,12 @@
 
 <link rel="stylesheet" href="{{ "css/anl_chrome.css" | absURL  }}">
 <link rel="stylesheet" href="{{ "css/documents.css" | relURL }}">
+<link rel="stylesheet" href="{{ "css/cards.css" | relURL }}">
 <script>
   window.contentEditorBaseUrl = "{{ $editorPage.RelPermalink }}";
 </script>
 
 {{/* Generic section/page asset loader: only here! */}}
-{{ $filePath := .File.Path | default "" | replace "\\" "/" }}
 {{ $isHome := or .IsHome (eq .Type "home") }}
 {{ if $isHome }}
   {{ $cssPath := "static/css/home/_index.css" }}
@@ -52,13 +51,15 @@
   {{ $isIndex := eq (path.Base $filePath) "_index.md" }}
   {{ $sectionDir := path.Dir $filePath }}
   <script>console.log('[chrome] filePath:', {{ $filePath | jsonify }}, 'isIndex:', {{ $isIndex }}, 'sectionDir:', {{ $sectionDir | jsonify }});</script>
+  {{/* Always load section _index.css if it exists */}}
+  {{ $sectionCssPath := printf "static/css/%s/_index.css" $sectionDir }}
+  <script>console.log('[chrome] DEBUG section CSS path:', {{ $sectionCssPath | jsonify }}, 'exists:', {{ fileExists $sectionCssPath }});</script>
+  {{ if (fileExists $sectionCssPath) }}
+    <link rel="stylesheet" href="/css/{{ $sectionDir }}/_index.css">
+    <script>console.log('[chrome] Included section CSS: /css/{{ $sectionDir }}/_index.css');</script>
+  {{ end }}
   {{ if $isIndex }}
-    {{ $cssPath := printf "static/css/%s/_index.css" $sectionDir }}
     {{ $jsPath := printf "static/js/%s/_index.js" $sectionDir }}
-    {{ if (fileExists $cssPath) }}
-      <link rel="stylesheet" href="/css/{{ $sectionDir }}/_index.css">
-      <script>console.log('[chrome] Included section CSS: /css/{{ $sectionDir }}/_index.css');</script>
-    {{ end }}
     {{ if (fileExists $jsPath) }}
       <script type="module" src="/js/{{ $sectionDir }}/_index.js" defer></script>
       <script>console.log('[chrome] Included section JS: /js/{{ $sectionDir }}/_index.js');</script>

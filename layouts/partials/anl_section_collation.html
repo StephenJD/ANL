@@ -104,7 +104,7 @@
           {{ if .Content }}
             {{ .Content | safeHTML }}
           {{ else }}
-            {{ .Render "main" }}
+            {{ .Render "main" | safeHTML }}
           {{ end }}
         {{ end }}
 
