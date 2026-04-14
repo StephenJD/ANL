@@ -58,7 +58,7 @@ The foundations of our impact and how you can join us in guiding the next genera
     <p class="mission-support-card-desc">
         Join our journey. Receive prayer updates or give financially to help us empower the next generation. Your partnership makes this possible.
     </p>
-    <a class="mission-support-card-link" href="05_give">Read more</a>
+    <a class="mission-support-card-link" href="04_support_us">Read more</a>
 </div>
 </div>
 
