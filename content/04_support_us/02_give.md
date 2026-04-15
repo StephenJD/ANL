@@ -8,7 +8,12 @@ access: public
 
 # Giving {.text-center}
 
+
 <div class="text-center">
+
+![](matt-baker-WWxqOYyxg08-unsplash.jpg)
+
+<sub>Photo by Matt Baker Fotos on Unsplash</sub>
 
 **We are totally grateful for the way God has resourced us with people, places and finance since we began. We trust Him completely to continue to do that.**
 
@@ -25,4 +30,10 @@ We cannot currently claim Gift Aid as we are not (yet) a charity, but we would l
 
 give@ascendnextlevel.org.uk  so we can do that.
 
+![](alexas_fotos-pnGjbJEmU3o-unsplash.jpg)
+
+<sub>Photo by Alexas Fotos on Unsplash</sub>
+
 </div>
+
+

@@ -42,7 +42,7 @@ type: document
 
 Ascend Next Level have prepared the Risk Assessment, Safeguarding arrangements and Volunteer Role descriptions. All TnT leaders and helpers are DBS checked and receive regular Safeguarding training.
 
-[The Safeguarding Policy can be seen here](https://docs.google.com/document/d/1JWWDKvsyEFi-WyY9fUl8ISyQ_DP5Sb7Qf4PoVJKeHDU/edit?usp=drive_link).
+[The Safeguarding Policy can be seen here](06_policies/01_safeguardingpolicy.
 
 You can enquire about TnT via:
 

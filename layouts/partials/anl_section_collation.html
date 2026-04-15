@@ -102,7 +102,7 @@
           </div>
         {{ else }}
           {{ if .Content }}
-            {{ .Content | safeHTML }}
+            {{ partial "sibling_media_paths.html" . }}
           {{ else }}
             {{ .Render "main" | safeHTML }}
           {{ end }}

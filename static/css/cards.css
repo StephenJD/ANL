@@ -50,3 +50,18 @@
 .card li {
   margin-bottom: 0.5rem;
 }
+
+@media (max-width: 600px) {
+  .card {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    padding: 1rem;
+    border-radius: 16px;
+    box-sizing: border-box;
+  }
+
+  .cards-scope {
+    padding: 0;
+  }
+}
