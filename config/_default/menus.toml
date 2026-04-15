@@ -8,7 +8,7 @@
 
 [[main]]
 name = "What's On"
-url = "01_whats_on/"
+url = "/01_whats_on"
 weight = 10
 
 [[main]]
