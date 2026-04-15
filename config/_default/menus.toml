@@ -7,8 +7,8 @@
 # Specific values needing translation must be provided in languages.toml
 
 [[main]]
-name = "Home"
-url = "/"          # Home page top
+name = "What's On"
+url = "01_whats_on/"
 weight = 10
 
 [[main]]

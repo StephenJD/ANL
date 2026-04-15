@@ -15,7 +15,7 @@ access: Public
 
 <sub>Photo by Iam Os Fotos on Unsplash</sub>
 
-Prayer and worship are foundational to all we do.
+**Prayer and worship are foundational to all we do**
 
 You are welcome to **join** us as we seek the Lord on Mondays in Whaley Bridge , 10am to 12 noon, or on zoom at the same times.
 
