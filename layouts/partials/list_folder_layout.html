@@ -1,6 +1,8 @@
 {{/* layouts/partials/list_folder_layout.html */}}
   <div class="debug-message">
-    DEBUG: layouts/partials/list_folder_layout.html is running
+    DEBUG: layouts/partials/list_folder_layout.html is running<br>
+    Sections found: {{ len .Sections }}<br>
+    Pages found: {{ len .Pages }}<br>
   </div> 
   
 <link rel="stylesheet" href="{{ "css/documents.css" | relURL }}">
@@ -19,55 +21,126 @@
 {{/* <div> Opened in this parial */}}
 {{ partial "anl_page_chrome.html" $current_page }}
   <section class="document-content">
+
     {{ if not (in $access "public") }}
       <div class="gated_page_placeholder" data-path="{{ .File.Path }}">
         <div class="page_access_message">Loading page…</div>
       </div>
-    {{ else }}
-      <h1>{{ .Title }}</h1>
-   
-      <div class="directory-style">
-        {{ $sortedSections := sort .Sections "File.Path" }}
-        {{ range $sortedSections }}
-          <p><a href="{{ .Permalink }}">{{ .Title }}/</a></p>
-        {{ end }}
+      <div id="gated-content" style="display:none;">
+        <h1>{{ .Title }}</h1>
+        <div class="directory-style">
+          <div class="debug-message">
+            <strong>Sections:</strong><br>
+            {{ $sortedSections := sort .Sections "File.Path" }}
+            {{ range $sortedSections }}
+              Path: {{ .File.Path }} | Title: {{ .Title }} | IsSection: {{ .IsSection }}<br>
+            {{ end }}
+            <strong>Pages:</strong><br>
+            {{ $sortedPages := sort .Pages "File.Path" }}
+            {{ range $sortedPages }}
+              Path: {{ .File.Path }} | Title: {{ .Title }} | Type: {{ .Type }} | IsSection: {{ .IsSection }}<br>
+            {{ end }}
+          </div>
 
-        {{ $sortedPages := sort .Pages "File.Path" }}
-        {{ range $sortedPages }}
-          {{ if and (eq .Type "document-folder") (not .IsSection) }}
+          <div class="debug-message">
+            <strong>Rendered Section Links:</strong><br>
+            {{ range $sortedSections }}
+              <p><a href="{{ .Permalink }}">{{ .Title }}/</a> ({{ .File.Path }})</p>
+            {{ end }}
+            <strong>Rendered Page Links (document-folder, not section, not expired):</strong><br>
+            {{ range $sortedPages }}
+              {{ $expires := .Params.expires }}
+              {{ $expired := false }}
+              {{ if $expires }}{{ if now.After (time $expires) }}{{ $expired = true }}{{ end }}{{ end }}
+              {{ if and (eq .Type "document-folder") (not .IsSection) (not $expired) }}
+                <p><a href="{{ .Permalink }}">{{ .Title }}/</a> ({{ .File.Path }})</p>
+              {{ end }}
+            {{ end }}
+          </div>
+
+          {{/* Original output for users */}}
+          {{ range $sortedSections }}
+            <p><a href="{{ .Permalink }}">{{ .Title }}/</a></p>
+          {{ end }}
+          {{ range $sortedPages }}
             {{ $expires := .Params.expires }}
             {{ $expired := false }}
             {{ if $expires }}{{ if now.After (time $expires) }}{{ $expired = true }}{{ end }}{{ end }}
-            {{ if not $expired }}
-            <p><a href="{{ .Permalink }}">{{ .Title }}/</a></p>
+            {{ if and (not .IsSection) (not $expired) }}
+              <p><a href="{{ .Permalink }}">{{ .Title }}</a></p>
             {{ end }}
           {{ end }}
-        {{ end }}
+        </div>
       </div>
+    {{ else }}
+      <h1>{{ .Title }}</h1>
+      <div class="directory-style">
+        <div class="debug-message">
+          <strong>Sections:</strong><br>
+          {{ $sortedSections := sort .Sections "File.Path" }}
+          {{ range $sortedSections }}
+            Path: {{ .File.Path }} | Title: {{ .Title }} | IsSection: {{ .IsSection }}<br>
+          {{ end }}
+          <strong>Pages:</strong><br>
+          {{ $sortedPages := sort .Pages "File.Path" }}
+          {{ range $sortedPages }}
+            Path: {{ .File.Path }} | Title: {{ .Title }} | Type: {{ .Type }} | IsSection: {{ .IsSection }}<br>
+          {{ end }}
+        </div>
 
-      {{ range $sortedPages }}
-        {{ $rawType := lower (printf "%v" .Params.type) }}
-        {{ if or (eq .Type "document") (eq .Type "form") (hasPrefix .Type "dynamic") (hasPrefix $rawType "dynamic") }}
-          {{ $expires := .Params.expires }}
-          {{ $expired := false }}
-          {{ if $expires }}{{ if now.After (time $expires) }}{{ $expired = true }}{{ end }}{{ end }}
-          {{ if not $expired }}
-          {{ $auto_summary_types := site.Params.auto_summary | default dict }}
-          {{ $auto_summary := index $auto_summary_types .Type | default false }}
-          <div class="summary-style">		
-            <p><a href="{{ .Permalink }}">{{ .Title }}</a></p>
-            {{ if .Params.summary }}
-              {{ .Params.summary | plainify | emojify }}
-            {{ else if .Params.abstract }}
-              {{ .Params.abstract | plainify | emojify | truncate 250 }}
-            {{ else if and .Summary $auto_summary }}
-              {{ .Summary | plainify | emojify }}
+        <div class="debug-message">
+          <strong>Rendered Section Links:</strong><br>
+          {{ range $sortedSections }}
+            <p><a href="{{ .Permalink }}">{{ .Title }}/</a> ({{ .File.Path }})</p>
+          {{ end }}
+          <strong>Rendered Page Links (all types, not section, not expired):</strong><br>
+          {{ range $sortedPages }}
+            {{ $expires := .Params.expires }}
+            {{ $expired := false }}
+            {{ if $expires }}{{ if now.After (time $expires) }}{{ $expired = true }}{{ end }}{{ end }}
+            {{ if and (not .IsSection) (not $expired) }}
+              <p><a href="{{ .Permalink }}">{{ .Title }}</a> ({{ .File.Path }})</p>
             {{ end }}
-          </div>
-          {{ end }}{{/* end if not $expired */}}
-        {{ end }}{{/* end if document/form/dynamic */}}
-      {{ end }}{{/* end range $sortedPages */}}
+          {{ end }}
+        </div>
+
+        {{/* Original output for users */}}
+        {{ range $sortedSections }}
+          <p><a href="{{ .Permalink }}">{{ .Title }}/</a></p>
+        {{ end }}
+          {{ range $sortedPages }}
+            {{ $expires := .Params.expires }}
+            {{ $expired := false }}
+            {{ if $expires }}{{ if now.After (time $expires) }}{{ $expired = true }}{{ end }}{{ end }}
+            {{ if and (not .IsSection) (not $expired) }}
+              <p><a href="{{ .Permalink }}">{{ .Title }}</a></p>
+            {{ end }}
+          {{ end }}
+      </div>
     {{ end }}
+
+<script type="module">
+  import { loadGatedPage } from "{{ "js/gated_page_loader.js" | relURL }}";
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const placeholder = document.querySelector(".gated_page_placeholder");
+    if (!placeholder) return;
+
+    let msgBox = placeholder.querySelector(".page_access_message");
+    if (!msgBox) {
+      msgBox = document.createElement("div");
+      msgBox.className = "page_access_message";
+      msgBox.style.display = "none";
+      placeholder.prepend(msgBox);
+    }
+
+    loadGatedPage(placeholder, placeholder.dataset.path, msgBox).then(() => {
+      // After loading, show the gated content for logged-in users
+      const gatedContent = document.getElementById("gated-content");
+      if (gatedContent) gatedContent.style.display = "block";
+    });
+  });
+</script>
   </section>
 </div>
 
