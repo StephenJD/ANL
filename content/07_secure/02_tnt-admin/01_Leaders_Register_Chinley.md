@@ -31,6 +31,7 @@ Text-like inputs are always value and may occur inside or outside fieldsets.
 <fieldset>
 <legend>TnT Session</legend>
   <label>Date: <input required type="date" class="autofill-today" /></label>
+  <label>Notes:<textarea rows="2"></textarea></label>
   <fieldset>
     <legend>Helpers</legend>
     <div class="check-list-container"></div>

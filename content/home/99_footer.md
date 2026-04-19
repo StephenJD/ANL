@@ -28,14 +28,8 @@ access: Public
 
 <!-- Connect Card -->
 <div class="footer-card footer-card--connect group">
-    <h3 class="footer-card-title">Stay Connected</h3>
-    <p class="footer-card-desc">
-        Subscribe to our newsletter for impact stories.
-    </p>
-    <div class="footer-card-form">
-    <input type="email" />
-    <button>Join</button>
-    </div>
+    <h3 class="footer-card-title">More About Us</h3>
+    <a class="footer-card-link" href="02_about_anl">About Ascend Next Level</a>
 </div>
 </div>
 

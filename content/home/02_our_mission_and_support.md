@@ -44,7 +44,7 @@ The foundations of our impact and how you can join us in guiding the next genera
     </div>
     <h3 class="mission-support-card-title">Equip</h3>
     <p class="mission-support-card-desc">
-        We seek to give young people the knowledge, tools and opportunities to live life fully and wisely with Jesus through mentorship and practical resources.
+        We seek to give young people the knowledge, tools and opportunities to live life fully and wisely with Jesus through mentorship and practical resources so they are resilient, strong, brave and well.
     </p>
     <a class="mission-support-card-link" href="#">Resources <img src="/images/shared/arrow_forward_bold.svg" alt="Resources" width="20" height="20" /></a>
 </div>
