@@ -92,16 +92,6 @@ document.addEventListener("access-validated", async () => {
   const loginDiv = form.querySelector("#login_div");
   const registerDiv = form.querySelector("#register_div");
 
-  // Show timeout message if redirected with ?timeout=1
-  const timeoutFlag = new URLSearchParams(window.location.search).get("timeout");
-  if (timeoutFlag === "1") {
-    messageBox.textContent = "Access to Credentials timed out. Please try again.";
-    loginDiv.style.display = "block";
-    registerDiv.style.display = "block";
-    logoutBtn.style.display = "none";
-    return;
-  }
-
   const userLoginToken = localStorage.getItem("userLogin_token");
   const redirect = new URLSearchParams(window.location.search).get("redirect");
   const loginMsg = `Enter UN & PW above and click "Login" or to Register or Reset your account, enter your email below`;
@@ -220,20 +210,35 @@ document.addEventListener("access-validated", async () => {
         }
 	  messageBox.textContent = "Checking log-in details...";
         await hideUI();
-	  const result = await requestUserLoginToken(userName, password);
-	  if (result.status === "success") {
-	    return LoginStates.SHOWING_USER;
-	  }
+        const result = await requestUserLoginToken(userName, password);
+        if (result.status === "success") {
+          return LoginStates.SHOWING_USER;
+        }
 
-    if (result.status === "invalid_credentials") {
-      messageBox.textContent = "Login failed. Check your details, or use Register/Reset below.";
-      registerDiv.style.display = "block";
-      return LoginStates.LOGGED_OUT;
+        if (result.status === "invalid_credentials") {
+          messageBox.textContent = "Login failed. Check your details, or use Register/Reset below.";
+          loginDiv.style.display = "block";
+          registerDiv.style.display = "block";
+          logoutBtn.style.display = "none";
+          return LoginStates.LOGGED_OUT;
+        }
+        if (result.status === "error" && result.error === "Session timed out") {
+          messageBox.textContent = "Access to Credentials timed out. Please try again.";
+          loginDiv.style.display = "block";
+          registerDiv.style.display = "block";
+          logoutBtn.style.display = "none";
+          return LoginStates.DISPLAY_LOGIN;
         }
         if (result.status === "error") {
           messageBox.textContent = "Your browser failed to get a response. You may have a network problem.";
+          loginDiv.style.display = "block";
+          registerDiv.style.display = "block";
+          logoutBtn.style.display = "none";
           return LoginStates.DISPLAY_LOGIN;
         }
+        loginDiv.style.display = "block";
+        registerDiv.style.display = "block";
+        logoutBtn.style.display = "none";
         return LoginStates.DISPLAY_LOGIN;
 
       case LoginStates.SHOWING_USER:
@@ -261,9 +266,8 @@ document.addEventListener("access-validated", async () => {
       case LoginStates.LOGGING_OUT:
         await removeSession_Login_token();
         messageBox.textContent = "To Register or Reset your account, enter your email below";
-        emailInput.value = "";
-        userNameInput.value = "";
-        passwordInput.value = "";
+        // Only clear fields on explicit user logout, not on timeout or failed login
+        // Clearing logic moved to a dedicated logout handler if needed
         urlToken = null;
         return LoginStates.DISPLAY_LOGIN;
 
@@ -318,7 +322,6 @@ document.addEventListener("access-validated", async () => {
 
   async function requestUserLoginToken(userName, password) {
     console.log("[user-login] requestUserLoginToken:", userName);
-  
     try {
       const resp = await fetch("/.netlify/functions/verifyUser", {
         method: "POST",
@@ -330,19 +333,34 @@ document.addEventListener("access-validated", async () => {
           deviceId: getDeviceId()
         })
       });
-  
+
       const data = await resp.json();
       console.log("[user-login] verifyUser response:", data);
-  
+
+      if (data.status === "timeout") {
+        // messageBox.textContent = "Access to Credentials timed out. Please try again.";
+        // loginDiv.style.display = "block";
+        // registerDiv.style.display = "block";
+        // logoutBtn.style.display = "none";
+        return { status: "error", error: "Session timed out" };
+      }
+
       if (data.status === "success") {
         localStorage.setItem("userLogin_token", data.userLoginToken);
         localStorage.setItem("user_role", JSON.stringify(data.role));
       }
-  
+
       return data;
-  
+
     } catch (err) {
       console.error("[user-login] requestUserLoginToken failed:", err);
+      if (err.name === "AbortError") {
+        // messageBox.textContent = "Your browser failed to get a response. You may have a network problem.";
+        // loginDiv.style.display = "block";
+        // registerDiv.style.display = "block";
+        // logoutBtn.style.display = "none";
+        return { status: "error", error: "Client timeout" };
+      }
       return { status: "error", error: err.message };
     }
   }
@@ -422,7 +440,12 @@ document.addEventListener("access-validated", async () => {
   })();
 
   loginBtn.addEventListener("click", () => runStateMachine(LoginStates.LOGGING_IN));
-  logoutBtn.addEventListener("click", () => runStateMachine(LoginStates.LOGGING_OUT));
+  logoutBtn.addEventListener("click", () => {
+    emailInput.value = "";
+    userNameInput.value = "";
+    passwordInput.value = "";
+    runStateMachine(LoginStates.LOGGING_OUT);
+  });
   registerBtn.addEventListener("click", () => runStateMachine(LoginStates.REGISTERING));
   resetBtn.addEventListener("click", () => runStateMachine(LoginStates.RESETTING));
 

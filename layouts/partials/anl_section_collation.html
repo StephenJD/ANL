@@ -96,11 +96,6 @@
 
         {{ if and (not (in $sectionAccess "public")) (not (in (slice (lower .File.BaseFileName)) "content-editor")) }}
           <section class="gated-section">
-            <script>
-              if (!localStorage.getItem("userLogin_token")) {
-                document.currentScript.closest('.gated-section').remove();
-              }
-            </script>
             <div class="gated_page_placeholder" data-path="{{ .File.Path }}">
               <div class="page_access_message">Loading page…</div>
             </div>
