@@ -31,9 +31,12 @@
   {{ $isEditor := or (in (lower .File.Path) "/content-editor/") (in (lower .File.BaseFileName) "content-editor") (eq .Type "dynamic") (in (lower .Params.function_key | default "") (slice "content_editor" "tree_view" "document_list")) }}
   <section id="main-content" class="document-content">
     {{ if and (not (in $access "public")) (not $isEditor) }}
-      <div class="gated_page_placeholder" data-path="{{ .File.Path }}">
-        <div class="page_access_message">Loading page…</div>
-      </div>
+      {{/* If the parent page is public, render nothing for private sections (leave blank) */}}
+      {{ if not (in $current_page.Params.access | default "public" | lower) "public" }}
+        <div class="gated_page_placeholder" data-path="{{ .File.Path }}">
+          <div class="page_access_message">Loading page…</div>
+        </div>
+      {{ end }}
     {{ else }}
       {{ if $content }}
         {{ $content | safeHTML }}
@@ -126,20 +129,34 @@ document.addEventListener("DOMContentLoaded", () => {
 
   placeholders.forEach(p => {
     const pagePath = p.dataset.path;
-
-    if (p.closest("#main-content")) {
+    // Determine if this placeholder is in the main content (parent page) or a nested section
+    const isMainContent = !!p.closest("#main-content");
+    // If in main content, always try to load (parent page gating)
+    if (isMainContent) {
       loadGatedPage(p, pagePath, p.querySelector(".page_access_message"));
       console.log("DEBUG: loading gated main page:", pagePath);
     } else {
+      // For nested sections, only show login message if the parent page is also private
+      // Find the closest #main-content ancestor and check if it is gated (has a .gated_page_placeholder)
+      const parentGated = p.closest("#main-content") && p.closest("#main-content").querySelector(".gated_page_placeholder");
       if (token) {
         loadGatedPage(p, pagePath, p.querySelector(".page_access_message"));
         console.log("DEBUG: loading gated nested section:", pagePath);
-      } else {
-        console.log("DEBUG: gated section skipped (not logged in):", pagePath);
+      } else if (parentGated) {
+        // Only show login message if parent is also gated (private page)
+        console.log("DEBUG: gated section skipped (not logged in, parent private):", pagePath);
         const msgBox = p.querySelector(".page_access_message");
         if (msgBox) {
           msgBox.textContent = "Log in to see this content";
           msgBox.style.display = "block";
+        }
+      } else {
+        // On public pages, leave blank (show nothing)
+        console.log("DEBUG: gated section skipped (not logged in, parent public):", pagePath);
+        const msgBox = p.querySelector(".page_access_message");
+        if (msgBox) {
+          msgBox.textContent = "";
+          msgBox.style.display = "none";
         }
       }
     }
