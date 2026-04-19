@@ -181,17 +181,17 @@ function collectEntries(dir, out = []) {
 // BUILD ENTRY (NO DSL)
 // -----------------------------
 function buildEntry(entry) {
-  console.log("[ENTRY] start", entry.filePath);
+  //console.log("[ENTRY] start", entry.filePath);
 
   // 1. Strip shortcodes
   const clean = stripShortcodes(entry.rawContent);
-  console.log("[ENTRY] cleaned length", clean.length);
+  //console.log("[ENTRY] cleaned length", clean.length);
 
   // 2. Parse markdown (HTML allowed)
   const html = marked.parse(clean);
-  console.log("[MARKED] output length", html.length);
-  console.log(marked.parse("<div>test</div>"));
-  console.log("[ENTRY] done", entry.filePath);
+  //console.log("[MARKED] output length", html.length);
+  //console.log(marked.parse("<div>test</div>"));
+  //console.log("[ENTRY] done", entry.filePath);
 
   return html;
 }

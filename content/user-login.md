@@ -83,7 +83,7 @@ document.addEventListener("access-validated", async () => {
   const logoutBtn = document.getElementById("logout_btn");
   const registerBtn = document.getElementById("register_btn");
   const resetBtn = document.getElementById("reset_btn");
-  
+
   const messageBox = document.getElementById("login_message");
   const emailLabel = document.getElementById("email_lbl");
   const emailInput = document.getElementById("submitted_by");
@@ -91,6 +91,16 @@ document.addEventListener("access-validated", async () => {
   const passwordInput = document.querySelector("input[type='password']");
   const loginDiv = form.querySelector("#login_div");
   const registerDiv = form.querySelector("#register_div");
+
+  // Show timeout message if redirected with ?timeout=1
+  const timeoutFlag = new URLSearchParams(window.location.search).get("timeout");
+  if (timeoutFlag === "1") {
+    messageBox.textContent = "Access to Credentials timed out. Please try again.";
+    loginDiv.style.display = "block";
+    registerDiv.style.display = "block";
+    logoutBtn.style.display = "none";
+    return;
+  }
 
   const userLoginToken = localStorage.getItem("userLogin_token");
   const redirect = new URLSearchParams(window.location.search).get("redirect");

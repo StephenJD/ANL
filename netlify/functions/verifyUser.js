@@ -112,7 +112,7 @@ export async function get_UserLoginToken(userName, password, deviceId = null, us
     return { status: "success", userLoginToken, role: currentUser["Role"] };
   } catch (err) {
     console.error("[verifyUser] get_UserLoginToken error:", err);
-    return { status: "error" };
+    throw err;
   }
 }
 
@@ -184,6 +184,9 @@ export async function handler(event) {
     }
   } catch (err) {
     console.error("[verifyUser] handler exception:", err);
+    if (err.message === "Session timed out") {
+      return { statusCode: 200, body: JSON.stringify({ status: "timeout" }) };
+    }
     return { statusCode: 500, body: JSON.stringify({ status: "error", error: err.message }) };
   }
 }

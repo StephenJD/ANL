@@ -94,13 +94,19 @@
           <a class="edit-section-link" href="{{ $contentEditorHref }}">✏️ Edit This Section</a>
         </span>
 
-        <h2>{{ .Title }}</h2>
-
         {{ if and (not (in $sectionAccess "public")) (not (in (slice (lower .File.BaseFileName)) "content-editor")) }}
-          <div class="gated_page_placeholder" data-path="{{ .File.Path }}">
-            <div class="page_access_message">Loading page…</div>
-          </div>
+          <section class="gated-section">
+            <script>
+              if (!localStorage.getItem("userLogin_token")) {
+                document.currentScript.closest('.gated-section').remove();
+              }
+            </script>
+            <div class="gated_page_placeholder" data-path="{{ .File.Path }}">
+              <div class="page_access_message">Loading page…</div>
+            </div>
+          </section>
         {{ else }}
+          <h2>{{ .Title }}</h2>
           {{ if .Content }}
             {{ partial "sibling_media_paths.html" . }}
           {{ else }}
