@@ -12,8 +12,8 @@ import fs from "fs";
 import path from "path";
 import { getSecureItem, setSecureItem, deleteRecords } from "./multiSecureStore.js";
 
-const ACCESS_TOKEN_BIN = process.env.ACCESS_TOKEN_BIN;
-const USER_ACCESS_BIN  = process.env.USER_ACCESS_BIN;
+const ACCESS_TOKEN_KEY = process.env.ACCESS_TOKEN_KEY;
+const USER_ACCESS_KEY  = process.env.USER_ACCESS_KEY;
 const PERMITTED_USERS_KEY = process.env.PERMITTED_USERS_KEY;
 const USER_ACCESS_TIMEOUT_mS = (process.env.USER_ACCESS_TIMEOUT_HRS || 8) * 60 * 60 * 1000;
 
@@ -84,7 +84,7 @@ export async function check_userLoginToken(token, deviceId, userAgent = null) {
   }
 
   try {
-    const entry = await getSecureItem(ACCESS_TOKEN_BIN, token);
+    const entry = await getSecureItem(ACCESS_TOKEN_KEY, token);
     if (!entry) {
       const result = { status: "not_found" };
       cacheSet(token, result);
@@ -111,14 +111,14 @@ export async function check_userLoginToken(token, deviceId, userAgent = null) {
     }
 
     // --- Exact role match against live permitted-users record ---
-    const permittedUsers = await getSecureItem(USER_ACCESS_BIN, PERMITTED_USERS_KEY) || [];
+    const permittedUsers = await getSecureItem(USER_ACCESS_KEY, PERMITTED_USERS_KEY) || [];
     const liveUser = permittedUsers.find(
       u => (u["User name"] || "").toLowerCase() === (entry.user_name || "").toLowerCase()
     );
 
     if (!liveUser) {
       // User removed from permitted list — force logout
-      await deleteRecords(ACCESS_TOKEN_BIN, [token]);
+      await deleteRecords(ACCESS_TOKEN_KEY, [token]);
       cacheInvalidate(token);
       console.warn("[authHelper] User no longer in permitted list:", entry.user_name);
       return { status: "role_mismatch" };
@@ -129,7 +129,7 @@ export async function check_userLoginToken(token, deviceId, userAgent = null) {
 
     if (liveRole !== tokenRole) {
       // Role changed since token was issued — invalidate token and force logout
-      await deleteRecords(ACCESS_TOKEN_BIN, [token]);
+      await deleteRecords(ACCESS_TOKEN_KEY, [token]);
       cacheInvalidate(token);
       console.warn("[authHelper] Role mismatch for user:", entry.user_name,
         "token-role:", tokenRole, "live-role:", liveRole);
@@ -137,7 +137,7 @@ export async function check_userLoginToken(token, deviceId, userAgent = null) {
     }
 
     // --- Slide expiry (keeps active sessions alive) ---
-    await setSecureItem(ACCESS_TOKEN_BIN, token, {
+    await setSecureItem(ACCESS_TOKEN_KEY, token, {
       user_name: entry.user_name,
       role:      entry.role,
       deviceId:  entry.deviceId || null,

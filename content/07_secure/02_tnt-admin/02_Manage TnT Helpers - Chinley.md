@@ -24,10 +24,10 @@ Form Rules
 
 <div id="form-config" style="display:none">
   {
-    "save_bin_id": "HELPER_BIN",
+    "save_bin_key": "HELPER_KEY",
     "save_sectionKey": "TnT_Helpers",
     "listLabel": "Existing Helpers",
-    "checkList_bin_id": null,
+    "checkList_bin_key": null,
     "checkList_section_key": null,
     "checkList_fields": null
   }

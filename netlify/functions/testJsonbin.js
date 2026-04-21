@@ -1,8 +1,8 @@
 // netlify/functions/testJsonbin.js
 export async function handler(event) {
-  const BIN_ID = process.env.USER_ACCESS_BIN;
+  const BIN_KEY = process.env.USER_ACCESS_KEY;
   const API_KEY = process.env.JSONBIN_API_KEY;
-  const url = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
+  const url = `https://api.jsonbin.io/v3/b/${BIN_KEY}`;
 
   try {
     const res = await fetch(url, {

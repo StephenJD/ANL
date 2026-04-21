@@ -5,7 +5,7 @@ import { sendEmail } from "./sendEmail.js";
 import { getSecureItem } from "./multiSecureStore.js";
 import { getFormFrontMatter } from "./getFormFrontMatter.js";
 
-const USER_ACCESS_BIN = process.env.USER_ACCESS_BIN;
+const USER_ACCESS_KEY = process.env.USER_ACCESS_KEY;
 const PERMITTED_USERS_KEY = process.env.PERMITTED_USERS_KEY;
 const REQUEST_WINDOW_MS = 15 * 60 * 1000;
 const MAX_REQUESTS_PER_WINDOW = 6;
@@ -59,7 +59,7 @@ export async function handler(event) {
     const requiresRole = requiredAccess.length > 0 && !requiredAccess.includes("public") && !requiredAccess.includes("none");
     let isPermitted = true;
     if (requiresRole) {
-      const permittedUsers = await getSecureItem(USER_ACCESS_BIN, PERMITTED_USERS_KEY) || [];
+      const permittedUsers = await getSecureItem(USER_ACCESS_KEY, PERMITTED_USERS_KEY) || [];
       const user = permittedUsers.find(u => String(u?.Email || "").toLowerCase() === String(email).toLowerCase());
 
       if (!user) {
@@ -85,7 +85,7 @@ export async function handler(event) {
     console.log("[DEBUG] Storing request-link token:", token, valueObject);
 
     const ONE_DAY_MS = 24 * 60 * 60 * 1000;
-    await setSecureItem(process.env.ACCESS_TOKEN_BIN, token, valueObject, ONE_DAY_MS);
+    await setSecureItem(process.env.ACCESS_TOKEN_KEY, token, valueObject, ONE_DAY_MS);
 
     const accessLink = `${site_root}${formPath}?token=${encodeURIComponent(token)}`;
 

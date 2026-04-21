@@ -39,7 +39,7 @@ async function populateCheckList(form, config) {
       headers: getNetlifyAuthHeaders({ json: true }),
       body: JSON.stringify({
         action: "list",
-        bin_id: config.checkList_bin_id,
+        bin_key: config.checkList_bin_key,
         section_key: config.checkList_section_key
       })
     });
@@ -70,7 +70,7 @@ async function populateCheckList(form, config) {
 function initializeBinArrayForm(form, config) {
   try {
     manageBinArrayForm({
-      bin_id: config.save_bin_id,
+      bin_key: config.save_bin_key,
       sectionKey: config.save_sectionKey,
       listLabel: config.listLabel,
       form

@@ -20,10 +20,10 @@ Text-like inputs are always value and may occur inside or outside fieldsets.
 
 <div id="form-config" style="display:none">
   {
-    "save_bin_id": "TNT_SESSIONS_BIN",
-    "save_sectionKey": "TnT_Sessions",
+    "save_bin_key": "TNT_SESSIONS_KEY",
+    "save_sectionKey": "tnt_sessions",
     "listLabel": "Previous Sessions",
-    "checkList_bin_id": "HELPER_BIN",
+    "checkList_bin_key": "HELPER_KEY",
     "checkList_section_key": "TnT_Helpers",
     "checkList_fields": ["Name:"]
   }

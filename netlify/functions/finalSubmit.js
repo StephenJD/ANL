@@ -17,7 +17,7 @@ export async function handler(event) {
       return { statusCode: 400, body: JSON.stringify({ success: false, error: "Missing token" }) };
     }
 
-    const storedFormData = await getSecureItem(process.env.ACCESS_TOKEN_BIN, token);
+    const storedFormData = await getSecureItem(process.env.ACCESS_TOKEN_KEY, token);
     if (!storedFormData) {
       console.error("[ERROR finalSubmit] Invalid or expired token:", token);
       return { statusCode: 400, body: JSON.stringify({ success: false, error: "Invalid or expired token" }) };

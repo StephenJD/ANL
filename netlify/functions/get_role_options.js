@@ -20,10 +20,10 @@ export async function handler(event) {
             };
         }
 
-        const BIN_ID = process.env["USER_ACCESS_BIN"];
+        const BIN_KEY = process.env["USER_ACCESS_KEY"];
         const token = "Role_Details";
 
-        const roles = await getSecureItem(BIN_ID, token);
+        const roles = await getSecureItem(BIN_KEY, token);
         console.log("[get_role_options] Raw roles from getSecureItem:", JSON.stringify(roles));
 
         function normalizeRole(value) {

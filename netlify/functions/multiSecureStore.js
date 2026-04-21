@@ -1,74 +1,53 @@
-// /netlify/functions/multiSecureStore.js
-import process from "process";
+import { readStore, writeStore } from "../../lib/secureStoreIO.js";
 
-import { cleanupExpired } from "../../lib/cleanupExpired.js";
-import { readStore as _readStore, writeStore } from "../../lib/secureStoreIO.js";
-
-// Simple per-request cache for BIN_ID reads
 const binCache = {};
 
-async function cachedReadStore(BIN_ID) {
-  if (binCache[BIN_ID]) return binCache[BIN_ID];
-  const store = await _readStore(BIN_ID);
-  binCache[BIN_ID] = store;
+async function cachedReadStore(key) {
+  if (binCache[key]) return binCache[key];
+  const store = await readStore(key);
+  binCache[key] = store;
   return store;
 }
 
-function clearBinCache() {
-  for (const key in binCache) delete binCache[key];
-}
+export async function setSecureItem(key, token, value, ttl = null) {
+  const store = await cachedReadStore(key);
 
-export async function setSecureItem(BIN_ID, token, value, ttl = null) {
-  const store = await cachedReadStore(BIN_ID);
+  let newValue = value;
 
-  let newValue;
-  if (Array.isArray(value)) {
-    newValue = value.map(item => (ttl !== null ? { ...item, expires: Date.now() + ttl } : item));
-  } else if (typeof value === "object" && value !== null) {
-    newValue = ttl !== null ? { ...value, expires: Date.now() + ttl } : value;
-  } else {
-    newValue = value;
+  if (ttl !== null && typeof value === "object") {
+    newValue = { ...value, expires: Date.now() + ttl };
   }
 
-
   store[token] = newValue;
-  await writeStore(BIN_ID, store);
-  binCache[BIN_ID] = store; // update cache after write
+
+  await writeStore(key, store);
+  binCache[key] = store;
 }
 
-export async function getSecureItem(BIN_ID, token) {
-  const store = await cachedReadStore(BIN_ID);
-  let entry = store[token];
+export async function getSecureItem(key, token) {
+  const store = await cachedReadStore(key);
+
+  const entry = store[token];
   if (!entry) return null;
 
   const now = Date.now();
 
-  if (Array.isArray(entry)) {
-    entry = entry.filter(item => !item.expires || now <= item.expires);
-    if (entry.length !== store[token].length) {
-      store[token] = entry;
-      await writeStore(BIN_ID, store);
-      binCache[BIN_ID] = store;
-    }
-    return entry.length ? entry : null;
-  }
-
-  if (typeof entry === "object" && entry !== null && entry.expires && now > entry.expires) {
-    await cleanupExpired(BIN_ID);
-    binCache[BIN_ID] = store;
+  if (typeof entry === "object" && entry.expires && now > entry.expires) {
+    delete store[token];
+    await writeStore(key, store);
+    binCache[key] = store;
     return null;
   }
 
   return entry;
 }
 
-// Optionally, clear cache at the start of each Netlify handler
 export function resetSecureStoreCache() {
-  clearBinCache();
+  Object.keys(binCache).forEach(k => delete binCache[k]);
 }
 
-export async function deleteRecords(BIN_ID, tokens = []) {
-  const store = await cleanupExpired(BIN_ID);
+export async function deleteRecords(BIN_KEY, tokens = []) {
+  const store = await cachedReadStore(BIN_KEY);
   let changed = false;
 
   for (const token of tokens) {
@@ -79,8 +58,9 @@ export async function deleteRecords(BIN_ID, tokens = []) {
   }
 
   if (changed) {
-    await writeStore(BIN_ID, store);
-    binCache[BIN_ID] = store;
+    await writeStore(BIN_KEY, store);
+    binCache[BIN_KEY] = store;
   }
+
   return { success: true, deleted: tokens.length };
 }

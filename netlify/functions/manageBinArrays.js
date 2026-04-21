@@ -9,7 +9,7 @@ import 'dotenv/config';
 // Only these bin names may be accessed via this function
 // All bin IDs are allowed (all are random and unguessable)
 
-const USER_ACCESS_BIN_KEY = process.env.USER_ACCESS_BIN;
+const USER_ACCESS_KEY = process.env.USER_ACCESS_KEY;
 
 function replyMsg(statusCode, payload) {
   if (statusCode === 200) {
@@ -83,10 +83,10 @@ export async function handler(event) {
     return replyMsg(400, "Invalid JSON");
   }
 
-  const { action, bin_id, section_key, keyValue } = body;
+  const { action, bin_key, section_key, keyValue } = body;
   if (!section_key) return replyMsg(400, "Missing section_key");
     // All bin IDs are allowed (all are random and unguessable)
-  const BIN_KEY = process.env[bin_id];
+  const BIN_KEY = process.env[bin_key];
   let dataArray = await getSecureItem(BIN_KEY, section_key);
   if (!Array.isArray(dataArray)) dataArray = [];
 

@@ -75,10 +75,10 @@ function alignButtons(form) {
   }
 }
 
-export async function manageBinArrayForm({ bin_id, sectionKey, listLabel, form }) {
+export async function manageBinArrayForm({ bin_key, sectionKey, listLabel, form }) {
   if (!form) throw new Error("Form is required");
   listLabel = listLabel || sectionKey;
-  console.log("[binArrayInterface] manageBinArrayForm", bin_id,  sectionKey);
+  console.log("[binArrayInterface] manageBinArrayForm", bin_key,  sectionKey);
 
   const container = form;
 
@@ -104,7 +104,7 @@ export async function manageBinArrayForm({ bin_id, sectionKey, listLabel, form }
   let recordsCache = [];
 
 async function apiCall(action, payload = {}, keyValue = null) {
-  const body = { action, bin_id, section_key: sectionKey, ...payload };
+  const body = { action, bin_key, section_key: sectionKey, ...payload };
   if (keyValue) body.keyValue = keyValue;
 
   const res = await fetch("/.netlify/functions/manageBinArrays", {

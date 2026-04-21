@@ -1,7 +1,7 @@
 // /netlify/functions/trackVisit.js
 import { getSecureItem, setSecureItem } from "./multiSecureStore.js";
 
-const BIN_ID = process.env.VISITS_BIN;
+const BIN_KEY = process.env.VISITS_KEY;
 const VISIT_WINDOW_MS = 30 * 60 * 1000; // 30 minutes per client key
 const visitRateCache = new Map();
 
@@ -30,11 +30,11 @@ export async function handler(event) {
     }
     visitRateCache.set(key, now);
 
-    const current_counts = (await getSecureItem(BIN_ID, "visit_counts")) || {};
+    const current_counts = (await getSecureItem(BIN_KEY, "visit_counts")) || {};
     const today = new Date().toISOString().slice(0, 10);
 
     current_counts[today] = (current_counts[today] || 0) + 1;
-    await setSecureItem(BIN_ID, "visit_counts", current_counts);
+    await setSecureItem(BIN_KEY, "visit_counts", current_counts);
 
     return {
       statusCode: 200,

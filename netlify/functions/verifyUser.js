@@ -7,8 +7,8 @@ import { generateUserToken, generateTempAccessToken } from "./generateSecureToke
 import { check_userLoginToken as _authCheck, requireAuth } from "./authHelper.js";
 
 // --- Bin keys from .env ---
-const USER_ACCESS_BIN = process.env.USER_ACCESS_BIN;
-const ACCESS_TOKEN_BIN = process.env.ACCESS_TOKEN_BIN;
+const USER_ACCESS_KEY = process.env.USER_ACCESS_KEY || "user_access";
+const ACCESS_TOKEN_KEY= process.env.ACCESS_TOKEN_KEY;
 const PERMITTED_USERS_KEY = process.env.PERMITTED_USERS_KEY;
 const ADMIN_SUPERUSER_HASH = process.env.ADMIN_SUPERUSER_HASH;
 const USER_ACCESS_TIMEOUT_mS = process.env.USER_ACCESS_TIMEOUT_HRS * 60 * 60 * 1000;
@@ -40,7 +40,7 @@ function isRateLimited(event, action) {
 export async function checkIsPermittedUser(email) {
   try {
     //console.log("[verifyUser] checkIsPermittedUser:", email); 
-    const permittedUsers = await getSecureItem(USER_ACCESS_BIN, PERMITTED_USERS_KEY) || [];
+    const permittedUsers = await getSecureItem(USER_ACCESS_KEY, PERMITTED_USERS_KEY) || [];
     const permitted = permittedUsers.some(u => u.Email.toLowerCase() === email.toLowerCase());
     if (permitted) return permitted;
     else {
@@ -57,14 +57,14 @@ export async function checkIsPermittedUser(email) {
 export async function addUserLogin(email, userName, password) {
   try {
     //console.log("[verifyUser] addUserLogin:", email, userName, password); 
-    const permittedUsers = await getSecureItem(USER_ACCESS_BIN, PERMITTED_USERS_KEY) || [];
+    const permittedUsers = await getSecureItem(USER_ACCESS_KEY, PERMITTED_USERS_KEY) || [];
     const userEntry = permittedUsers.find(u => u.Email.toLowerCase() === email.toLowerCase());
     if (!userEntry) return { status: "failed" };
 
     const loginToken = generateUserToken(userName, password);
     userEntry.login_token = loginToken;
     userEntry["User name"] = userName;
-    await setSecureItem(USER_ACCESS_BIN, PERMITTED_USERS_KEY, permittedUsers);
+    await setSecureItem(USER_ACCESS_KEY, PERMITTED_USERS_KEY, permittedUsers);
     return { status: "success", loginToken, role: userEntry["Role"] };
   } catch (err) {
     console.error("[verifyUser] addUserLogin error:", err);
@@ -77,11 +77,13 @@ export async function get_UserLoginToken(userName, password, deviceId = null, us
   try {
     console.log("[verifyUser] get_UserLoginToken:", userName); 
     const loginToken = generateUserToken(userName, password);
-    const usersArray = await getSecureItem(USER_ACCESS_BIN, PERMITTED_USERS_KEY) || [];
+    const usersArray = await getSecureItem(USER_ACCESS_KEY, PERMITTED_USERS_KEY) || [];
 
-    let currentUser = usersArray.find(u => u.login_token === loginToken);
+    let currentUser = usersArray.find(u => (u.login_token || "") === loginToken);
     if (!currentUser) {
-	currentUser = usersArray.find(u => u["User name"] === userName);
+	currentUser = usersArray.find(u =>
+  (u["User name"] || "").toLowerCase().trim() === userName.toLowerCase().trim()
+);
       if (currentUser) {
         if (currentUser.login_token) {
 		console.log("[verifyUser] get_UserLoginToken invalid login_token for:", userName );
@@ -98,7 +100,7 @@ export async function get_UserLoginToken(userName, password, deviceId = null, us
 
     const userLoginToken = generateTempAccessToken(loginToken);
     await setSecureItem(
-      ACCESS_TOKEN_BIN,
+      ACCESS_TOKEN_KEY,
       userLoginToken,
       {
         user_name: currentUser["User name"],
@@ -125,12 +127,12 @@ export async function check_userLoginToken(userLogin_token, deviceId = null, use
 // --- 5) Delete a user login ---
 export async function deleteUserLogin(email) {
   try {
-    const permittedUsers = await getSecureItem(USER_ACCESS_BIN, PERMITTED_USERS_KEY) || [];
+    const permittedUsers = await getSecureItem(USER_ACCESS_KEY, PERMITTED_USERS_KEY) || [];
     const userEntry = permittedUsers.find(u => u.Email.toLowerCase() === email.toLowerCase());
     if (!userEntry) return { status: "Not found" };
 
     userEntry.login_token = null;
-    await setSecureItem(USER_ACCESS_BIN, PERMITTED_USERS_KEY, permittedUsers);
+    await setSecureItem(USER_ACCESS_KEY, PERMITTED_USERS_KEY, permittedUsers);
     return { status: "success" };
   } catch (err) {
     console.error("[verifyUser] deleteUserLogin error:", err);

@@ -11,10 +11,10 @@ validation: [noSend] # options: requestLink, submit, none (default), noSend
 
 <div id="form-config" style="display:none">
   {
-    "save_bin_id": "USER_ACCESS_BIN",
+    "save_bin_key": "USER_ACCESS_KEY",
     "save_sectionKey": "permitted_users",
     "listLabel": "Existing Permitted Users",
-    "checkList_bin_id": "USER_ACCESS_BIN",
+    "checkList_bin_key": "USER_ACCESS_KEY",
     "checkList_section_key": "Role_Details",
     "checkList_fields": ["Role"]
   }

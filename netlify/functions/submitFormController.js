@@ -37,7 +37,7 @@ export async function handler(event) {
     let effectiveSubmittedBy = null;
     let existing = null;
     if (token) {
-      existing = await getSecureItem(process.env.ACCESS_TOKEN_BIN, token);
+      existing = await getSecureItem(process.env.ACCESS_TOKEN_KEY, token);
       console.debug("[submitFormController] Existing token data:", existing);
       if (!existing) {
         console.debug("[submitFormController] Invalid or expired token");
@@ -106,8 +106,8 @@ export async function handler(event) {
     };
     const secureToken = generateTempAccessToken(valueToStore);
     const ONE_HOUR_MS = 60 * 60 * 1000;
-    await setSecureItem(process.env.ACCESS_TOKEN_BIN, secureToken, valueToStore, ONE_HOUR_MS);
-    console.debug("[submitFormController] Stored secure item in ACCESS_TOKEN_BIN");
+    await setSecureItem(process.env.ACCESS_TOKEN_KEY, secureToken, valueToStore, ONE_HOUR_MS);
+    console.debug("[submitFormController] Stored secure item in ACCESS_TOKEN_KEY");
 
     if (effectiveSubmittedBy) {
       let finalHtml = formattedHTML.replace(/{@}/g, "").replace(/{@V}/g, "");

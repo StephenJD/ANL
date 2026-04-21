@@ -1,0 +1,8 @@
+name = "d1-store"
+main = "worker.js"
+compatibility_date = "2026-04-20"
+
+[[d1_databases]]
+binding = "secure_store"
+database_name = "secure_store"
+database_id = "6ac76038-83bc-4a87-b641-b51526129cbe"

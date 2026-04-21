@@ -1,11 +1,11 @@
 // \netlify\functions\visitTracker.js
 import { getSecureItem } from "../multiSecureStore.js";
 
-const BIN_ID = process.env.VISITS_BIN;
+const BIN_KEY = process.env.VISITS_KEY;
 
 export default async function visitTracker() {
   try {
-    const visits = (await getSecureItem(BIN_ID, "visit_counts")) || {};
+    const visits = (await getSecureItem(BIN_KEY, "visit_counts")) || {};
 
     if (!visits || Object.keys(visits).length === 0) {
       return "<p>No visit data available.</p>";

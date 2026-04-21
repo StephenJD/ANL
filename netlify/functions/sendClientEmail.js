@@ -3,7 +3,7 @@ import { getSecureItem } from "./multiSecureStore.js";
 import { sendEmail } from "./sendEmail.js";
 import { requireAuth } from "./authHelper.js";
 
-const ACCESS_TOKEN_BIN = process.env.ACCESS_TOKEN_BIN;
+const ACCESS_TOKEN_KEY = process.env.ACCESS_TOKEN_KEY;
 
 export async function handler(event) {
   console.log("[DEBUG] Raw event.body:", event.body);
@@ -22,7 +22,7 @@ export async function handler(event) {
       return { statusCode: 400, body: JSON.stringify({ success: false, error: "Missing token or email" }) };
     }
 
-    const storedData = await getSecureItem(ACCESS_TOKEN_BIN, token);
+    const storedData = await getSecureItem(ACCESS_TOKEN_KEY, token);
     console.log("[DEBUG] Retrieved storedData from store:", storedData);
 
     if (!storedData || !storedData.formattedHTML) {
