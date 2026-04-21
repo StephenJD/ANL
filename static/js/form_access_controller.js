@@ -113,7 +113,8 @@ async function fetchFrontMatter() {
   const validation = Array.isArray(frontMatter?.validation) ? frontMatter.validation : ["none"];
   requireRequestLink = validation.includes("requestLink");
   requireFinalSubmit = validation.includes("submit");
-  showSubmit = !validation.includes("noSend");
+  // If validation includes 'noSend', do not show submit/send buttons
+  showSubmit = !validation.map(v => v.toLowerCase()).includes("nosend");
 }
 
 function setupAccessControls() {
@@ -136,7 +137,13 @@ function setupAccessControls() {
   }
 
   if (submitBox) {
+    // Hide submit/send box if showSubmit is false
     submitBox.style.display = showSubmit ? "block" : "none";
+    // Also hide any .form-send-btn or .form-submit-btn if present
+    if (!showSubmit) {
+      const sendBtns = form.querySelectorAll('.form-send-btn, .form-submit-btn, button[type="submit"]');
+      sendBtns.forEach(btn => btn.style.display = "none");
+    }
   }
 }
 
@@ -245,7 +252,7 @@ async function handleFormSubmission(e) {
 
   //console.log("[form_access_controller] handleFormSubmission clone:", formData);
 
-  const payload = { bin: "ACCESS_TOKEN_BIN", formName: cleanTitle, formData, formPath: window.location.pathname }; 
+  const payload = { bin: "ACCESS_TOKEN_KEY", formName: cleanTitle, formData, formPath: window.location.pathname }; 
 
   if (!requireRequestLink && submittedBy) payload.submittedBy = submittedBy;
   else if (optionalEmail) payload.optionalEmail = optionalEmail;

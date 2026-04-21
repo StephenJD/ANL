@@ -3,7 +3,19 @@ export default {
   async fetch(request, env) {
     const EXPECTED_TOKEN = env.DB_ACCESS_TOKEN;
     const token = request.headers.get("x-db-token");
-    if (!EXPECTED_TOKEN || token !== EXPECTED_TOKEN) {
+
+    function safeEqual(a, b) {
+      if (typeof a !== "string" || typeof b !== "string") return false;
+      if (a.length !== b.length) return false;
+
+      let out = 0;
+      for (let i = 0; i < a.length; i++) {
+        out |= a.charCodeAt(i) ^ b.charCodeAt(i);
+      }
+      return out === 0;
+    }
+
+    if (!safeEqual(token, EXPECTED_TOKEN)) {
       return new Response("Unauthorized", { status: 401 });
     }
     const url = new URL(request.url);
