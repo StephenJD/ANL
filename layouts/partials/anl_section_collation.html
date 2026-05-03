@@ -12,6 +12,15 @@
   {{ end }}
 {{ end }}
 
+{{ $filePath := "" }}
+{{ $currentDir := "" }}
+{{ $baseName := "" }}
+{{ with .File }}
+  {{ $filePath = .Path }}
+  {{ $currentDir = .Dir }}
+  {{ $baseName = .BaseFileName }}
+{{ end }}
+
 <div class="debug-message">
   DEBUG: partials\anl_section_collation.html is running
   | Type={{ $current_page.Type }}
@@ -20,7 +29,7 @@
   | RawAccess={{ $rawAccess }}
   | Params.access={{ $current_page.Params.access | default "not set" }}
   | .Content length={{ len $current_page.Content }}
-  | File.Path={{ .File.Path }}
+  | File.Path={{ $filePath }}
 </div>
 
 {{/* <div> Opened in this parial */}}
@@ -28,12 +37,12 @@
   
 
   {{/* Exclude gate logic for dynamic/editor/document-list pages by type or function_key */}}
-  {{ $isEditor := or (in (lower .File.Path) "/content-editor/") (in (lower .File.BaseFileName) "content-editor") (eq .Type "dynamic") (in (lower .Params.function_key | default "") (slice "content_editor" "tree_view" "document_list")) }}
+  {{ $isEditor := or (in (lower $filePath) "/content-editor/") (in (lower $baseName) "content-editor") (eq .Type "dynamic") (in (lower .Params.function_key | default "") (slice "content_editor" "tree_view" "document_list")) }}
   <section id="main-content" class="document-content">
     {{ if and (not (in $access "public")) (not $isEditor) }}
       {{/* If the parent page is public, render nothing for private sections (leave blank) */}}
       {{ if not (in $current_page.Params.access | default "public" | lower) "public" }}
-        <div class="gated_page_placeholder" data-path="{{ .File.Path }}">
+        <div class="gated_page_placeholder" data-path="{{ $filePath }}">
           <div class="page_access_message">Loading page…</div>
         </div>
       {{ end }}
@@ -44,18 +53,17 @@
     {{ end }}
   </section>
   
-  {{ $currentDir := $current_page.File.Dir }}
   {{ $all := where site.RegularPages "File.Dir" $currentDir }}
   {{ $sections := slice }}
   {{ range $all }}
-    {{ if ne .File.Path $current_page.File.Path }}
+    {{ if ne .File.Path $filePath }}
       {{ $sections = $sections | append . }}
     {{ end }}
   {{ end }}
   {{ $sections = sort $sections "File.BaseFileName" }}
   
   <div class="debug-message">
-    DEBUG: $current_page.Path={{ printf "%q" $current_page.File.Path }} |
+    DEBUG: $current_page.Path={{ printf "%q" $filePath }} |
            Dir={{ printf "%q" $currentDir }} |
            Section={{ printf "%q" $current_page.Section }} |
            Kind={{ printf "%q" $current_page.Kind }}
@@ -77,7 +85,14 @@
     {{ end }}
     {{ if not $expired }}
       {{ $bg := .Params.background_image }}
-      <section id="sec-{{ replace .File.BaseFileName "_" "-" }}"
+      {{ $secPath := "" }}
+      {{ $secBase := "" }}
+      {{ with .File }}
+        {{ $secPath = .Path }}
+        {{ $secBase = .BaseFileName }}
+      {{ end }}
+
+      <section id="sec-{{ replace $secBase "_" "-" }}"
       class="document-content"
       style="{{ if $bg }}background-image: url('{{ $bg }}');{{ end }}">
 
@@ -91,15 +106,15 @@
         {{ $editorPage := index (first 1 (where site.Pages "Params.function_key" "content_editor")) 0 }}
         {{ $contentEditorHref := "" }}
         {{ if $editorPage }}
-          {{ $contentEditorHref = printf "%s?path=%s" $editorPage.RelPermalink (.File.Path | urlquery) }}
+          {{ $contentEditorHref = printf "%s?path=%s" $editorPage.RelPermalink ($secPath | urlquery) }}
         {{ end }}
         <span class="edit-section-link-wrap" style="display:none; margin-left:12px; font-size:0.95em;">
           <a class="edit-section-link" href="{{ $contentEditorHref }}">✏️ Edit This Section</a>
         </span>
 
-        {{ if and (not (in $sectionAccess "public")) (not (in (slice (lower .File.BaseFileName)) "content-editor")) }}
+        {{ if and (not (in $sectionAccess "public")) (not (in (slice (lower $secBase)) "content-editor")) }}
           <section class="gated-section">
-            <div class="gated_page_placeholder" data-path="{{ .File.Path }}">
+            <div class="gated_page_placeholder" data-path="{{ $secPath }}">
               <div class="page_access_message">Loading page…</div>
             </div>
           </section>

@@ -18,12 +18,15 @@
   {{ end }}
 {{ end }}
 
+{{ $filePath := "" }}
+{{ with .File }}{{ $filePath = .Path }}{{ end }}
+
 {{/* <div> Opened in this parial */}}
 {{ partial "anl_page_chrome.html" $current_page }}
   <section class="document-content">
 
     {{ if not (in $access "public") }}
-      <div class="gated_page_placeholder" data-path="{{ .File.Path }}">
+      <div class="gated_page_placeholder" data-path="{{ $filePath }}">
         <div class="page_access_message">Loading page…</div>
       </div>
       <div id="gated-content" style="display:none;">
@@ -33,19 +36,19 @@
             <strong>Sections:</strong><br>
             {{ $sortedSections := sort .Sections "File.Path" }}
             {{ range $sortedSections }}
-              Path: {{ .File.Path }} | Title: {{ .Title }} | IsSection: {{ .IsSection }}<br>
+              Path: {{ with .File }}{{ .Path }}{{ end }} | Title: {{ .Title }} | IsSection: {{ .IsSection }}<br>
             {{ end }}
             <strong>Pages:</strong><br>
             {{ $sortedPages := sort .Pages "File.Path" }}
             {{ range $sortedPages }}
-              Path: {{ .File.Path }} | Title: {{ .Title }} | Type: {{ .Type }} | IsSection: {{ .IsSection }}<br>
+              Path: {{ with .File }}{{ .Path }}{{ end }} | Title: {{ .Title }} | Type: {{ .Type }} | IsSection: {{ .IsSection }}<br>
             {{ end }}
           </div>
 
           <div class="debug-message">
             <strong>Rendered Section Links:</strong><br>
             {{ range $sortedSections }}
-              <p><a href="{{ .Permalink }}">{{ .Title }}/</a> ({{ .File.Path }})</p>
+              <p><a href="{{ .Permalink }}">{{ .Title }}/</a> ({{ with .File }}{{ .Path }}{{ end }})</p>
             {{ end }}
             <strong>Rendered Page Links (document-folder, not section, not expired):</strong><br>
             {{ range $sortedPages }}
@@ -53,7 +56,7 @@
               {{ $expired := false }}
               {{ if $expires }}{{ if now.After (time $expires) }}{{ $expired = true }}{{ end }}{{ end }}
               {{ if and (eq .Type "document-folder") (not .IsSection) (not $expired) }}
-                <p><a href="{{ .Permalink }}">{{ .Title }}/</a> ({{ .File.Path }})</p>
+                <p><a href="{{ .Permalink }}">{{ .Title }}/</a> ({{ with .File }}{{ .Path }}{{ end }})</p>
               {{ end }}
             {{ end }}
           </div>
@@ -79,19 +82,19 @@
           <strong>Sections:</strong><br>
           {{ $sortedSections := sort .Sections "File.Path" }}
           {{ range $sortedSections }}
-            Path: {{ .File.Path }} | Title: {{ .Title }} | IsSection: {{ .IsSection }}<br>
+            Path: {{ with .File }}{{ .Path }}{{ end }} | Title: {{ .Title }} | IsSection: {{ .IsSection }}<br>
           {{ end }}
           <strong>Pages:</strong><br>
           {{ $sortedPages := sort .Pages "File.Path" }}
           {{ range $sortedPages }}
-            Path: {{ .File.Path }} | Title: {{ .Title }} | Type: {{ .Type }} | IsSection: {{ .IsSection }}<br>
+            Path: {{ with .File }}{{ .Path }}{{ end }} | Title: {{ .Title }} | Type: {{ .Type }} | IsSection: {{ .IsSection }}<br>
           {{ end }}
         </div>
 
         <div class="debug-message">
           <strong>Rendered Section Links:</strong><br>
           {{ range $sortedSections }}
-            <p><a href="{{ .Permalink }}">{{ .Title }}/</a> ({{ .File.Path }})</p>
+            <p><a href="{{ .Permalink }}">{{ .Title }}/</a> ({{ with .File }}{{ .Path }}{{ end }})</p>
           {{ end }}
           <strong>Rendered Page Links (all types, not section, not expired):</strong><br>
           {{ range $sortedPages }}
@@ -99,7 +102,7 @@
             {{ $expired := false }}
             {{ if $expires }}{{ if now.After (time $expires) }}{{ $expired = true }}{{ end }}{{ end }}
             {{ if and (not .IsSection) (not $expired) }}
-              <p><a href="{{ .Permalink }}">{{ .Title }}</a> ({{ .File.Path }})</p>
+              <p><a href="{{ .Permalink }}">{{ .Title }}</a> ({{ with .File }}{{ .Path }}{{ end }})</p>
             {{ end }}
           {{ end }}
         </div>

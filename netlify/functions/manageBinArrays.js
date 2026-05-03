@@ -87,8 +87,14 @@ export async function handler(event) {
   if (!section_key) return replyMsg(400, "Missing section_key");
     // All bin IDs are allowed (all are random and unguessable)
   const BIN_KEY = process.env[bin_key];
+  console.log("BIN_KEY:", BIN_KEY, "section_key:", section_key);
+
   let dataArray = await getSecureItem(BIN_KEY, section_key);
-  if (!Array.isArray(dataArray)) dataArray = [];
+
+  //console.log("[manageBinArrays] RAW FROM STORE:", JSON.stringify(dataArray, null, 2));
+  //console.log("[manageBinArrays] TYPE:", typeof dataArray, Array.isArray(dataArray));
+
+  if (!dataArray || typeof dataArray !== "object") dataArray = {};
 
   const firstField = dataArray[0] ? Object.keys(dataArray[0])[0] : null;
 

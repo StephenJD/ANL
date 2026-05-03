@@ -22,9 +22,13 @@
 
 {{/* <div> Opened in this parial */}}
 {{ partial "anl_page_chrome.html" . }}
+  {{ $filePath := "" }}
+  {{ with .File }}
+    {{ $filePath = .Path }}
+  {{ end }}
   <section class="document-content">
     {{ if not (in $access "public") }}
-      <div class="gated_page_placeholder" data-path="{{ .File.Path }}">
+      <div class="gated_page_placeholder" data-path="{{ $filePath }}">
         <div class="page_access_message">Loading page…</div>
       </div>
     {{ else }}

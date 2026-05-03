@@ -285,7 +285,7 @@ section#sec-00-encouraging-young-people a.herobutton:active {
   padding-bottom: 6rem;
 }
 
-#sec-02-our-mission-and-support .mission-support-grid {
+#sec-02-our-mission-and-support .card-group {
   display: grid;
   grid-template-columns: 1fr;
   gap: 1.5rem;
@@ -296,14 +296,14 @@ section#sec-00-encouraging-young-people a.herobutton:active {
 
 /* md:grid-cols-2 */
 @media (min-width: 768px) {
-  #sec-02-our-mission-and-support .mission-support-grid {
+  #sec-02-our-mission-and-support .card-group {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
 /* lg:grid-cols-4 */
 @media (min-width: 1024px) {
-  #sec-02-our-mission-and-support .mission-support-grid {
+  #sec-02-our-mission-and-support .card-group {
     grid-template-columns: repeat(4, 1fr);
   }
 }
@@ -384,7 +384,7 @@ section#sec-00-encouraging-young-people a.herobutton:active {
   font-size: 1rem;
 }
 
-#sec-02-our-mission-and-support .mission-support-card {
+#sec-02-our-mission-and-support .card {
   border-radius: 2.5rem;
   padding: 2rem;
   display: flex;
@@ -396,7 +396,7 @@ section#sec-00-encouraging-young-people a.herobutton:active {
 }
 
 /* shared icon */
-#sec-02-our-mission-and-support .mission-support-card-icon {
+#sec-02-our-mission-and-support .card .mission-support-card-icon {
   height: 4rem;
   width: 4rem;
   border-radius: 1rem;
@@ -406,128 +406,14 @@ section#sec-00-encouraging-young-people a.herobutton:active {
   margin-bottom: 2rem;
 }
 
-#sec-02-our-mission-and-support .mission-support-card-icon img {
-  width: 85%;
-  height: 85%;
+#sec-02-our-mission-and-support .card .mission-support-card-icon img {
+  width: 70%;
+  height: 70%;
   object-fit: contain;
 }
 
 /* shared text */
-#sec-02-our-mission-and-support .mission-support-card-title {
-  font-size: 1.5rem;
-  font-weight: 700;
-  margin-bottom: 1rem;
-}
-#sec-02-our-mission-and-support .mission-support-card-desc {
-  line-height: 1.625;
-  margin-bottom: 2rem;
-  flex-grow: 1;
-}
-#sec-02-our-mission-and-support .mission-support-card-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-weight: 700;
-  transition: color 0.2s;
-}
-
-/* Encourage */
-#sec-02-our-mission-and-support .mission-support-card--encourage {
-  background: rgba(214,227,255,0.3);
-  border-color: rgba(0,77,153,0.08);
-}
-#sec-02-our-mission-and-support .mission-support-card--encourage:hover {
-  background: rgba(214,227,255,0.45);
-}
-#sec-02-our-mission-and-support .mission-support-card--encourage .mission-support-card-icon {
-  background: #004d99;
-  color: #fff;
-  box-shadow: 0 8px 24px rgba(0,77,153,0.2);
-}
-#sec-02-our-mission-and-support .mission-support-card--encourage .mission-support-card-title {
-  color: #003366;
-}
-#sec-02-our-mission-and-support .mission-support-card--encourage .mission-support-card-link {
-  color: #004d99;
-}
-#sec-02-our-mission-and-support .mission-support-card--encourage:hover .mission-support-card-link {
-  color: #003366;
-}
-
-/* Encounter */
-#sec-02-our-mission-and-support .mission-support-card--encounter {
-  background: rgba(146,242,246,0.3);
-  border-color: rgba(43,148,154,0.08);
-}
-#sec-02-our-mission-and-support .mission-support-card--encounter:hover {
-  background: rgba(146,242,246,0.45);
-}
-#sec-02-our-mission-and-support .mission-support-card--encounter .mission-support-card-icon {
-  background: #2B949A;
-  color: #fff;
-  box-shadow: 0 8px 24px rgba(43,148,154,0.2);
-}
-#sec-02-our-mission-and-support .mission-support-card--encounter .mission-support-card-title {
-  color: #1f6f73;
-}
-#sec-02-our-mission-and-support .mission-support-card--encounter .mission-support-card-link {
-  color: #2B949A;
-}
-#sec-02-our-mission-and-support .mission-support-card--encounter:hover .mission-support-card-link {
-  color: #1f6f73;
-}
-
-/* Equip */
-#sec-02-our-mission-and-support .mission-support-card--equip {
-  background: #1c252e;
-  border-color: rgba(255,255,255,0.05);
-  color: #fff;
-}
-#sec-02-our-mission-and-support .mission-support-card--equip:hover {
-  background: #25303b;
-}
-#sec-02-our-mission-and-support .mission-support-card--equip .mission-support-card-icon {
-  background: rgba(255,255,255,0.1);
-  backdrop-filter: blur(4px);
-  color: #fff;
-}
-#sec-02-our-mission-and-support .mission-support-card--equip .mission-support-card-desc {
-  color: rgba(255,255,255,0.8);
-}
-#sec-02-our-mission-and-support .mission-support-card--equip .mission-support-card-link {
-  color: rgba(255,255,255,0.9);
-}
-#sec-02-our-mission-and-support .mission-support-card--equip .mission-support-card-title {
-  color: #fff;
-}
-#sec-02-our-mission-and-support .mission-support-card--equip:hover .mission-support-card-link {
-  color: #fff;
-}
-
-/* Support */
-#sec-02-our-mission-and-support .mission-support-card--support {
-  background: rgba(255,221,180,0.4);
-  border-color: rgba(130,85,0,0.08);
-}
-#sec-02-our-mission-and-support .mission-support-card--support:hover {
-  background: rgba(255,221,180,0.55);
-}
-#sec-02-our-mission-and-support .mission-support-card--support .mission-support-card-icon {
-  background: #825500;
-  color: #fff;
-  box-shadow: 0 8px 24px rgba(130,85,0,0.2);
-}
-#sec-02-our-mission-and-support .mission-support-card--support .mission-support-card-title {
-  color: #5c3d00;
-}
-#sec-02-our-mission-and-support .mission-support-card--support .mission-support-card-link {
-  color: #825500;
-}
-#sec-02-our-mission-and-support .mission-support-card--support:hover .mission-support-card-link {
-  color: #5c3d00;
-}
-
-#sec-02-our-mission-and-support .mission-support-card-title {
+#sec-02-our-mission-and-support .card h2 {
   font-family: 'Plus Jakarta Sans', Arial, sans-serif;
   font-size: 1.5rem;
   font-weight: 800;
@@ -535,13 +421,13 @@ section#sec-00-encouraging-young-people a.herobutton:active {
   line-height: 1.2;
 }
 
-#sec-02-our-mission-and-support .mission-support-card-desc {
+#sec-02-our-mission-and-support .card p {
   font-family: 'Inter', Arial, sans-serif;
   font-size: 1.125rem;
   color: #424752;
-  line-height: 1.6;
   margin-bottom: 2rem;
   flex-grow: 1;
+  line-height: 1.625;
 }
 
 #sec-02-our-mission-and-support .mission-support-card-link {
@@ -552,6 +438,99 @@ section#sec-00-encouraging-young-people a.herobutton:active {
   align-items: center;
   gap: 0.5rem;
   text-decoration: none;
+  transition: color 0.2s;
+}
+
+/* Encourage */
+#sec-02-our-mission-and-support #card-1 {
+  background: rgba(214,227,255,0.3);
+  border-color: rgba(0,77,153,0.08);
+}
+#sec-02-our-mission-and-support #card-1:hover {
+  background: rgba(214,227,255,0.45);
+}
+#sec-02-our-mission-and-support #card-1 .mission-support-card-icon {
+  background: #004d99;
+  color: #fff;
+}
+#sec-02-our-mission-and-support #card-1 h2 {
+  color: #003366;
+}
+#sec-02-our-mission-and-support #card-1 a {
+  color: #004d99;
+}
+#sec-02-our-mission-and-support #card-1:hover a {
+  color: #003366;
+}
+
+/* Encounter */
+#sec-02-our-mission-and-support #card-2 {
+  background: rgba(146,242,246,0.3);
+  border-color: rgba(43,148,154,0.08);
+}
+#sec-02-our-mission-and-support #card-2:hover {
+  background: rgba(146,242,246,0.45);
+}
+#sec-02-our-mission-and-support #card-2 .mission-support-card-icon {
+  background: #2B949A;
+  color: #fff;
+}
+#sec-02-our-mission-and-support #card-2 h2 {
+  color: #1f6f73;
+}
+#sec-02-our-mission-and-support #card-2 a {
+  color: #2B949A;
+}
+#sec-02-our-mission-and-support #card-2:hover a {
+  color: #1f6f73;
+}
+
+/* Equip */
+#sec-02-our-mission-and-support #card-3 {
+  background: #1c252e;
+  border-color: rgba(255,255,255,0.05);
+  color: #fff;
+}
+#sec-02-our-mission-and-support #card-3:hover {
+  background: #25303b;
+}
+#sec-02-our-mission-and-support #card-3 .mission-support-card-icon {
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+}
+#sec-02-our-mission-and-support #card-3 p {
+  color: rgba(255,255,255,0.8);
+}
+#sec-02-our-mission-and-support #card-3 a {
+  color: rgba(255,255,255,0.9);
+}
+#sec-02-our-mission-and-support #card-3 h2 {
+  color: #fff;
+}
+#sec-02-our-mission-and-support #card-3:hover a {
+  color: #fff;
+}
+
+/* Support */
+#sec-02-our-mission-and-support #card-4 {
+  background: rgba(255,221,180,0.4);
+  border-color: rgba(130,85,0,0.08);
+}
+#sec-02-our-mission-and-support #card-4:hover {
+  background: rgba(255,221,180,0.55);
+}
+#sec-02-our-mission-and-support #card-4 .mission-support-card-icon {
+  background: #825500;
+  color: #fff;
+}
+#sec-02-our-mission-and-support #card-4 h2 {
+  color: #5c3d00;
+}
+#sec-02-our-mission-and-support #card-4 a {
+  color: #825500;
+}
+#sec-02-our-mission-and-support #card-4:hover a {
+  color: #5c3d00;
 }
 
 /* =========================

@@ -29,6 +29,10 @@ home = "home"
 ## Advanced options below ##
 ############################
 
+[security]
+  [security.funcs]
+    getenv = ["^WC_.*$"]
+    
 # Get last modified date for content from Git?
 enableGitInfo = false
 

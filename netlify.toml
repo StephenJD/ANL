@@ -17,7 +17,7 @@ hugo --gc --minify -b $URL
   publish = "public"
   
 [build.environment]
-  HUGO_VERSION = "0.80.0"
+  HUGO_VERSION = "0.161.1"
   HUGO_ENABLEGITINFO = "true"
 
 [context.production.environment]

@@ -9,7 +9,10 @@ DEBUG: sibling_media_paths.html running
 
 {{ $page := . }}
 {{ $lines := split $page.Content "\n" }}
-{{ $folder := $page.File.Dir }}
+{{ $folder := "" }}
+{{ with $page.File }}
+  {{ $folder = .Dir }}
+{{ end }}
 {{ $newLines := slice }}
 
 {{ range $lines }}
