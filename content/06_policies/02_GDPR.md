@@ -10,7 +10,7 @@ access: Public
 
 # ANL GDPR Data Protection Policy
 
-{{< card-group >}}
+{{< card-column >}}
 
 # 1. Personal Data
 *Personal data* is data we hold by which (possibly in conjunction with other available information) a living individual can be identified.
@@ -127,4 +127,4 @@ gdpr@ascendnextlevel.org.uk
 
 Information Commissioner’s Office: https://ico.org.uk/
 
-{{< /card-group >}}
+{{< /card-column >}}

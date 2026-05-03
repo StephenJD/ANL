@@ -1,0 +1,121 @@
+#sec-00-encouraging-young-people {
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
+  min-height: 400px;
+  background-size: cover;
+  background-position: center;
+  background-color: transparent !important;
+}
+#sec-00-encouraging-young-people .hero-content {
+  max-width: 48rem;
+  margin-left: 0;
+  margin-right: 0;
+  padding: 2.5rem 0;
+  box-sizing: border-box;
+  text-align: left;
+}
+
+#sec-00-encouraging-young-people .hero-container {
+  max-width: 80rem;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+  width: 100%;
+  position: relative;
+  z-index: 10;
+}
+
+@media (max-width: 600px) {
+  #sec-00-encouraging-young-people .hero-container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  #sec-00-encouraging-young-people .hero-content {
+    padding: 1.5rem 0;
+  }
+}
+
+#sec-00-encouraging-young-people.document-content {
+  background-color: transparent !important;
+}
+
+/* overlay */
+#sec-00-encouraging-young-people .home-gradient-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(
+    to right,
+    #f7f9ff 0%,
+    rgba(247, 249, 255, 0.6) 60%,
+    rgba(247, 249, 255, 0) 100%
+  );
+  width: 100%;
+  height: 100%;
+}
+
+/* content stacking */
+#sec-00-encouraging-young-people > *:not(.home-gradient-overlay) {
+  position: relative;
+  z-index: 2;
+}
+
+/* HERO HEADING */
+#sec-00-encouraging-young-people .heroheading {
+  font-family: 'Plus Jakarta Sans', 'Inter', Arial, sans-serif;
+  font-size: clamp(2.5rem, 6vw, 4.5rem);
+  font-weight: 800;
+  color: #161c22;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  margin-bottom: 2rem;
+  text-align: left;
+}
+
+#sec-00-encouraging-young-people .heroheading strong,
+#sec-00-encouraging-young-people .heroheading b {
+  color: #004d99;
+  font-style: italic;
+  font-weight: 800;
+}
+
+/* HERO PARAGRAPH */
+#sec-00-encouraging-young-people .heroparagraph {
+  font-family: 'Inter', Arial, sans-serif;
+  font-size: clamp(1.25rem, 2vw, 1.5rem);
+  color: #424752;
+  max-width: 40rem;
+  margin: 0 0 2.5rem 0;
+  line-height: 1.6;
+  text-align: left;
+}
+
+/* HERO BUTTON */
+section#sec-00-encouraging-young-people a.herobutton {
+  display: inline-block;
+  background: linear-gradient(135deg, #004d99 0%, #1565c0 100%);
+  color: #fff !important;
+  padding: 1rem 2rem;
+  border-radius: 0.75rem;
+  font-family: 'Inter', Arial, sans-serif;
+  font-weight: 700;
+  font-size: 1.125rem;
+  box-shadow: 0 4px 24px rgba(0, 77, 153, 0.12);
+  transition: opacity 0.2s, transform 0.2s, box-shadow 0.2s;
+  margin: 0;
+  text-decoration: none !important;
+  border: none;
+  cursor: pointer;
+}
+
+section#sec-00-encouraging-young-people a.herobutton:hover {
+  opacity: 0.9;
+  box-shadow: 0 8px 32px rgba(0, 77, 153, 0.18);
+}
+
+section#sec-00-encouraging-young-people a.herobutton:active {
+  transform: scale(0.98);
+}

@@ -1,0 +1,85 @@
+/* static\css\home\02_our_mission_and_support.css */
+
+#sec-02-our-mission-and-support h2 {
+  font-family: 'Plus Jakarta Sans', Arial, sans-serif;
+  font-size: 3rem;
+  font-weight: 800;
+  line-height: 1.2;
+  text-align: center;
+}
+
+#sec-02-our-mission-and-support > p {
+  text-align: center;
+}
+
+#sec-02-our-mission-and-support {
+  background: #f7f9ff;
+}
+
+/* Variants Card 1*/
+#card-1 {
+  background: rgba(214,227,255,0.3);
+  border-color: rgba(0,77,153,0.08);
+}
+
+#card-1:hover {
+  background: rgba(214,227,255,0.45);
+}
+
+#card-1 h2,
+#card-1 a {
+  color: #004d99;
+}
+
+/* Variants Card 2*/
+
+#card-2 {
+  background: rgba(146,242,246,0.3);
+  border-color: rgba(43,148,154,0.08);
+}
+
+#card-2:hover {
+  background: rgba(146,242,246,0.45);
+}
+
+#card-2 h2,
+#card-2 a {
+  color: #2B949A;
+}
+
+/* Variants Card 3*/
+
+#card-3 {
+  background: #1c252e;
+  border-color: rgba(255,255,255,0.05);
+  color: #fff;
+}
+
+#card-3:hover {
+  background: #25303b;
+}
+
+#card-3 p {
+  color: rgba(255,255,255,0.8);
+}
+
+#card-3 h2,
+#card-3 a {
+  color: #fff;
+}
+
+/* Variants Card 4*/
+
+#card-grid-2 .card {
+  background: rgba(255,221,180,0.4);
+  border-color: rgba(130,85,0,0.08);
+}
+
+#card-grid-2 .card:hover {
+  background: rgba(255,221,180,0.55);
+}
+
+#card-grid-2 .card h2,
+#card-grid-2 .card a {
+  color: #825500;
+}

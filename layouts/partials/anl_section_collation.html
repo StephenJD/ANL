@@ -34,6 +34,20 @@
 
 {{/* <div> Opened in this parial */}}
 {{ partial "anl_page_chrome.html" . }} 
+
+{{/* Load all .css files from the matching static/css/ folder */}}
+{{ if $filePath }}
+  {{ $cleanPath := replace $filePath "\\" "/" }}
+  {{ $dirName := path.Dir $cleanPath }}
+  {{ $cssDirPath := path.Join "static/css" $dirName }}
+  {{ if fileExists $cssDirPath }}
+    {{ range (readDir $cssDirPath) }}
+      {{ if strings.HasSuffix .Name ".css" }}
+        <link rel="stylesheet" href="{{ path.Join "css" $dirName .Name | relURL }}">
+      {{ end }}
+    {{ end }}
+  {{ end }}
+{{ end }}
   
 
   {{/* Exclude gate logic for dynamic/editor/document-list pages by type or function_key */}}
@@ -41,7 +55,7 @@
   <section id="main-content" class="document-content">
     {{ if and (not (in $access "public")) (not $isEditor) }}
       {{/* If the parent page is public, render nothing for private sections (leave blank) */}}
-      {{ if not (in $current_page.Params.access | default "public" | lower) "public" }}
+      {{ if not (in ($current_page.Params.access | default "public" | lower) "public") }}
         <div class="gated_page_placeholder" data-path="{{ $filePath }}">
           <div class="page_access_message">Loading page…</div>
         </div>

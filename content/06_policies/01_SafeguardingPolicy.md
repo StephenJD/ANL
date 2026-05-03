@@ -17,7 +17,7 @@ for Safeguarding is Amy Stone. Contact details…. We keep abreast of current be
 practice through Christian Safeguarding Services.
 
 
-{{< card-group >}}
+{{< card-column >}}
 
 # 1. Introduction
 This Safeguarding Policy outlines our commitment to ensuring the safety, well-being, and protection of young people and adults at risk of harm in all our activities and services. We recognise our duty to prevent harm, abuse, and exploitation and to provide a safe environment for all individuals engaging with our organisation, especially because, as Christians, we believe that every person is made in the image of God and we seek to show God’s love and care as an organisation. This policy aligns with UK safeguarding legislation and best practices. Ascend Next Level CIC encourages and supports young people and their families to live life well. We long to see people flourish as they engage in the positive experiences we offer in terms of outdoor adventure, different forms of creative expression (art, dance, music, building projects etc) and Christian prayer. The directors are responsible for leading our Safeguarding arrangements: governance and accountability is in place.
@@ -121,4 +121,4 @@ Support must be sought if staff feel unsure in handling faith conversations.
 - Adult Social Care — contact.centre@derbyshire.gov.uk — 01629 533190  
 - NSPCC — 0808 800 5000  
 
-{{< /card-group >}}
+{{< /card-column >}}

@@ -4,7 +4,7 @@
 
 {{ $parts := split .Inner "CARD_BREAK" }}
 
-<div class="card-group" id="card-group-{{ $i }}">
+<div class="card-grid" id="card-grid-{{ $i }}">
   {{ range $i, $p := $parts }}
     {{ $p = trim $p "\n\r\t " }}
     {{ if gt (len $p) 0 }}
