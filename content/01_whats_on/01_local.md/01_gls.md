@@ -1,5 +1,5 @@
 ---
-access: public
+access: admin
 title: GLS
 type: document
 ---
