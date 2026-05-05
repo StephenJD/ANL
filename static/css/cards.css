@@ -82,6 +82,13 @@
   margin-bottom: 0.5rem;
 }
 
+.card-row h1,
+.card-row h2,
+.card-row h3,
+.card-row p {
+  margin: 0;
+}
+
 .card-row {
   display: flex;
   justify-content: flex-start;

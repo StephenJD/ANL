@@ -31,7 +31,9 @@
   {{ partial "anl_page_chrome.html" $current_page }}
   
   <div class="form-container">
-    <h1>{{ .Title }}</h1>
+    {{ if .Title }}
+      <h1>{{ .Title }}</h1>
+    {{ end }}
     {{ partial "form_request.html" . }}
     {{ partial "page_access_message.html" . }}
 

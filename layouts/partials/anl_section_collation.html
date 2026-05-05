@@ -133,7 +133,9 @@
             </div>
           </section>
         {{ else }}
-          <h2>{{ .Title }}</h2>
+          {{ if .Title }}
+            <h2>{{ .Title }}</h2>
+          {{ end }}
           {{ if .Content }}
             {{ partial "sibling_media_paths.html" . }}
           {{ else }}

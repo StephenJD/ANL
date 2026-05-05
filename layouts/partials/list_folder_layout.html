@@ -30,7 +30,7 @@
         <div class="page_access_message">Loading page…</div>
       </div>
       <div id="gated-content" style="display:none;">
-        <h1>{{ .Title }}</h1>
+        {{ if .Title }}<h1>{{ .Title }}</h1>{{ end }}
         <div class="directory-style">
           <div class="debug-message">
             <strong>Sections:</strong><br>
@@ -76,7 +76,7 @@
         </div>
       </div>
     {{ else }}
-      <h1>{{ .Title }}</h1>
+      {{ if .Title }}<h1>{{ .Title }}</h1>{{ end }}
       <div class="directory-style">
         <div class="debug-message">
           <strong>Sections:</strong><br>
