@@ -1,3 +1,7 @@
-<div class="card-row" id="card-row-{{ .Ordinal }}">
+{{ $state := .Page.Scratch }}
+{{ $i := add ($state.Get "rowIndex" | default 0) 1 }}
+{{ $state.Set "rowIndex" $i }}
+
+<div class="card-row" id="card-row-{{ $i }}">
   {{ .Inner }}
 </div>
