@@ -91,13 +91,9 @@
 
 .card-row p {
   margin: 0;
-}
-
-.card-row h2 {
-  margin: 0;
-  text-align: left;
-  line-height: 1;
-  font-size: 1.45rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 /* =========================
