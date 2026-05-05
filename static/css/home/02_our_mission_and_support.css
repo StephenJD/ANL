@@ -1,6 +1,6 @@
 /* static\css\home\02_our_mission_and_support.css */
 
-#sec-02-our-mission-and-support h2 {
+h2 {
   font-family: 'Plus Jakarta Sans', Arial, sans-serif;
   font-size: 3rem;
   font-weight: 800;
@@ -8,7 +8,7 @@
   text-align: center;
 }
 
-#sec-02-our-mission-and-support > p {
+p {
   text-align: center;
 }
 

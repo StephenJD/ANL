@@ -1,7 +1,3 @@
-{{ $html := .content | markdownify }}
-
-{{ $html = replaceRE `<p>\s*(<img[^>]+>)\s*</p>` `<div class="img">$1</div>` $html }}
-
-<div class="card card-{{ .index }}">
-  {{ $html | safeHTML }}
+<div class="card" id="card-{{ .index }}">
+  {{ .content | markdownify }}
 </div>
