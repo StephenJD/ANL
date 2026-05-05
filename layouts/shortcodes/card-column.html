@@ -1,6 +1,6 @@
 {{ $state := .Page.Scratch }}
-{{ $i := add ($state.Get "cardGroupIndex" | default 0) 1 }}
-{{ $state.Set "cardGroupIndex" $i }}
+{{ $i := add ($state.Get "cardColumnIndex" | default 0) 1 }}
+{{ $state.Set "cardColumnIndex" $i }}
 
 {{ $parts := split .Inner "CARD_BREAK" }}
 

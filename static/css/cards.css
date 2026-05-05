@@ -1,8 +1,11 @@
+/* =========================
+   LAYOUT SYSTEM
+========================= */
+
 .card-column {
   display: flex;
   flex-direction: column;
   gap: 2.25rem;
-  padding: 0;
 }
 
 .card-grid {
@@ -13,6 +16,10 @@
   margin: 0 auto;
   padding: 0 1.5rem;
 }
+
+/* =========================
+   CARD BASE
+========================= */
 
 .card {
   background: #fff;
@@ -27,6 +34,10 @@
   box-sizing: border-box;
   transition: background-color 0.2s ease, box-shadow 0.2s ease;
 }
+
+/* =========================
+   TYPOGRAPHY
+========================= */
 
 .card h1 {
   font-size: 1.6rem;
@@ -56,42 +67,6 @@
   line-height: 1.625;
 }
 
-.card-grid .card > p:first-child img {
-  width: 60px;
-  height: 60px;
-  display: block;
-  margin: 0;
-  border-radius: 8px;
-}
-
-.card img {
-  display: block;
-}
-
-.card p a {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.card p img {
-  width: 20px;
-  height: 20px;
-  display: inline-block;
-  border-radius: 4px;
-}
-
-.card p a {
-  display: inline-flex;
-  align-items: center;
-}
-
-.card p a img {
-  width: 20px;
-  height: 20px;
-  display: inline-block;
-}
-
 .card ul,
 .card ol {
   margin: 0 0 1rem;
@@ -101,6 +76,44 @@
 .card li {
   margin-bottom: 0.5rem;
 }
+
+/* =========================
+   IMAGES
+========================= */
+
+.card img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Top icon image (first paragraph) */
+.card-grid .card > p:first-child img {
+  width: 60px;
+  height: 60px;
+  display: block;
+  margin: 0;
+  border-radius: 8px;
+}
+
+/* Inline icon inside links */
+.card p a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.card p a img {
+  width: 20px;
+  height: 20px;
+  display: inline-block;
+  border-radius: 4px;
+  vertical-align: middle;
+}
+
+/* =========================
+   MOBILE
+========================= */
 
 @media (max-width: 600px) {
   .card {

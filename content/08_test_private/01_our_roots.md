@@ -1,7 +1,7 @@
 ---
 title: ""
 type: document
-access: Public
+access: public
 ---
 
 {{< card-grid >}}

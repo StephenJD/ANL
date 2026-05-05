@@ -10,16 +10,17 @@ import { urlize } from "../lib/urlize.js";
 // PATHS
 // -----------------------------
 const contentDir = path.join(process.cwd(), "content");
-const outputDir = path.join(process.cwd(), "private_html");
+const rootDir = process.cwd();
 
 // -----------------------------
 // CLEAN OUTPUT
 // -----------------------------
-if (fs.existsSync(outputDir)) {
-  fs.rmSync(outputDir, { recursive: true, force: true });
+function cleanOutputDir(dir) {
+  if (fs.existsSync(dir)) {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+  fs.mkdirSync(dir, { recursive: true });
 }
-fs.mkdirSync(outputDir, { recursive: true });
-
 // -----------------------------
 // UTIL
 // -----------------------------
@@ -180,19 +181,57 @@ function collectEntries(dir, out = []) {
 // -----------------------------
 // BUILD ENTRY (NO DSL)
 // -----------------------------
+function convertRowInline(md) {
+  console.log("[convertRowInline] running");
+
+  // normalize line endings (CRLF issue fix)
+  md = md.replace(/\r/g, "");
+
+  // --- image + heading row ---
+  md = md.replace(
+    /!\[([^\]]*)\]\(([^)]+)\)\s*##\s*(.+)/g,
+    (_, alt, src, title) => {
+      console.log("[row] image+heading matched");
+
+      return `<span class="md-row">
+<img src="${src.trim()}" alt="${alt}">
+<h2>${title.trim()}</h2>
+</span>`;
+    }
+  );
+
+  // --- link + icon row ---
+  md = md.replace(
+    /\[([^\]]+)\]\(([^)]+)\)\s+!\[\]\(([^)]+)\)/g,
+    (_, text, href, icon) => {
+      console.log("[row] link+icon matched");
+
+      return `<span class="md-row">
+<a href="${href.trim()}">${text}</a>
+<img src="${icon.trim()}" alt="">
+</span>`;
+    }
+  );
+
+  return md;
+}
+
 function buildEntry(entry) {
-  //console.log("[ENTRY] start", entry.filePath);
+  console.log("[buildEntry] FILE:", entry.filePath);
 
-  // 1. Strip shortcodes
-  const clean = stripShortcodes(entry.rawContent);
-  //console.log("[ENTRY] cleaned length", clean.length);
+  const raw = stripShortcodes(entry.rawContent);
 
-  // 2. Parse markdown (HTML allowed)
+  if (raw.trim().startsWith("<")) {
+    console.log("[buildEntry] HTML bypass");
+    return raw;
+  }
+
+  const clean = convertRowInline(raw);
+
+  console.log("[buildEntry] AFTER transform");
+  console.log(clean);
+
   const html = marked.parse(clean);
-  //console.log("[MARKED] output length", html.length);
-  //console.log(marked.parse("<div>test</div>"));
-  //console.log("[ENTRY] done", entry.filePath);
-
   return html;
 }
 
@@ -207,14 +246,19 @@ function writeOutput(entry, html) {
     .map((p) => urlize(p))
     .join(path.sep);
 
-  const outHtml = path.join(outputDir, rel);
+  const isPublic = entry.access.includes("public");
+
+  const baseDir = isPublic
+    ? path.join(rootDir, "public")
+    : path.join(rootDir, "private_html");
+
+  const outHtml = path.join(baseDir, rel);
   const outJson = outHtml.replace(/\.html$/i, ".json");
 
   fs.mkdirSync(path.dirname(outHtml), { recursive: true });
 
   fs.writeFileSync(outJson, JSON.stringify(entry.frontMatter, null, 2));
-
-  if (!entry.access.includes("public")) {
+  if (!isPublic) {
     fs.writeFileSync(outHtml, html);
   }
 }
@@ -223,6 +267,11 @@ function writeOutput(entry, html) {
 // MAIN PIPELINE
 // -----------------------------
 try {
+  //const dir = path.join(rootDir, "public");``
+  //cleanOutputDir(dir);
+  const privateDir = path.join(rootDir, "private_html");
+  cleanOutputDir(privateDir);
+
   const entries = collectEntries(contentDir);
 
   for (const entry of entries) {

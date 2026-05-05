@@ -1,7 +1,7 @@
 ---
 title: ""
 type: document
-access: Public
+access: public
 ---
 
 ## Our Mission &amp; Support
@@ -10,8 +10,11 @@ The foundations of our impact and how you can join us in guiding the next genera
 {{< card-grid >}}
 
 <!-- Encourage Card -->
-![Encourage](/images/shared/heart.png) 
-## Encourage
+
+![Encourage](/images/shared/heart.png)
+
+## Encourage 
+
 
 To ‘inspire with courage, spirit or hope.’ We seek to encourage young people and their families to be healthy, resilient and strong mentally, spiritually, emotionally, and physically.
 
@@ -20,8 +23,7 @@ To ‘inspire with courage, spirit or hope.’ We seek to encourage young people
 {{< card-break >}}
 
 <!-- Encounter Card -->
-![Encounter](/images/shared/compass.png) 
-## Encounter
+![Encounter](/images/shared/compass.png) ## Encounter
 
 We invite young people to grow stronger through encountering adventure, God and joy through outdoor opportunities in the Peak District and creative expression.
 
