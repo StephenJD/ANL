@@ -1,6 +1,10 @@
 /* =========================
    LAYOUT SYSTEM
 ========================= */
+.card-row {
+  outline: 3px solid red !important;
+}
+
 
 .card-column {
   display: flex;
@@ -26,7 +30,7 @@
   border: 1px solid #e5e7eb;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: stretch;
   border-radius: 24px;
   box-shadow: 0 4px 14px rgba(0,0,0,0.06);
   padding: 2.25rem;
@@ -99,8 +103,14 @@
 .card-row p {
   margin: 0;
   display: flex;
-  align-items: center;
+  text-align: left;
   gap: 0.5rem;
+  flex: 0 0 auto;
+}
+
+.card-row > p a {
+  display: flex;
+  align-items: center;
 }
 
 /* =========================

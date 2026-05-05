@@ -36,7 +36,7 @@
   border: 1px solid #e3e9f0;
   padding: 1.5rem;
   margin-top: 2rem;
-  max-width: 24rem;
+  max-width: none;
 }
 
 #sec-01-our-roots #card-row-1 {
